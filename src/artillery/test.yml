@@ -1,0 +1,14 @@
+config:
+  target: 'http://localhost:1337'  # Ajusta la URL según tu configuración de la aplicación
+  phases:
+    - duration: 60    # Duración de la prueba en segundos
+      arrivalRate: 10  # Tasa de llegada de nuevos usuarios por segundo
+      rampTo: 50       # Aumenta gradualmente a 50 usuarios en el período de 60 segundos
+
+scenarios:
+  - flow:
+      - get:
+          url: '/api/documents'  # Endpoint a probar
+          headers:
+            User-Agent: 'Artillery'
+      - think: 5  # Tiempo de espera entre cada solicitud en segundos
