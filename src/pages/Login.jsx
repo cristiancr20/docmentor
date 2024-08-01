@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { useUser } from "../UserContext";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -24,7 +23,7 @@ const Login = () => {
       const { jwt, user } = authResponse.data;
 
       // Guarda el JWT
-      localStorage.setItem("jwt", jwt);
+      localStorage.setItem("jwtToken", jwt);
 
       // Obtener el rol del usuario usando GraphQL
       const graphqlResponse = await axios.post(
@@ -59,13 +58,16 @@ const Login = () => {
 
       const userData =
         graphqlResponse.data.data.usersPermissionsUser.data.attributes;
+
       const userRole = userData.rol.data.attributes.tipoRol;
       const username = userData.username;
       const useremail = userData.email;
-
+      const userId = user.id;
+      
       localStorage.setItem("rol", userRole);
       localStorage.setItem("username", username);
-      localStorage.setItem("email", useremail)
+      localStorage.setItem("email", useremail);
+      localStorage.setItem("userId", userId);
 
       // Redirige según el rol
       if (userRole === "tutor") {
@@ -125,6 +127,9 @@ const Login = () => {
           >
             Iniciar Sesión
           </button>
+          <div className="m-2 text-white">
+            No tienes cuenta? <span className="text-blue-700"><Link to="/signup">REGISTRATE</Link></span>
+          </div>
         </form>
       </div>
     </div>
