@@ -37,10 +37,19 @@ function Navbar() {
               <>
                 <li>
                   <Link
-                    to="/tutor-dashboard"
+                    to="/tutor/dashboard"
                     className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
                   >
                     Tutor Dashboard
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/proyectos/asignados"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Proyectos asignados
                   </Link>
                 </li>
                 {/* Más opciones específicas para el tutor */}
@@ -48,15 +57,7 @@ function Navbar() {
             )}
             {userRole === "estudiante" && (
               <>
-                <li>
-                  <Link
-                    to="/documents"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Documentos
-                  </Link>
-                </li>
-                <li>
+                {/* <li>
                   <Link
                     to="/subir/documento"
                     className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
@@ -71,6 +72,24 @@ function Navbar() {
                     className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
                   >
                     Ver Documentos
+                  </Link>
+                </li> */}
+
+                <li>
+                  <Link
+                    to="/proyecto/nuevo"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Nuevo Proyecto
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/proyecto/ver"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                   Ver mis Proyectos
                   </Link>
                 </li>
               </>

@@ -71,9 +71,9 @@ const Login = () => {
 
       // Redirige según el rol
       if (userRole === "tutor") {
-        navigate("/tutor-dashboard");
+        navigate("/tutor/dashboard");
       } else if (userRole === "estudiante") {
-        navigate("/student-dashboard");
+        navigate("/student/dashboard");
       }
     } catch (error) {
       console.error("An error occurred:", error.response);
