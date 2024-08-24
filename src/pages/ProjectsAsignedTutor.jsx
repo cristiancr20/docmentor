@@ -2,66 +2,47 @@
 import React, { useEffect, useState } from 'react';
 import { getProjectsByTutor } from '../core/apiCore';
 import Navbar from '../components/Navbar';
-
+import ProjectsTable from '../components/ProjectsTable';
 
 const ProjectsAsignedTutor = () => {
-    const [projects, setProjects] = useState([]);
-    const [error, setError] = useState(null);
-    const userId = localStorage.getItem('userId'); // Obtén el ID del usuario desde el almacenamiento local
-  
-    useEffect(() => {
-      const fetchProjects = async () => {
-        try {
-          if (userId) {
-            const userProjects = await getProjectsByTutor(userId);
-            setProjects(userProjects);
-          } else {
-            setError('User ID is not available');
-          }
-        } catch (error) {
-          setError('Error fetching projects');
-          console.error('Error fetching projects:', error);
+  const [projects, setProjects] = useState([]);
+  const [error, setError] = useState(null);
+  const userId = localStorage.getItem('userId');
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        if (userId) {
+          const userProjects = await getProjectsByTutor(userId);
+          setProjects(userProjects);
+        } else {
+          setError('User ID is not available');
         }
-      };
-  
-      fetchProjects();
-    }, [userId]);
-  
-    return (
-      <div>
+      } catch (error) {
+        setError('Error fetching projects');
+        console.error('Error fetching projects:', error);
+      }
+    };
+
+    fetchProjects();
+  }, [userId]);
+
+  const columns = [
+    { key: 'estudiante', label: 'Estudiante', render: (project) => project.estudiante.email },
+    { key: 'Title', label: 'Título' },
+    { key: 'Descripcion', label: 'Descripción' },
+    { key: 'FechaCreacion', label: 'Fecha de Creación' },
+  ];
+
+  return (
+    <div>
       <Navbar />
       <div className="container mx-auto p-4">
         {error && <p className="text-red-500">{error}</p>}
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 text-center">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-900 dark:bg-gray-900 dark:text-gray-400 ">
-            <tr>
-              <th className="px-4 py-2 ">Estudiante</th>
-              <th className="px-4 py-2 ">Título</th>
-              <th className="px-4 py-2 ">Descripción</th>
-              <th className="px-4 py-2 ">Fecha de Creación</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.length === 0 ? (
-              <tr className="bg-gray-800 text-white dark:border-gray-700">
-                <td colSpan="4" className="px-4 py-2 text-center">No hay proyectos disponibles</td>
-              </tr>
-            ) : (
-              projects.map(project => (
-                <tr className="bg-gray-800 text-white dark:border-gray-700" key={project.id}>
-                  
-                  <td className="px-4 py-2 ">{project.estudiante.email}</td>
-                  <td className="px-4 py-2 ">{project.Title}</td>
-                  <td className="px-4 py-2 ">{project.Descripcion}</td>
-                  <td className="px-4 py-2 ">{project.FechaCreacion}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <ProjectsTable projects={projects} columns={columns} />
       </div>
-      </div>
-    );
-  };
-  
-  export default ProjectsAsignedTutor;
+    </div>
+  );
+};
+
+export default ProjectsAsignedTutor;

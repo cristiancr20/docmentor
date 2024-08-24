@@ -12,11 +12,10 @@ import SignUp from "./pages/SignUp";
 
 /* ESTUDIANTE */
 import StudentsDashboard from "./pages/StudentDashboard";
-import ListarDocumentos from "./pages/ListarDocumentos";
-import SubirDocumento from "./pages/SubirDocumento";
+import SubirDocumento from "./components/SubirDocumento";
 import NewProject from "./pages/NewProject";
 import ViewProjectsStudents from "./pages/ViewProjectsStudents";
-import ProjectVersion from "./pages/DocumentVersion";
+import ProjectDetalle from "./pages/ProyectoDetalle";
 
 /* TUTOR */
 import TutorDashboard from "./pages/TutorDashboard";
@@ -34,11 +33,10 @@ function App() {
           <Route path="/proyectos/asignados" element={<ProjectsAsignedTutor />} />
 
           <Route path="/student/dashboard" element={<StudentsDashboard />} />
-          <Route path="/documentos" element={<ListarDocumentos />} />
           <Route path="/proyecto/nuevo" element={<NewProject />} />
           <Route path="/proyecto/ver" element={<ViewProjectsStudents />} />
           <Route path="/subir/documento" element={<SubirDocumento />} />
-          <Route path="/proyecto/:projectId/version" element={<ProjectVersion/>} />
+          <Route path="/proyecto/:projectId" element={<ProjectDetalle/>} />
         </Routes>
       </Router>
     </>

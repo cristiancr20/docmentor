@@ -24,8 +24,6 @@ export const getRoles = async () => {
 
 
 
-
-
 //*******************ESTUDIANTE************************* 
 //METODO PARA CREAR UN NUEVO PROYECTO
 export const createProject = async (projectData) => {
@@ -55,14 +53,15 @@ export const createProject = async (projectData) => {
 export const getProjectsByStudents = async (userId) => {
   try {
     const response = await axios.get(
-      `http://localhost:1337/api/users/${userId}?populate=new_project_es.tutor,new_project_es.estudiante`
+      `http://localhost:1337/api/users/${userId}?populate=project_es.tutor,project_es.estudiante`
     );
-    return response.data.new_project_es;
+    return response.data.project_es;
   } catch (error) {
     console.error("Error fetching user documents:", error);
     throw error;
   }
 };
+
 
 
 //METODO PARA SUBIR DOCUMENTO
@@ -90,70 +89,71 @@ export const uploadFile = async (file) => {
   return response.data[0]; // Retorna el primer archivo subido
 };
 
-// Método para crear la entrada en la entidad 'document'
-export const createDocument = async (title, fileId, userId) => {
+// MÉTODO PARA AGREGAR EL DOCUMENTO AL PROYECTO
+export const createDocument = async (title, fileId, projectId) => {
   const documentData = {
     data: {
       title: title,
-      document: [fileId],
-      user: userId,
+      documentFile: [fileId], // Asegúrate de que 'documentFile' es un array si Strapi lo requiere así
+      project: projectId, // Enviar el ID del proyecto directamente
+      fechaSubida: new Date().toISOString(), // Fecha de subida
+      estado: false, // Estado inicial
     },
   };
 
-  const token = localStorage.getItem("jwtToken"); // Obtener el token
+  console.log("Document Data:", documentData);
 
-  if (!token) {
-    throw new Error("Token JWT no encontrado");
-  }
 
-  const response = await axios.post(
-    "http://localhost:1337/api/documents",
-    documentData,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`, // Añadir el token en los headers
-      },
-    }
-  );
-
-  return response.data;
-};
-
-// Función para obtener los documentos de un usuario específico
-export const getUserDocuments = async (userId) => {
   try {
-    const response = await axios.get(
-      `http://localhost:1337/api/users/${userId}?populate=documents`
+    const response = await axios.post(
+      "http://localhost:1337/api/documents",
+      documentData,
     );
-    return response.data.documents;
+
+    console.log("Document Response:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("Error fetching user documents:", error);
+    console.error("Error al crear el documento:", error.response || error.message);
     throw error;
   }
 };
 
-// Obtener detalles del proyecto
-export const getProject = async (projectId) => {
+
+
+// Obtener detalles del proyecto por ID
+export const getProjectById = async (projectId) => {
+
   try {
-    const response = await axios.get(`http://localhost:1337/api/new-projects/${projectId}`);
-    return response.data?.data?.attributes || {};
+    const response = await axios.get(`http://localhost:1337/api/new-projects/${projectId}?populate=*`);
+    return response.data.data;
   } catch (error) {
-    console.error('Error fetching project:', error);
+    console.error("Error fetching project details:", error);
     throw error;
   }
 };
 
-// Función para obtener documentos de un proyecto
-export const getDocuments = async (projectId) => {
+
+// Obtener documentos por ID del proyecto
+export const getDocumentsByProjectId = async (projectId) => {
+
   try {
-    const response = await axios.get(`http://localhost:1337/api/new-projects/${projectId}?populate=documents`);
-    const documents = response.data?.data?.attributes?.documents?.data || [];
-    return documents;
+    // Utiliza la sintaxis correcta para aplicar el filtro
+    const response = await axios.get(`http://localhost:1337/api/documents?filters[project][id][$eq]=${projectId}&populate=*`,);
+
+    console.log("Documents Response:", response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching documents:', error);
+    console.error("Error al obtener los documentos:", error.response?.data || error.message);
     throw error;
   }
 };
+
+
+
+
+
+
+
 
 // Función para obtener versiones de un documento
 export const getDocumentVersions = async (documentId) => {
@@ -187,9 +187,9 @@ export const getDocumentVersions = async (documentId) => {
 export const getProjectsByTutor = async (userId) => {
   try {
     const response = await axios.get(
-      `http://localhost:1337/api/users/${userId}?populate=new_project_ts.tutor,new_project_ts.estudiante`
+      `http://localhost:1337/api/users/${userId}?populate=project_ts.tutor,project_ts.estudiante`
     );
-    return response.data.new_project_ts;
+    return response.data.project_ts;
   } catch (error) {
     console.error("Error fetching user documents:", error);
     throw error;
