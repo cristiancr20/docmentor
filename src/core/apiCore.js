@@ -150,11 +150,6 @@ export const getDocumentsByProjectId = async (projectId) => {
 
 
 
-
-
-
-
-
 // Función para obtener versiones de un documento
 export const getDocumentVersions = async (documentId) => {
   try {
@@ -195,3 +190,66 @@ export const getProjectsByTutor = async (userId) => {
     throw error;
   }
 };
+
+export const getDocumentById = async (documentId) => {
+  try {
+    const response = await fetch(`http://localhost:1337/api/documents/${documentId}?populate=*`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Document response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching document:', error);
+    throw error;
+  }
+};
+
+
+export const getCommentsByDocument = async (documentId) => {
+  try {
+    const response = await fetch(`http://localhost:1337/api/documents/${documentId}?populate=comments`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Comments response:', data);
+    // Asegúrate de que estás accediendo correctamente a los comentarios
+    const comments = data?.data?.attributes?.comments?.data || [];
+    console.log('Comments:', comments);
+    return comments;
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    throw error;
+  }
+};
+
+
+export const addCommentToDocument = async (documentId, newComment, tutorId) => {
+  try {
+    const response = await fetch(`http://localhost:1337/api/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          document: documentId,
+          correccion: newComment,
+          correccionTutor: tutorId
+        },
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Comment response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw error;
+  }
+};
+

@@ -11,7 +11,6 @@ const ProyectoDetalle = () => {
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
-  const STRAPI_URL = "http://localhost:1337";
 
   useEffect(() => {
     fetchProject();
@@ -151,10 +150,8 @@ const ProyectoDetalle = () => {
                           doc.attributes.documentFile.data[0]?.attributes
                             ?.url ? (
                             <a
-                              href={`${STRAPI_URL}${doc.attributes.documentFile.data[0].attributes.url}`}
+                              href={`/documento/${doc.id}`} // Cambia aquí para redirigir al visor de documentos
                               className="text-blue-600 hover:underline"
-                              target="_blank"
-                              rel="noopener noreferrer"
                             >
                               Ver Documento
                             </a>

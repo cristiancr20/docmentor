@@ -1,3 +1,4 @@
+// ProjectsTable.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaEye } from 'react-icons/fa';
@@ -16,12 +17,11 @@ const ProjectsTable = ({ projects, columns, linkBase }) => {
                 {column.label}
               </th>
             ))}
-            {/* 
             {linkBase && (
               <th className="px-4 py-2 bg-gray-800 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Acciones
               </th>
-            )} */}
+            )}
           </tr>
         </thead>
         <tbody>

@@ -20,6 +20,7 @@ import ProjectDetalle from "./pages/ProyectoDetalle";
 /* TUTOR */
 import TutorDashboard from "./pages/TutorDashboard";
 import ProjectsAsignedTutor from "./pages/ProjectsAsignedTutor";
+import DocumentoViewer from "./components/DocumentViewer";
 
 function App() {
   return (
@@ -31,6 +32,9 @@ function App() {
 
           <Route path="/tutor/dashboard" element={<TutorDashboard />} />
           <Route path="/proyectos/asignados" element={<ProjectsAsignedTutor />} />
+          // En tu archivo de rutas, por ejemplo, App.jsx o Routes.jsx
+          <Route path="/documento/:documentId" element={<DocumentoViewer />} />
+
 
           <Route path="/student/dashboard" element={<StudentsDashboard />} />
           <Route path="/proyecto/nuevo" element={<NewProject />} />

@@ -39,7 +39,7 @@ const ProjectsAsignedTutor = () => {
       <Navbar />
       <div className="container mx-auto p-4">
         {error && <p className="text-red-500">{error}</p>}
-        <ProjectsTable projects={projects} columns={columns} />
+        <ProjectsTable projects={projects} columns={columns} linkBase="/proyecto"/>
       </div>
     </div>
   );
