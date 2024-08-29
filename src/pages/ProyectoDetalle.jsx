@@ -11,6 +11,7 @@ const ProyectoDetalle = () => {
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
+  const rol = localStorage.getItem("rol");
 
   useEffect(() => {
     fetchProject();
@@ -85,13 +86,14 @@ const ProyectoDetalle = () => {
             Historial de Versiones:
           </h2>
 
-          {/* Botón para abrir el modal */}
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Subir Nuevo Documento
-          </button>
+          {rol === "estudiante" && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Subir Nuevo Documento
+            </button>
+          )}
 
           {documents.length > 0 ? (
             <div className="overflow-x-auto">

@@ -140,7 +140,6 @@ export const getDocumentsByProjectId = async (projectId) => {
     // Utiliza la sintaxis correcta para aplicar el filtro
     const response = await axios.get(`http://localhost:1337/api/documents?filters[project][id][$eq]=${projectId}&populate=*`,);
 
-    console.log("Documents Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error al obtener los documentos:", error.response?.data || error.message);
@@ -198,7 +197,6 @@ export const getDocumentById = async (documentId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Document response:', data);
     return data;
   } catch (error) {
     console.error('Error fetching document:', error);
@@ -214,10 +212,8 @@ export const getCommentsByDocument = async (documentId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Comments response:', data);
     // Asegúrate de que estás accediendo correctamente a los comentarios
     const comments = data?.data?.attributes?.comments?.data || [];
-    console.log('Comments:', comments);
     return comments;
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -226,30 +222,35 @@ export const getCommentsByDocument = async (documentId) => {
 };
 
 
-export const addCommentToDocument = async (documentId, newComment, tutorId) => {
+export const addCommentToDocument = async (documentId, newComment, tutorId, highlightAreas, quote) => {
+
+
   try {
-    const response = await fetch(`http://localhost:1337/api/comments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: {
-          document: documentId,
-          correccion: newComment,
-          correccionTutor: tutorId
+      const response = await fetch(`http://localhost:1337/api/comments`, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+              data: {
+                  correccion: newComment,
+                  correccionTutor: tutorId,
+                  document: documentId,
+                  highlightAreas: JSON.stringify(Array.isArray(highlightAreas) ? highlightAreas : []), // Asegúrate de que sea un array
+                  quote: quote // Usa el comentario como cita
         },
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    console.log('Comment response:', data);
-    return data;
+          }),
+      });
+
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Comment added:", result);
+      return result;
   } catch (error) {
-    console.error('Error adding comment:', error);
-    throw error;
+      console.error("Error adding comment:", error.message);
   }
 };
 
