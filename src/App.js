@@ -5,6 +5,7 @@ import {
   Route,
 } from "react-router-dom";
 
+import Dashboard from "./pages/Dashboard";
 
 /* AUTENTICACION */
 import Login from "./pages/Login";
@@ -27,6 +28,8 @@ function App() {
     <>
       <Router>
         <Routes>
+          <Route path="/" element={<Dashboard />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
 

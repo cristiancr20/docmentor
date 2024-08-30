@@ -24,9 +24,10 @@ interface HighlightExampleProps {
     fileUrl: string;
     notes: Note[];
     onAddNote: (note: Note) => void;
+    isTutor: boolean;
 }
 
-const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onAddNote }) => {
+const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onAddNote, isTutor }) => {
     const [message, setMessage] = React.useState('');
     let noteId = notes.length;
 
@@ -34,7 +35,8 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
         <div
             style={{
                 background: '#eee',
-                display: 'flex',
+                display: isTutor ? 'flex' : 'none',
+               
                 position: 'absolute',
                 left: `${props.selectionRegion.left}%`,
                 top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
@@ -69,7 +71,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
             }
         };
 
-        return (
+        return isTutor ? (
             <div
                 style={{
                     background: '#fff',
@@ -103,7 +105,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
                     <Button onClick={props.cancel}>Cancel</Button>
                 </div>
             </div>
-        );
+        ): null;
     };
 
     const renderHighlights = (props: RenderHighlightsProps) => (

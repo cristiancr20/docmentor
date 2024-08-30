@@ -49,7 +49,7 @@ function SignUp() {
   };
 
   return (
-    <div className="bg-cover bg-center bg-no-repeat bg-blend-multiply  min-h-screen  ">
+    <div className="bg-cover bg-center bg-no-repeat bg-gray-900 bg-blend-multiply  min-h-screen bg-[url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')]  ">
       <div className="px-4 mx-auto max-w-screen-xl py-24 lg:py-56 ">
         <form
           class="max-w-sm mx-auto bg-gray-900 p-4 rounded-lg"

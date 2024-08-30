@@ -248,6 +248,27 @@ export const addCommentToDocument = async (documentId, newComment, tutorId, high
 
       const result = await response.json();
       console.log("Comment added:", result);
+
+      const updateResponse = await fetch(`http://localhost:1337/api/documents/${documentId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            data: {
+                revisado: true, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
+            },
+        }),
+    });
+
+    if (!updateResponse.ok) {
+        throw new Error(`HTTP error during document update! status: ${updateResponse.status}`);
+    }
+
+    const updateResult = await updateResponse.json();
+    console.log("Document updated:", updateResult);
+
+
       return result;
   } catch (error) {
       console.error("Error adding comment:", error.message);

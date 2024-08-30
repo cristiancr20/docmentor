@@ -109,18 +109,17 @@ const DocumentoViewer = () => {
           fileUrl={documentUrl}
           notes={notes || []} // Pasar las notas con las áreas resaltadas
           onAddNote={handleAddNote}
+          isTutor={rol === 'tutor'}
         />
       </div>
     </div>
 
-    {rol === "tutor" && (
       <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg"> {/* 25% del ancho */}
         <CommentsPanel
           comments={comments}
-          onAddComment={handleAddComment}
         />
       </div>
-    )}
+    
   </div>
 </div>
 

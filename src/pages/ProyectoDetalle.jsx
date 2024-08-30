@@ -116,9 +116,9 @@ const ProyectoDetalle = () => {
                   {documents.map((doc, index) => {
                     // Determina el color de fondo de la fila basado en el estado del documento
                     const rowColor =
-                      doc.attributes.estado === false
+                      doc.attributes.revisado === false
                         ? "bg-yellow-100" // Amarillo claro para pendiente
-                        : doc.attributes.estado === true
+                        : doc.attributes.revisado === true
                         ? "bg-green-100" // Verde claro para revisado
                         : index % 2 === 0
                         ? "bg-white"
@@ -128,7 +128,7 @@ const ProyectoDetalle = () => {
                       <tr
                         key={doc.id}
                         className={`${rowColor} ${
-                          index % 2 === 0 && doc.attributes.estado === null
+                          index % 2 === 0 && doc.attributes.revisado === null
                             ? "bg-gray-50"
                             : ""
                         }`}
@@ -137,9 +137,9 @@ const ProyectoDetalle = () => {
                           {doc.attributes.title}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.attributes.estado === false
+                          {doc.attributes.revisado === false
                             ? "Pendiente de revisión"
-                            : doc.attributes.estado === true
+                            : doc.attributes.revisado === true
                             ? "Revisado"
                             : "Sin estado"}
                         </td>
