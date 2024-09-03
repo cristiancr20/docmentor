@@ -101,17 +101,59 @@ export const createDocument = async (title, fileId, projectId) => {
     },
   };
 
-  console.log("Document Data:", documentData);
-
-
   try {
     const response = await axios.post(
       "http://localhost:1337/api/documents",
       documentData,
     );
 
-    console.log("Document Response:", response.data);
-    return response.data;
+
+    const documentoId = response.data.data.id;
+
+     // Verificar la respuesta del documento
+     if (!response || !response.data || !response.data.data) {
+      throw new Error("Error inesperado al crear el documento. Estructura de respuesta inválida.");
+    }
+
+    const document = response.data;
+  
+    // Obtener el proyecto para identificar al tutor asociado
+    const projectResponse = await axios.get(
+      `http://localhost:1337/api/new-projects/${projectId}?populate=tutor,estudiante`
+    );
+
+
+      // Verificar la respuesta del proyecto
+    if (!projectResponse || !projectResponse.data || !projectResponse.data.data) {
+      throw new Error("Error inesperado al obtener el proyecto. Estructura de respuesta inválida.");
+    }
+
+    const projectAttributes = projectResponse.data.data.attributes;
+    const tutor = projectAttributes.tutor.data;
+    const student = projectAttributes.estudiante.data;
+
+
+    if (tutor && student) {
+      // Crear la notificación para el tutor con el nombre del estudiante
+      const notificationData = {
+        data: {
+          mensaje: `El estudiante ${student.attributes.username} ha subido un nuevo documento: ${title}`,
+          tutor: tutor.id,  // ID del tutor
+          document: documentoId,  // ID del documento recién creado
+          leido: false,  // Inicialmente no leída
+        },
+      };
+      console.log("Notificación creada para el tutor:", notificationData);
+
+
+      await axios.post(
+        "http://localhost:1337/api/notificacions",
+        notificationData
+      );
+
+    }
+
+    return document;
   } catch (error) {
     console.error("Error al crear el documento:", error.response || error.message);
     throw error;
@@ -272,6 +314,21 @@ export const addCommentToDocument = async (documentId, newComment, tutorId, high
       return result;
   } catch (error) {
       console.error("Error adding comment:", error.message);
+  }
+};
+
+export const getNotifications = async (token) => {
+  try {
+    const response = await axios.get('http://localhost:1337/api/notificacions', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('Notificaciones cargadas:', response.data.data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error al cargar las notificaciones:', error.response || error.message);
+    throw error;  // Propaga el error para manejarlo en el componente
   }
 };
 

@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-import { FaArrowDown } from "react-icons/fa";
+import { FaArrowDown, FaBell } from "react-icons/fa";
+import axios from "axios";
+import { getNotifications } from "../core/apiCore";
 
 function Navbar() {
   const [userRole, setUserRole] = useState("");
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const role = localStorage.getItem("rol");
@@ -16,11 +19,63 @@ function Navbar() {
     setUserRole(role);
     setUserName(name);
     setUserEmail(email);
+
+    if (role === "tutor") {
+      const token = localStorage.getItem("jwtToken");
+      if (token) {
+        getNotifications(token)
+          .then((data) => setNotifications(data))
+          .catch((error) =>
+            console.error("Error al cargar notificaciones:", error)
+          );
+      } else {
+        console.error("Token JWT no encontrado");
+      }
+    }
   }, []);
 
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+  const handleNotificationToggle = () => {
+    setIsNotificationOpen(!isNotificationOpen);
+  };
+
+  const markAsRead = async (notificationId) => {
+    try {
+      await axios.put(
+        `http://localhost:1337/api/notificacions/${notificationId}`,
+        {
+          data: {
+            leido: true,
+          },
+        }
+      );
+
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) =>
+          notification.id === notificationId
+            ? {
+                ...notification,
+                attributes: { ...notification.attributes, leido: true },
+              }
+            : notification
+        )
+      );
+
+      console.log("Notificación marcada como leída");
+    } catch (error) {
+      console.error(
+        "Error al marcar la notificación como leída:",
+        error.response || error.message
+      );
+    }
+  };
+
+  const unreadNotificationsCount = notifications.filter(
+    (notification) => !notification.attributes.leido
+  ).length;
 
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-900">
@@ -32,7 +87,6 @@ function Navbar() {
         </Link>
         <div className="hidden w-full md:block md:w-auto" id="navbar-default">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-            
             {userRole === "tutor" && (
               <>
                 <li>
@@ -52,29 +106,10 @@ function Navbar() {
                     Proyectos asignados
                   </Link>
                 </li>
-                {/* Más opciones específicas para el tutor */}
               </>
             )}
             {userRole === "estudiante" && (
               <>
-                {/* <li>
-                  <Link
-                    to="/subir/documento"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Subir Documento
-                  </Link>
-                </li>
-
-                <li>
-                  <Link
-                    to="/documentos"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Ver Documentos
-                  </Link>
-                </li> */}
-
                 <li>
                   <Link
                     to="/proyecto/nuevo"
@@ -89,7 +124,7 @@ function Navbar() {
                     to="/proyecto/ver"
                     className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
                   >
-                   Ver mis Proyectos
+                    Ver mis Proyectos
                   </Link>
                 </li>
               </>
@@ -97,9 +132,60 @@ function Navbar() {
           </ul>
         </div>
         <div className="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+
+           {/* USER NOTIFICACIONES */}
+           {userRole === "tutor" && (
+            <>
+              <button
+                type="button"
+                className="flex p-2 mx-2 items-center space-x-2 bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                id="notification-menu-button"
+                aria-expanded={isNotificationOpen}
+                onClick={handleNotificationToggle}
+                aria-controls="notification-dropdown"
+              >
+                <FaBell className="text-yellow-500" />
+                {unreadNotificationsCount > 0 && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 p-3 text-xs font-bold text-white bg-red-500 rounded-full">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+              </button>
+              <div
+                className={`z-50 ${
+                  isNotificationOpen ? "absolute" : "hidden"
+                } mt-52 w-80 p-2  max-h-96 overflow-y-auto bg-white divide-y divide-gray-100 rounded-lg shadow bg-gray-700 divide-gray-600`}
+              >
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-3 rounded-lg mt-2 cursor-pointer ${
+                        notification.attributes.leido
+                          ? "bg-gray-900 text-white"
+                          : "bg-blue-100 text-gray-900"
+                      }`}
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <p className="text-sm ">
+                        {notification.attributes.mensaje}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="p-3 text-sm text-gray-700 dark:text-gray-400">
+                    No hay notificaciones.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          
+          {/* USER PANEL */}
           <button
             type="button"
-            className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+            className="flex p-2 mx-2 items-center space-x-2 bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
             id="user-menu-button"
             aria-expanded={isDropdownOpen}
             onClick={handleDropdownToggle}
@@ -125,7 +211,6 @@ function Navbar() {
               </span>
             </div>
             <ul className="py-2" aria-labelledby="user-menu-button">
-             
               <li>
                 <a
                   href="#"
@@ -136,30 +221,8 @@ function Navbar() {
               </li>
             </ul>
           </div>
-          <button
-            data-collapse-toggle="navbar-user"
-            type="button"
-            className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-            aria-controls="navbar-user"
-            aria-expanded="false"
-          >
-            <span className="sr-only">Open main menu</span>
-            <svg
-              className="w-5 h-5"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 17 14"
-            >
-              <path
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M1 1h15M1 7h15M1 13h15"
-              />
-            </svg>
-          </button>
+
+         
         </div>
       </div>
     </nav>

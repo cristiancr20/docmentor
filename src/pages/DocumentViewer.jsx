@@ -39,8 +39,7 @@ const DocumentoViewer = () => {
       const data = await getCommentsByDocument(documentId);
       setComments(data);
   
-      if (data) {
-        console.log("Fetched comments:", data);
+      if (data) { 
   
         const notesWithHighlights = data.map((comment) => ({
           id: comment.id,
@@ -49,7 +48,6 @@ const DocumentoViewer = () => {
           quote: comment.attributes.quote || "",
         }));
   
-        console.log("Parsed notes with highlights:", notesWithHighlights);
         setNotes(notesWithHighlights);
       }
     } catch (error) {
@@ -73,7 +71,6 @@ const DocumentoViewer = () => {
   };
 
   const handleAddNote = (note) => {
-    console.log("Adding note:", note);
     handleAddComment(note.content, note.highlightAreas, note.quote);
   };
 
