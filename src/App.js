@@ -14,7 +14,6 @@ import SignUp from "./pages/SignUp";
 /* ESTUDIANTE */
 import StudentsDashboard from "./pages/StudentDashboard";
 import SubirDocumento from "./components/SubirDocumento";
-import NewProject from "./pages/NewProject";
 import ViewProjectsStudents from "./pages/ViewProjectsStudents";
 import ProjectDetalle from "./pages/ProyectoDetalle";
 
@@ -39,7 +38,7 @@ function App() {
 
 
           <Route path="/student/dashboard" element={<StudentsDashboard />} />
-          <Route path="/proyecto/nuevo" element={<NewProject />} />
+
           <Route path="/proyecto/ver" element={<ViewProjectsStudents />} />
           <Route path="/subir/documento" element={<SubirDocumento />} />
           <Route path="/proyecto/:projectId" element={<ProjectDetalle/>} />

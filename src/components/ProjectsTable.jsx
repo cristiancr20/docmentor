@@ -1,9 +1,51 @@
 // ProjectsTable.jsx
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FaEye } from 'react-icons/fa';
+import React from "react";
+import { Link } from "react-router-dom";
+import { FaEye, FaPen } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
+import { deleteProject } from "../core/apiCore";
 
-const ProjectsTable = ({ projects, columns, linkBase }) => {
+import Swal from "sweetalert2";
+
+const ProjectsTable = ({ projects, columns, linkBase, onDelete: fetchProjects, onEdit }) => {
+  const rol = localStorage.getItem("rol");
+
+  const handleDelete = async (projectId) => {
+    // Muestra la alerta de confirmación antes de eliminar
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "No podrás revertir esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar!",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await deleteProject(projectId);
+          fetchProjects(); // Recarga los proyectos después de la eliminación
+          Swal.fire("Eliminado!", "El proyecto ha sido eliminado.", "success");
+        } catch (error) {
+          console.error("Error al eliminar el proyecto:", error);
+          Swal.fire(
+            "Error!",
+            "Hubo un problema al eliminar el proyecto.",
+            "error"
+          );
+        }
+      }
+    });
+  };
+
+
+  const handleEdit = async (projectId) => {
+    if(onEdit){
+      onEdit(projectId);
+    }
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden text-gray-800">
@@ -27,7 +69,10 @@ const ProjectsTable = ({ projects, columns, linkBase }) => {
         <tbody>
           {projects.length === 0 ? (
             <tr className="bg-gray-800 text-white">
-              <td colSpan={columns.length + (linkBase ? 1 : 0)} className="px-4 py-4 text-center">
+              <td
+                colSpan={columns.length + (linkBase ? 1 : 0)}
+                className="px-4 py-4 text-center"
+              >
                 No hay proyectos disponibles
               </td>
             </tr>
@@ -39,16 +84,31 @@ const ProjectsTable = ({ projects, columns, linkBase }) => {
                     key={column.key}
                     className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900"
                   >
-                    {column.render ? column.render(project) : project[column.key]}
+                    {column.render
+                      ? column.render(project)
+                      : project[column.key]}
                   </td>
                 ))}
                 {linkBase && (
-                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="p-4 whitespace-nowrap text-sm font-medium text-gray-900 flex ">
                     <Link to={`${linkBase}/${project.id}`}>
-                      <FaEye className="text-blue-600 hover:underline" />
+                      <FaEye className="text-blue-600 hover:underline mx-2 text-xl " />
                     </Link>
+
+                    {rol === "estudiante" && (
+                      <>
+                        <FaPen className="text-yellow-600 hover:underline mx-2 text-xl cursor-pointer" 
+                          onClick={() => handleEdit(project.id)}
+                        />
+                        <MdDelete
+                          className="text-red-600 hover:underline mx-2 text-xl cursor-pointer"
+                          onClick={() => handleDelete(project.id)}
+                        />
+                      </>
+                    )}
                   </td>
                 )}
+                <td></td>
               </tr>
             ))
           )}

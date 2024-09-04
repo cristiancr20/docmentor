@@ -38,16 +38,15 @@ const DocumentoViewer = () => {
     try {
       const data = await getCommentsByDocument(documentId);
       setComments(data);
-  
-      if (data) { 
-  
+
+      if (data) {
         const notesWithHighlights = data.map((comment) => ({
           id: comment.id,
           content: comment.attributes.correccion,
           highlightAreas: JSON.parse(comment.attributes.highlightAreas) || [],
           quote: comment.attributes.quote || "",
         }));
-  
+
         setNotes(notesWithHighlights);
       }
     } catch (error) {
@@ -97,29 +96,29 @@ const DocumentoViewer = () => {
       <Navbar />
 
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-  <h1 className="text-3xl font-bold mb-4">{documentAttributes.title}</h1>
-  <div className="columns-2">
-    {/* Panel del visor de documentos */}
-    <div className="p-4"> {/* 75% del ancho */}
-      <div className="pdf-container">
-        <DisplayNotesSidebarExample
-          fileUrl={documentUrl}
-          notes={notes || []} // Pasar las notas con las áreas resaltadas
-          onAddNote={handleAddNote}
-          isTutor={rol === 'tutor'}
-        />
-      </div>
-    </div>
+        <h1 className="text-3xl font-bold mb-4">{documentAttributes.title}</h1>
+        <div className="columns-2">
+          {/* Panel del visor de documentos */}
+          <div className="p-4">
+            {" "}
+            {/* 75% del ancho */}
+            <div className="pdf-container">
+              <DisplayNotesSidebarExample
+                fileUrl={documentUrl}
+                notes={notes || []} // Pasar las notas con las áreas resaltadas
+                onAddNote={handleAddNote}
+                isTutor={rol === "tutor"}
+              />
+            </div>
+          </div>
 
-      <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg"> {/* 25% del ancho */}
-        <CommentsPanel
-          comments={comments}
-        />
+          <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
+            {" "}
+            {/* 25% del ancho */}
+            <CommentsPanel comments={comments} />
+          </div>
+        </div>
       </div>
-    
-  </div>
-</div>
-
     </div>
   );
 };

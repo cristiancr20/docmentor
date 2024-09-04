@@ -49,6 +49,30 @@ export const createProject = async (projectData) => {
   }
 };
 
+//EDITAR PROYECTO
+export const updateProject = async (projectId, projectData) => {
+  try {
+    const response = await axios.put(`http://localhost:1337/api/new-projects/${projectId}`, {
+      data: projectData
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al actualizar el proyecto:', error);
+    throw error;
+  }
+};
+
+//ELIMINAR PROYECTO
+export const deleteProject = async (projectId) => {
+  try {
+    const response = await axios.delete(`http://localhost:1337/api/new-projects/${projectId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar el proyecto:", error);
+    throw error;
+  }
+};
+
 //OBTENER LOS PROYECTOS POR ESTUDIANTE
 export const getProjectsByStudents = async (userId) => {
   try {
