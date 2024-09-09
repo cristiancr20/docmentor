@@ -90,23 +90,32 @@ const ProjectsTable = ({ projects, columns, linkBase, onDelete: fetchProjects, o
                   </td>
                 ))}
                 {linkBase && (
-                  <td className="p-4 whitespace-nowrap text-sm font-medium text-gray-900 flex ">
-                    <Link to={`${linkBase}/${project.id}`}>
-                      <FaEye className="text-blue-600 hover:underline mx-2 text-xl " />
-                    </Link>
-
-                    {rol === "estudiante" && (
-                      <>
-                        <FaPen className="text-yellow-600 hover:underline mx-2 text-xl cursor-pointer" 
-                          onClick={() => handleEdit(project.id)}
-                        />
-                        <MdDelete
-                          className="text-red-600 hover:underline mx-2 text-xl cursor-pointer"
-                          onClick={() => handleDelete(project.id)}
-                        />
-                      </>
-                    )}
-                  </td>
+                  <td className="p-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-4">
+                  <Link to={`${linkBase}/${project.id}`} className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg">
+                    <FaEye className="text-blue-600 text-lg" title="Ver" />
+                  </Link>
+                
+                  {rol === "estudiante" && (
+                    <>
+                      <button
+                        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                        onClick={() => handleEdit(project.id)}
+                        title="Editar"
+                      >
+                        <FaPen className="text-yellow-600 text-lg" />
+                      </button>
+                      
+                      <button
+                        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                        onClick={() => handleDelete(project.id)}
+                        title="Eliminar"
+                      >
+                        <MdDelete className="text-red-600 text-lg" />
+                      </button>
+                    </>
+                  )}
+                </td>
+                
                 )}
                 <td></td>
               </tr>

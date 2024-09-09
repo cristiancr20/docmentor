@@ -115,7 +115,7 @@ const DocumentoViewer = () => {
           <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
             {" "}
             {/* 25% del ancho */}
-            <CommentsPanel comments={comments} />
+            <CommentsPanel comments={comments}  onUpdateComments={fetchComments} />
           </div>
         </div>
       </div>

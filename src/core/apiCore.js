@@ -289,8 +289,6 @@ export const getCommentsByDocument = async (documentId) => {
 
 
 export const addCommentToDocument = async (documentId, newComment, tutorId, highlightAreas, quote) => {
-
-
   try {
       const response = await fetch(`http://localhost:1337/api/comments`, {
           method: "POST",
@@ -315,6 +313,7 @@ export const addCommentToDocument = async (documentId, newComment, tutorId, high
       const result = await response.json();
       console.log("Comment added:", result);
 
+      // Actualizar el estado del documento para indicar que ha sido revisado
       const updateResponse = await fetch(`http://localhost:1337/api/documents/${documentId}`, {
         method: "PUT",
         headers: {
@@ -332,12 +331,46 @@ export const addCommentToDocument = async (documentId, newComment, tutorId, high
     }
 
     const updateResult = await updateResponse.json();
-    console.log("Document updated:", updateResult);
-
 
       return result;
   } catch (error) {
       console.error("Error adding comment:", error.message);
+  }
+};
+
+//Editar comentario
+export const updateComment = async (commentId, newContent) => {
+  try {
+    const response = await axios.put(
+      `http://localhost:1337/api/comments/${commentId}`,
+      {
+        data: {
+          correccion: newContent, // Solo actualiza el campo "correccion"
+        },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar el comentario:", error);
+    throw error;
+  }
+};
+
+
+//Eliminar comentario
+export const deleteComment = async (commentId) => {
+  try {
+    const response = await axios.delete(`http://localhost:1337/api/comments/${commentId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar el comentario:", error);
+    throw error;
   }
 };
 
@@ -348,7 +381,6 @@ export const getNotifications = async (token) => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log('Notificaciones cargadas:', response.data.data);
     return response.data.data;
   } catch (error) {
     console.error('Error al cargar las notificaciones:', error.response || error.message);

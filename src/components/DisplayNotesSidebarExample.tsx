@@ -51,7 +51,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
                         <MessageIcon />
                     </Button>
                 }
-                content={() => <div style={{ width: '100px' }}>Add a note</div>}
+                content={() => <div style={{ width: '100px' }}>Agregar comentario</div>}
                 offset={{ left: 0, top: -8 }}
             />
         </div>
@@ -100,9 +100,9 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
                     }}
                 >
                     <div style={{ marginRight: '8px' }}>
-                        <PrimaryButton onClick={addNote}>Add</PrimaryButton>
+                        <PrimaryButton onClick={addNote}>Agregar</PrimaryButton>
                     </div>
-                    <Button onClick={props.cancel}>Cancel</Button>
+                    <Button onClick={props.cancel}>Cancelar</Button>
                 </div>
             </div>
         ): null;
