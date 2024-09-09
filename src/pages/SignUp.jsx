@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { getRoles, registerUser } from "../core/apiCore";
+import { getRoles, registerUser } from "../core/Autentication";
 import { successAlert, errorAlert } from "../components/Alerts/Alerts";
 
 function SignUp() {

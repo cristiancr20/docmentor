@@ -1,6 +1,6 @@
 // ViewProjects.jsx
 import React, { useEffect, useState } from 'react';
-import { getProjectsByTutor } from '../core/apiCore';
+import { getProjectsByTutor } from '../core/Projects';
 import Navbar from '../components/Navbar';
 import ProjectsTable from '../components/ProjectsTable';
 

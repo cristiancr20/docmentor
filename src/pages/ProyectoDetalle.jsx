@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getProjectById, getDocumentsByProjectId } from "../core/apiCore";
+import { getDocumentsByProjectId } from "../core/Document";
+import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
 
@@ -119,10 +120,10 @@ const ProyectoDetalle = () => {
                       doc.attributes.revisado === false
                         ? "bg-yellow-100" // Amarillo claro para pendiente
                         : doc.attributes.revisado === true
-                        ? "bg-green-100" // Verde claro para revisado
-                        : index % 2 === 0
-                        ? "bg-white"
-                        : "bg-gray-50";
+                          ? "bg-green-100" // Verde claro para revisado
+                          : index % 2 === 0
+                            ? "bg-white"
+                            : "bg-gray-50";
 
                     return (
                       <tr
@@ -140,8 +141,8 @@ const ProyectoDetalle = () => {
                           {doc.attributes.revisado === false
                             ? "Pendiente de revisión"
                             : doc.attributes.revisado === true
-                            ? "Revisado"
-                            : "Sin estado"}
+                              ? "Revisado"
+                              : "Sin estado"}
                         </td>
 
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

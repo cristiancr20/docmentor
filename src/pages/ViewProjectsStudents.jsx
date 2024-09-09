@@ -1,6 +1,6 @@
 // ViewProjectsStudents.jsx
 import React, { useEffect, useState } from "react";
-import { getProjectsByStudents } from "../core/apiCore";
+import { getProjectsByStudents } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";

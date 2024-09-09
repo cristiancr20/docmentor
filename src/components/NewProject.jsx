@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { createProject } from "../core/apiCore";
+import { createProject } from "../core/Projects";
 import axios from "axios";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 

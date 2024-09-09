@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CommentsPanel from "../components/CommentsPanel";
+import { getDocumentById } from "../core/Document";
 import {
-  getDocumentById,
   getCommentsByDocument,
   addCommentToDocument,
-} from "../core/apiCore";
+} from "../core/Comments.js";
 
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 
@@ -115,7 +115,10 @@ const DocumentoViewer = () => {
           <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
             {" "}
             {/* 25% del ancho */}
-            <CommentsPanel comments={comments}  onUpdateComments={fetchComments} />
+            <CommentsPanel
+              comments={comments}
+              onUpdateComments={fetchComments}
+            />
           </div>
         </div>
       </div>

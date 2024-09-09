@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { uploadFile, createDocument } from "../core/apiCore";
+import { uploadFile, createDocument } from "../core/Document";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 
 const SubirDocumento = ({ projectId, onClose }) => { // Asegúrate de recibir onClose como prop

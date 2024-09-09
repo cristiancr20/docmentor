@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
-import { deleteProject } from "../core/apiCore";
+import { deleteProject } from "../core/Projects";
 
 import Swal from "sweetalert2";
 

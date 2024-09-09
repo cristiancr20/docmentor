@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaArrowDown, FaBell } from "react-icons/fa";
 import axios from "axios";
-import { getNotifications } from "../core/apiCore";
+import { getNotifications } from "../core/Notification";
 
 function Navbar() {
   const [userRole, setUserRole] = useState("");

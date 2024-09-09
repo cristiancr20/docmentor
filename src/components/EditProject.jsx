@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { updateProject } from "../core/apiCore";
+import { updateProject } from "../core/Projects";
 import Swal from "sweetalert2";
 import axios from "axios";
 

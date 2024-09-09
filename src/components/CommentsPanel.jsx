@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import { updateComment, deleteComment } from "../core/apiCore";
+import { updateComment, deleteComment } from "../core/Comments";
 import Swal from "sweetalert2";
 import { FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
