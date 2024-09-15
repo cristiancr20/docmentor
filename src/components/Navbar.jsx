@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { FaArrowDown, FaBell } from "react-icons/fa";
 import axios from "axios";
 import { getNotifications } from "../core/Notification";
@@ -11,6 +11,8 @@ function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const role = localStorage.getItem("rol");
@@ -42,7 +44,10 @@ function Navbar() {
     setIsNotificationOpen(!isNotificationOpen);
   };
 
-  const markAsRead = async (notificationId) => {
+  const markAsRead = async (notification) => {
+    const notificationId = notification.id;
+    const documentData = notification.attributes.document?.data;
+
     try {
       await axios.put(
         `http://localhost:1337/api/notificacions/${notificationId}`,
@@ -63,8 +68,13 @@ function Navbar() {
             : notification
         )
       );
+      if (documentData) {
+        const documentId = documentData.id;
 
-      console.log("Notificación marcada como leída");
+      navigate(`/documento/${documentId}`);
+      }else{
+        console.warn("No hay documento asociado a la notificación");
+      }
     } catch (error) {
       console.error(
         "Error al marcar la notificación como leída:",
@@ -76,6 +86,8 @@ function Navbar() {
   const unreadNotificationsCount = notifications.filter(
     (notification) => !notification.attributes.leido
   ).length;
+
+
 
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-900">
@@ -158,7 +170,7 @@ function Navbar() {
                           ? "bg-gray-900 text-white"
                           : "bg-blue-100 text-gray-900"
                       }`}
-                      onClick={() => markAsRead(notification.id)}
+                      onClick={() =>  markAsRead(notification)}
                     >
                       <p className="text-sm ">
                         {notification.attributes.mensaje}

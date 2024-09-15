@@ -114,17 +114,17 @@ const EditProject = ({ project, onClose, onUpdate }) => {
         </select>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between m-2">
         <button
           type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 px-4 m-2 rounded"
         >
           Guardar Cambios
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+          className="bg-red-500 hover:bg-red-700 text-white font-bold p-2 px-4 m-2 rounded"
         >
           Cancelar
         </button>
