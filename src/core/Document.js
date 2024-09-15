@@ -33,7 +33,7 @@ export const createDocument = async (title, fileId, projectId) => {
       documentFile: [fileId], // Asegúrate de que 'documentFile' es un array si Strapi lo requiere así
       project: projectId, // Enviar el ID del proyecto directamente
       fechaSubida: new Date().toISOString(), // Fecha de subida
-      estado: false, // Estado inicial
+      revisado: false, // Estado inicial
     },
   };
 
@@ -133,5 +133,30 @@ export const getDocumentById = async (documentId) => {
   } catch (error) {
     console.error("Error fetching document:", error);
     throw error;
+  }
+};
+
+// Función para eliminar un documento
+export const deleteDocument = async (documentId) => {
+  try {
+    // Primero, obtenemos las notificaciones asociadas al documento
+    const notificationsResponse = await axios.get('http://localhost:1337/api/notificacions', {
+      params: {
+        'filters[document][id][$eq]': documentId,
+      },
+    });
+
+    const notifications = notificationsResponse.data.data;
+
+    // Eliminamos las notificaciones asociadas
+    for (const notification of notifications) {
+      await axios.delete(`http://localhost:1337/api/notificacions/${notification.id}`);
+    }
+
+    // Ahora eliminamos el documento
+    await axios.delete(`http://localhost:1337/api/documents/${documentId}`);
+
+  } catch (error) {
+    console.error('Error eliminando el documento o las notificaciones:', error.response || error.message);
   }
 };

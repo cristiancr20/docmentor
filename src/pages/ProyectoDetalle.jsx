@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getDocumentsByProjectId } from "../core/Document";
+import { getDocumentsByProjectId, deleteDocument } from "../core/Document"; // Asegúrate de agregar deleteDocument a tus funciones core
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
+
+import Swal from "sweetalert2";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -29,6 +31,37 @@ const ProyectoDetalle = () => {
       setError("Error fetching project details");
       console.error("Error fetching project details:", error);
     }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: "No podrás revertir esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar!",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          // Llamada a la función para eliminar el documento y las notificaciones
+          await deleteDocument(documentId);
+
+          // Volver a cargar los documentos después de la eliminación
+          fetchProject();
+          Swal.fire("Eliminado!", "El documento ha sido eliminado.", "success");
+        } catch (error) {
+          console.error("Error deleting document:", error);
+          Swal.fire(
+            "Error!",
+            "Hubo un problema al eliminar el documento.",
+            "error"
+          );
+        }
+      }
+    });
   };
 
   if (!project) {
@@ -162,6 +195,15 @@ const ProyectoDetalle = () => {
                             <span className="text-gray-500">
                               No hay documento
                             </span>
+                          )}
+                          {rol === "estudiante" && (
+                            <button
+                              onClick={() => handleDeleteDocument(doc.id)}
+                              title="Eliminar"
+                              className="text-red-600 hover:underline ml-4"
+                            >
+                              Eliminar
+                            </button>
                           )}
                         </td>
                       </tr>
