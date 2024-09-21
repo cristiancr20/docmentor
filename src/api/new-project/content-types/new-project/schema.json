@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "new_projects",
+  "info": {
+    "singularName": "new-project",
+    "pluralName": "new-projects",
+    "displayName": "Project",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "FechaCreacion": {
+      "type": "date"
+    },
+    "documents": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::document.document",
+      "mappedBy": "project"
+    },
+    "Title": {
+      "type": "string"
+    },
+    "Descripcion": {
+      "type": "text"
+    },
+    "tutor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "project_ts"
+    },
+    "estudiante": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "project_es"
+    }
+  }
+}
