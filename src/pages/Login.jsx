@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { login, getUserWithRole } from "../core/Autentication";
+
+import { motion } from "framer-motion";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,78 +15,59 @@ const Login = () => {
 
     try {
       // Autenticación del usuario
-      const authResponse = await axios.post(
-        "http://localhost:1337/api/auth/local",
-        {
-          identifier: email,
-          password: password,
+      const authResponse = await login({
+        identifier: email,
+        password: password,
+      });
+
+      console.log("authResponse:", authResponse.data);
+
+      if (authResponse) {
+        const { jwt, user } = authResponse;
+
+        // Guardamos el token JWT en el localStorage
+        localStorage.setItem("jwtToken", jwt);
+
+        console.log("Usuario:", user);
+
+        const userWithRole = await getUserWithRole(user.id);
+
+        // Ahora puedes redirigir según el rol del usuario
+        const userRole = userWithRole.rol?.tipoRol;
+        const username = user.username;
+        const useremail = user.email;
+        const userId = user.id;
+
+        localStorage.setItem("rol", userRole);
+        localStorage.setItem("username", username);
+        localStorage.setItem("email", useremail);
+        localStorage.setItem("userId", userId);
+
+        if (userRole === "tutor") {
+          navigate("/tutor/dashboard");
+        } else if (userRole === "estudiante") {
+          navigate("/student/dashboard");
+        } else {
+          console.error("Rol desconocido");
         }
-      );
-
-      const { jwt, user } = authResponse.data;
-
-      // Guarda el JWT
-      localStorage.setItem("jwtToken", jwt);
-
-      // Obtener el rol del usuario usando GraphQL
-      const graphqlResponse = await axios.post(
-        "http://localhost:1337/graphql",
-        {
-          query: `
-            query {
-            usersPermissionsUser(id: ${user.id}) {
-              data {
-                attributes {
-                  username
-                  email
-                  rol {
-                    data {
-                      attributes {
-                        tipoRol
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-          `,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
-        }
-      );
-
-      const userData =
-        graphqlResponse.data.data.usersPermissionsUser.data.attributes;
-
-      const userRole = userData.rol.data.attributes.tipoRol;
-      const username = userData.username;
-      const useremail = userData.email;
-      const userId = user.id;
-      
-      localStorage.setItem("rol", userRole);
-      localStorage.setItem("username", username);
-      localStorage.setItem("email", useremail);
-      localStorage.setItem("userId", userId);
-
-      // Redirige según el rol
-      if (userRole === "tutor") {
-        navigate("/tutor/dashboard");
-      } else if (userRole === "estudiante") {
-        navigate("/student/dashboard");
+      } else {
+        console.error("Respuesta vacía o no válida");
       }
+
+
     } catch (error) {
-      console.error("An error occurred:", error.response);
+      // Capturamos más detalles del error
+      console.error("Error en login:", error);
     }
   };
 
   return (
     <div className="bg-cover bg-center bg-no-repeat bg-blend-multiply  min-h-screen bg-gray-900  bg-[url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')] ">
       <div className="px-4 mx-auto max-w-screen-xl py-24 lg:py-56 ">
-        <form
+        <motion.form
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
           class="max-w-sm mx-auto bg-gray-900 p-4 rounded-lg"
           onSubmit={handleSubmit}
         >
@@ -128,9 +112,12 @@ const Login = () => {
             Iniciar Sesión
           </button>
           <div className="m-2 text-white">
-            No tienes cuenta? <span className="text-blue-700"><Link to="/signup">REGISTRATE</Link></span>
+            No tienes cuenta?{" "}
+            <span className="text-blue-700">
+              <Link to="/signup">REGISTRATE</Link>
+            </span>
           </div>
-        </form>
+        </motion.form>
       </div>
     </div>
   );

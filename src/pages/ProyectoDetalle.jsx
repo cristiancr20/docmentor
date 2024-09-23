@@ -4,6 +4,7 @@ import { getDocumentsByProjectId, deleteDocument } from "../core/Document"; // A
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
+import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 
@@ -84,14 +85,38 @@ const ProyectoDetalle = () => {
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        <h1 className="text-3xl font-bold mb-4">{attributes.Title}</h1>
-        <p className="text-lg mb-4">{attributes.Descripcion}</p>
-        <p className="text-md text-gray-700 mb-6">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-3xl font-bold mb-4"
+        >
+          {attributes.Title}
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-lg mb-4"
+        >
+          {attributes.Descripcion}
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-md text-gray-700 mb-6"
+        >
           Fecha de Creación:{" "}
           <span className="font-semibold">{attributes.FechaCreacion}</span>
-        </p>
+        </motion.p>
 
-        <div className="mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-6"
+        >
           <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-300 pb-2">
             Tutor:
           </h2>
@@ -101,9 +126,13 @@ const ProyectoDetalle = () => {
           <p className="text-md text-gray-800">
             Email: <span className="font-medium">{tutor.email}</span>
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        className="mb-6">
           <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-300 pb-2">
             Estudiante:
           </h2>
@@ -113,12 +142,17 @@ const ProyectoDetalle = () => {
           <p className="text-md text-gray-800">
             Email: <span className="font-medium">{estudiante.email}</span>
           </p>
-        </div>
+        </motion.div>
 
         <div>
-          <h2 className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            
+          className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">
             Historial de Versiones:
-          </h2>
+          </motion.h2>
 
           {rol === "estudiante" && (
             <button

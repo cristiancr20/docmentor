@@ -4,10 +4,17 @@ import { Link } from "react-router-dom";
 import { FaEye, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { deleteProject } from "../core/Projects";
+import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 
-const ProjectsTable = ({ projects, columns, linkBase, onDelete: fetchProjects, onEdit }) => {
+const ProjectsTable = ({
+  projects,
+  columns,
+  linkBase,
+  onDelete: fetchProjects,
+  onEdit,
+}) => {
   const rol = localStorage.getItem("rol");
 
   const handleDelete = async (projectId) => {
@@ -39,16 +46,20 @@ const ProjectsTable = ({ projects, columns, linkBase, onDelete: fetchProjects, o
     });
   };
 
-
   const handleEdit = async (projectId) => {
-    if(onEdit){
+    if (onEdit) {
       onEdit(projectId);
     }
-  }
+  };
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden text-gray-800">
+      <motion.table
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        className="min-w-full bg-white shadow-md rounded-lg overflow-hidden text-gray-800"
+      >
         <thead>
           <tr>
             {columns.map((column) => (
@@ -78,7 +89,13 @@ const ProjectsTable = ({ projects, columns, linkBase, onDelete: fetchProjects, o
             </tr>
           ) : (
             projects.map((project) => (
-              <tr key={project.id} className="bg-gray-50">
+              <motion.tr
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                key={project.id}
+                className="bg-gray-50"
+              >
                 {columns.map((column) => (
                   <td
                     key={column.key}
@@ -91,38 +108,40 @@ const ProjectsTable = ({ projects, columns, linkBase, onDelete: fetchProjects, o
                 ))}
                 {linkBase && (
                   <td className="p-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-4">
-                  <Link to={`${linkBase}/${project.id}`} className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg">
-                    <FaEye className="text-blue-600 text-lg" title="Ver" />
-                  </Link>
-                
-                  {rol === "estudiante" && (
-                    <>
-                      <button
-                        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                        onClick={() => handleEdit(project.id)}
-                        title="Editar"
-                      >
-                        <FaPen className="text-yellow-600 text-lg" />
-                      </button>
-                      
-                      <button
-                        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                        onClick={() => handleDelete(project.id)}
-                        title="Eliminar"
-                      >
-                        <MdDelete className="text-red-600 text-lg" />
-                      </button>
-                    </>
-                  )}
-                </td>
-                
+                    <Link
+                      to={`${linkBase}/${project.id}`}
+                      className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                    >
+                      <FaEye className="text-blue-600 text-lg" title="Ver" />
+                    </Link>
+
+                    {rol === "estudiante" && (
+                      <>
+                        <button
+                          className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                          onClick={() => handleEdit(project.id)}
+                          title="Editar"
+                        >
+                          <FaPen className="text-yellow-600 text-lg" />
+                        </button>
+
+                        <button
+                          className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                          onClick={() => handleDelete(project.id)}
+                          title="Eliminar"
+                        >
+                          <MdDelete className="text-red-600 text-lg" />
+                        </button>
+                      </>
+                    )}
+                  </td>
                 )}
                 <td></td>
-              </tr>
+              </motion.tr>
             ))
           )}
         </tbody>
-      </table>
+      </motion.table>
     </div>
   );
 };
