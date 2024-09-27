@@ -256,7 +256,11 @@ const ProyectoDetalle = () => {
 
       {/* Modal Popup */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
+        <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }} 
+        className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
             <button
               onClick={() => setIsModalOpen(false)}
@@ -281,7 +285,7 @@ const ProyectoDetalle = () => {
 
             <SubirDocumento projectId={projectId} onClose={closeModal} />
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

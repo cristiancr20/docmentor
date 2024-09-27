@@ -6,6 +6,8 @@ import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
 
+import { motion } from "framer-motion";
+
 const ViewProjectsStudents = () => {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
@@ -115,7 +117,11 @@ const ViewProjectsStudents = () => {
         </div>
       )}
       {isEditModalOpen && currentProject && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
            
             <EditProject
@@ -124,7 +130,7 @@ const ViewProjectsStudents = () => {
               onUpdate={handleUpdate}
             />
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
