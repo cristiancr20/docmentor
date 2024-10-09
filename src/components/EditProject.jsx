@@ -3,6 +3,8 @@ import { updateProject } from "../core/Projects";
 import Swal from "sweetalert2";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
+
 const EditProject = ({ project, onClose, onUpdate }) => {
   console.log("Proyecto a editar:", project);
 

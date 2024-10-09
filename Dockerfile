@@ -1,20 +1,22 @@
-# Usa una imagen base de Node.js
-FROM node:22-alpine
+# Dockerfile para el frontend
 
-# Establece el directorio de trabajo dentro del contenedor
+# Usa una imagen base de Node
+FROM node:20-alpine
+
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el archivo package.json y package-lock.json
-COPY package*.json ./
+# Copia solo los archivos necesarios para instalar las dependencias
+COPY package.json package-lock.json ./
 
 # Instala las dependencias
-RUN npm install
+RUN npm ci
 
-# Copia el resto de los archivos de la aplicación al contenedor
+# Ahora copia el resto de tu aplicación
 COPY . .
 
-# Expone el puerto en el que correrá la aplicación (3000)
+# Expone el puerto que usa React
 EXPOSE 3000
 
-# Comando para ejecutar la aplicación
+# Comando para iniciar la aplicación de React
 CMD ["npm", "start"]
