@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
+
 export const addCommentToDocument = async (
   documentId,
   newComment,
@@ -8,7 +10,7 @@ export const addCommentToDocument = async (
   quote
 ) => {
   try {
-    const response = await fetch(`http://localhost:1337/api/comments`, {
+    const response = await fetch(`${API_URL}/api/comments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,7 +37,7 @@ export const addCommentToDocument = async (
 
     // Actualizar el estado del documento para indicar que ha sido revisado
     const updateResponse = await fetch(
-      `http://localhost:1337/api/documents/${documentId}`,
+      `${API_URL}/api/documents/${documentId}`,
       {
         method: "PUT",
         headers: {
@@ -66,7 +68,7 @@ export const addCommentToDocument = async (
 export const getCommentsByDocument = async (documentId) => {
   try {
     const response = await fetch(
-      `http://localhost:1337/api/documents/${documentId}?populate=comments`
+      `${API_URL}/api/documents/${documentId}?populate=comments`
     );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -85,7 +87,7 @@ export const getCommentsByDocument = async (documentId) => {
 export const updateComment = async (commentId, newContent) => {
   try {
     const response = await axios.put(
-      `http://localhost:1337/api/comments/${commentId}`,
+      `${API_URL}/api/comments/${commentId}`,
       {
         data: {
           correccion: newContent, // Solo actualiza el campo "correccion"
@@ -108,7 +110,7 @@ export const updateComment = async (commentId, newContent) => {
 //Eliminar comentario
 export const deleteComment = async (commentId) => {
     try {
-      const response = await axios.delete(`http://localhost:1337/api/comments/${commentId}`);
+      const response = await axios.delete(`${API_URL}/api/comments/${commentId}`);
       return response.data;
     } catch (error) {
       console.error("Error al eliminar el comentario:", error);

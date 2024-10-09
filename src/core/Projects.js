@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:1337/api";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
 
 //METODO PARA CREAR UN NUEVO PROYECTO
 export const createProject = async (projectData) => {
@@ -30,7 +30,7 @@ export const createProject = async (projectData) => {
 export const updateProject = async (projectId, projectData) => {
   try {
     const response = await axios.put(
-      `http://localhost:1337/api/new-projects/${projectId}`,
+      `${API_URL}/api/new-projects/${projectId}`,
       {
         data: projectData,
       }
@@ -46,7 +46,7 @@ export const updateProject = async (projectId, projectData) => {
 export const deleteProject = async (projectId) => {
   try {
     const response = await axios.delete(
-      `http://localhost:1337/api/new-projects/${projectId}`
+      `${API_URL}/api/new-projects/${projectId}`
     );
     return response.data;
   } catch (error) {
@@ -59,7 +59,7 @@ export const deleteProject = async (projectId) => {
 export const getProjectsByStudents = async (userId) => {
   try {
     const response = await axios.get(
-      `http://localhost:1337/api/users/${userId}?populate=project_es.tutor,project_es.estudiante`
+      `${API_URL}/api/users/${userId}?populate=project_es.tutor,project_es.estudiante`
     );
     return response.data.project_es;
   } catch (error) {
@@ -72,7 +72,7 @@ export const getProjectsByStudents = async (userId) => {
 export const getProjectById = async (projectId) => {
   try {
     const response = await axios.get(
-      `http://localhost:1337/api/new-projects/${projectId}?populate=*`
+      `${API_URL}/api/new-projects/${projectId}?populate=*`
     );
     return response.data.data;
   } catch (error) {
@@ -85,7 +85,7 @@ export const getProjectById = async (projectId) => {
 export const getProjectsByTutor = async (userId) => {
   try {
     const response = await axios.get(
-      `http://localhost:1337/api/users/${userId}?populate=project_ts.tutor,project_ts.estudiante`
+      `${API_URL}/api/users/${userId}?populate=project_ts.tutor,project_ts.estudiante`
     );
     return response.data.project_ts;
   } catch (error) {

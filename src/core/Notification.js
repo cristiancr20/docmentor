@@ -1,10 +1,10 @@
 import axios from "axios";
 
-
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
 
 export const getNotifications = async (token) => {
   try {
-    const response = await axios.get('http://localhost:1337/api/notificacions?populate=*', {
+    const response = await axios.get(`${API_URL}/api/notificacions?populate=*`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

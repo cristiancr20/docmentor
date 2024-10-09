@@ -1,5 +1,8 @@
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
+
+
 //METODO PARA SUBIR DOCUMENTO
 export const uploadFile = async (file) => {
   const formData = new FormData();
@@ -12,7 +15,7 @@ export const uploadFile = async (file) => {
   }
 
   const response = await axios.post(
-    "http://localhost:1337/api/upload",
+    `${API_URL}/api/upload`,
     formData,
     {
       headers: {
@@ -39,7 +42,7 @@ export const createDocument = async (title, fileId, projectId) => {
 
   try {
     const response = await axios.post(
-      "http://localhost:1337/api/documents",
+      `${API_URL}/api/documents`,
       documentData
     );
 
@@ -56,7 +59,7 @@ export const createDocument = async (title, fileId, projectId) => {
 
     // Obtener el proyecto para identificar al tutor asociado
     const projectResponse = await axios.get(
-      `http://localhost:1337/api/new-projects/${projectId}?populate=tutor,estudiante`
+      `${API_URL}/api/new-projects/${projectId}?populate=tutor,estudiante`
     );
 
     // Verificar la respuesta del proyecto
@@ -87,7 +90,7 @@ export const createDocument = async (title, fileId, projectId) => {
       console.log("Notificación creada para el tutor:", notificationData);
 
       await axios.post(
-        "http://localhost:1337/api/notificacions",
+        `${API_URL}/api/notificacions`,
         notificationData
       );
     }
@@ -107,7 +110,7 @@ export const getDocumentsByProjectId = async (projectId) => {
   try {
     // Utiliza la sintaxis correcta para aplicar el filtro
     const response = await axios.get(
-      `http://localhost:1337/api/documents?filters[project][id][$eq]=${projectId}&populate=*`
+      `${API_URL}/api/documents?filters[project][id][$eq]=${projectId}&populate=*`
     );
 
     return response.data;
@@ -123,7 +126,7 @@ export const getDocumentsByProjectId = async (projectId) => {
 export const getDocumentById = async (documentId) => {
   try {
     const response = await fetch(
-      `http://localhost:1337/api/documents/${documentId}?populate=*`
+      `${API_URL}/api/documents/${documentId}?populate=*`
     );
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -140,7 +143,7 @@ export const getDocumentById = async (documentId) => {
 export const deleteDocument = async (documentId) => {
   try {
     // Primero, obtenemos las notificaciones asociadas al documento
-    const notificationsResponse = await axios.get('http://localhost:1337/api/notificacions', {
+    const notificationsResponse = await axios.get(`${API_URL}/api/notificacions`, {
       params: {
         'filters[document][id][$eq]': documentId,
       },
@@ -150,11 +153,11 @@ export const deleteDocument = async (documentId) => {
 
     // Eliminamos las notificaciones asociadas
     for (const notification of notifications) {
-      await axios.delete(`http://localhost:1337/api/notificacions/${notification.id}`);
+      await axios.delete(`${API_URL}/api/notificacions/${notification.id}`);
     }
 
     // Ahora eliminamos el documento
-    await axios.delete(`http://localhost:1337/api/documents/${documentId}`);
+    await axios.delete(`${API_URL}/api/documents/${documentId}`);
 
   } catch (error) {
     console.error('Error eliminando el documento o las notificaciones:', error.response || error.message);
