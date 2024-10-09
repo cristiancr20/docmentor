@@ -1,22 +1,21 @@
-# Dockerfile para el frontend
-
-# Usa una imagen base de Node
+# Dockerfile del frontend
 FROM node:20-alpine
 
-# Establece el directorio de trabajo
+# Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copia solo los archivos necesarios para instalar las dependencias
-COPY package.json package-lock.json ./
+# Copiar solo los archivos necesarios para instalar las dependencias
+COPY package.json ./ 
+COPY package-lock.json ./ 
 
-# Instala las dependencias
-RUN npm ci
+# Instalar las dependencias en el contenedor
+RUN npm install 
 
-# Ahora copia el resto de tu aplicación
-COPY . .
+# Copiar el resto de tu aplicación
+COPY . . 
 
-# Expone el puerto que usa React
-EXPOSE 3000
+# Exponer el puerto (ajusta según tu aplicación)
+EXPOSE 3000 
 
-# Comando para iniciar la aplicación de React
+# Comando para iniciar tu aplicación
 CMD ["npm", "start"]
