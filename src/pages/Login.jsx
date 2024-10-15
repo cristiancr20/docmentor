@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { login, getUserWithRole } from "../core/Autentication";
+import { loginSuccessAlert, loginErrorAlert } from "../components/Alerts/Alerts";
 
 import { motion } from "framer-motion";
 
@@ -20,15 +20,11 @@ const Login = () => {
         password: password,
       });
 
-      console.log("authResponse:", authResponse.data);
-
-      if (authResponse) {
+      if (authResponse && authResponse.jwt) {
         const { jwt, user } = authResponse;
 
         // Guardamos el token JWT en el localStorage
         localStorage.setItem("jwtToken", jwt);
-
-        console.log("Usuario:", user);
 
         const userWithRole = await getUserWithRole(user.id);
 
@@ -43,6 +39,7 @@ const Login = () => {
         localStorage.setItem("email", useremail);
         localStorage.setItem("userId", userId);
 
+        loginSuccessAlert(username);
         if (userRole === "tutor") {
           navigate("/tutor/dashboard");
         } else if (userRole === "estudiante") {
@@ -51,13 +48,13 @@ const Login = () => {
           console.error("Rol desconocido");
         }
       } else {
-        console.error("Respuesta vacía o no válida");
+        loginErrorAlert("No se recibió respuesta válida del servidor.");
       }
-
 
     } catch (error) {
       // Capturamos más detalles del error
       console.error("Error en login:", error);
+      loginErrorAlert("Error en el inicio de sesión. Verifica tus credenciales.");
     }
   };
 

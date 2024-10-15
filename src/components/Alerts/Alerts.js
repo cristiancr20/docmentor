@@ -20,3 +20,23 @@ export const errorAlert = () => {
   });
 }
 
+//ALERTA DE INICIAR SESION CORRECTAMENTE
+export const loginSuccessAlert = (username) => {
+  Swal.fire({
+    icon: 'success',
+    title: '¡Bienvenido! '+username,
+    text: 'Has iniciado sesión correctamente',
+    showConfirmButton: false,
+    timer: 1500
+  });
+}
+
+//ALERTA DE ERROR AL INICIAR SESION - CREDENCIALES INCOORRECTAS
+export const loginErrorAlert = () => {
+  Swal.fire({
+    icon: 'error',
+    title: '¡Error!',
+    text: 'Credenciales incorrectas',
+  });
+}
+
