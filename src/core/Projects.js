@@ -6,7 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
 export const createProject = async (projectData) => {
   try {
     const response = await axios.post(
-      `${API_URL}/new-projects`,
+      `${API_URL}/api/new-projects`,
       {
         data: projectData,
       },
