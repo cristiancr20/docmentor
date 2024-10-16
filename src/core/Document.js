@@ -87,7 +87,6 @@ export const createDocument = async (title, fileId, projectId) => {
           leido: false, // Inicialmente no leída
         },
       };
-      console.log("Notificación creada para el tutor:", notificationData);
 
       await axios.post(
         `${API_URL}/api/notificacions`,

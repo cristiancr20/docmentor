@@ -12,11 +12,11 @@ export const successAlert = () => {
 }
 
 // Alerta DE ERROR
-export const errorAlert = () => {
+export const errorAlert = (mensaje) => {
   Swal.fire({
     icon: 'error',
     title: '¡Error!',
-    text: 'Hubo un error al realizar la operación',
+    text: mensaje,
   });
 }
 

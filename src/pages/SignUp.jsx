@@ -38,10 +38,9 @@ function SignUp() {
       password,
       rol,
     };
-    
     try {
       const response = await registerUser(data);
-      successAlert();
+      successAlert(); // Muestra alerta de éxito
       setUsername("");
       setEmail("");
       setPassword("");
@@ -49,7 +48,20 @@ function SignUp() {
       window.location.href = "/login";
     } catch (error) {
       console.error("Error registering user:", error);
-      errorAlert();
+
+      // Manejo de errores con base en el código de estado
+      if (error.response) {
+        if (error.response.status === 409) {
+          errorAlert("El usuario ya existe."); // Mensaje para usuario existente
+        } else if (error.response.status === 400) {
+          errorAlert("Error en los datos proporcionados."); // Mensaje para errores de validación
+        } else {
+          errorAlert("Error al registrar el usuario. Inténtalo de nuevo."); // Mensaje genérico
+        }
+      } else {
+        errorAlert("Error al registrar el usuario. Inténtalo de nuevo."); // Mensaje genérico
+      }
+      errorAlert(); // Mostrar alerta de error
     }
   };
 

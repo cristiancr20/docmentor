@@ -8,7 +8,10 @@ export const registerUser = async (data) => {
     const response = await axios.post(`${API_URL}/api/auth/local/register`, data);
     return response.data;
   } catch (error) {
-    console.error(error);
+    // Si hay un error, lo vuelves a lanzar para que pueda ser manejado en el componente
+    console.error("Error en el registro de usuario:", error);
+    throw error; // Re-lanza el error para capturarlo en el componente
+  
   }
 };
 

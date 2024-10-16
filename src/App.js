@@ -36,7 +36,6 @@ function App() {
           <Route path="/proyectos/asignados" element={<ProjectsAsignedTutor />} />
           <Route path="/documento/:documentId" element={<DocumentoViewer />} />
 
-
           <Route path="/student/dashboard" element={<StudentsDashboard />} />
 
           <Route path="/proyecto/ver" element={<ViewProjectsStudents />} />

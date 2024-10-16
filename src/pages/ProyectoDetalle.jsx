@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getDocumentsByProjectId, deleteDocument } from "../core/Document"; // Asegúrate de agregar deleteDocument a tus funciones core
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
@@ -7,6 +7,7 @@ import SubirDocumento from "../components/SubirDocumento";
 import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
+import DocumentComparePopup from "../components/DocumentComparePopup";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -16,6 +17,8 @@ const ProyectoDetalle = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
   const rol = localStorage.getItem("rol");
+  const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(documents.length - 2);
 
   useEffect(() => {
     fetchProject();
@@ -32,6 +35,15 @@ const ProyectoDetalle = () => {
       setError("Error fetching project details");
       console.error("Error fetching project details:", error);
     }
+  };
+
+  const handleCompareClick = () => {
+    setShowIsComparePopupOpen(true);
+    setCurrentIndex(documents.length - 2);
+  };
+
+  const closeComparePopup = () => {
+    setShowIsComparePopupOpen(false);
   };
 
   const handleDeleteDocument = async (documentId) => {
@@ -132,7 +144,8 @@ const ProyectoDetalle = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-        className="mb-6">
+          className="mb-6"
+        >
           <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-300 pb-2">
             Estudiante:
           </h2>
@@ -149,8 +162,8 @@ const ProyectoDetalle = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            
-          className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2">
+            className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2"
+          >
             Historial de Versiones:
           </motion.h2>
 
@@ -161,6 +174,22 @@ const ProyectoDetalle = () => {
             >
               Subir Nuevo Documento
             </button>
+          )}
+
+          <button
+            onClick={handleCompareClick}
+            className="mb-4 bg-gray-200 text-gray-800 py-2 px-4 rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Comparar Versiones
+          </button>
+
+          {isShowComparePopupOpen && (
+            <DocumentComparePopup
+              documents={documents}
+              onClose={() => setShowIsComparePopupOpen(false)}
+              currentIndex={currentIndex}
+              setCurrentIndex={setCurrentIndex}
+            />
           )}
 
           {documents.length > 0 ? (
@@ -257,10 +286,11 @@ const ProyectoDetalle = () => {
       {/* Modal Popup */}
       {isModalOpen && (
         <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }} 
-        className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50"
+        >
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
             <button
               onClick={() => setIsModalOpen(false)}

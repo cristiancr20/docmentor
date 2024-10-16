@@ -102,7 +102,7 @@ const DocumentoViewer = () => {
           <div className="p-4">
             {" "}
             {/* 75% del ancho */}
-            <div className="pdf-container">
+            <div className="pdf-container" style={{ height: '100vh', overflow: 'auto' }}>
               <DisplayNotesSidebarExample
                 fileUrl={documentUrl}
                 notes={notes || []} // Pasar las notas con las áreas resaltadas
