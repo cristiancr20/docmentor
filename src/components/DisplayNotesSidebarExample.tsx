@@ -166,7 +166,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
         >
             <Viewer
                 fileUrl={fileUrl}
-                plugins={[highlightPluginInstance, defaultLayoutPluginInstance]}
+                plugins={[highlightPluginInstance]}
             />
         </div>
     );

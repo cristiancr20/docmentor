@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { highlightPlugin, RenderHighlightsProps } from '@react-pdf-viewer/highlight';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
@@ -6,6 +6,9 @@ import { GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { motion } from 'framer-motion';
+
+import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
+import { FaCodeCompare } from "react-icons/fa6";
 
 GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
@@ -20,7 +23,7 @@ const Alert = ({ message, onClose, isSuccess }) => {
       <p className="font-semibold">{message}</p>
       <button 
         onClick={onClose} 
-        className={`mt-2 bg-red-700  text-white px-2 py-1 rounded-md ${isSuccess ? 'bg-green-700 hover:bg-green-800' : 'bg-red-700 hover:bg-red-800'}`}
+        className={`mt-2   text-white px-2 py-1 rounded-md ${isSuccess ? 'bg-green-700 hover:bg-green-800' : 'bg-red-700 hover:bg-red-800'}`}
       >
         Cerrar
       </button>
@@ -29,9 +32,16 @@ const Alert = ({ message, onClose, isSuccess }) => {
 };
 
 const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentIndex }) => {
-  const [showAlert, setShowAlert] = React.useState(false);
-  const [alertMessage, setAlertMessage] = React.useState('');
-  const [isSuccess, setIsSuccess] = React.useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isComparing, setIsComparing] = useState(false);
+
+  const handleCompareClick = async () => {
+    setIsComparing(true); // Activar la animación
+    await compareDocuments(); // Ejecutar la comparación de documentos
+    setIsComparing(false); // Desactivar la animación
+  };
 
   const doc1 = documents[currentIndex];
   const doc2 = documents[currentIndex + 1];
@@ -104,13 +114,14 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
     try {
       const loadingTask = pdfjsLib.getDocument(url);
       const pdf = await loadingTask.promise;
-      let text = '';
+      const promises = [];
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(' ') + ' ';
-      }
+    for (let i = 1; i <= pdf.numPages; i++) {
+      promises.push(pdf.getPage(i).then(page => page.getTextContent()));
+    }
+
+    const pagesContent = await Promise.all(promises);
+    const text = pagesContent.map(content => content.items.map(item => item.str).join(' ')).join(' ');
 
       return text.trim();
     } catch (error) {
@@ -141,7 +152,12 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+
+    className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-11/12 h-11/12 overflow-hidden">
         {showAlert && (
           <Alert 
@@ -150,55 +166,84 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             isSuccess={isSuccess}
           />
         )}
-        <button onClick={onClose} className="text-gray-900 hover:text-gray-700 mb-4 bg-red-500 p-2 rounded">
+        <button onClick={onClose} className="text-white hover:bg-red-700 mb-4 bg-red-500 p-2 rounded ">
           Cerrar
         </button>
         <h2 className="text-xl font-semibold mb-4">Comparar Documentos</h2>
         <div className="flex space-x-4 h-full">
-          <div className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{
+              duration: 0.5, // Duración de la animación en segundos
+              ease: "easeInOut", // Tipo de suavizado
+            }}
+
+          className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
             <h3 className="text-lg font-medium mb-2">{doc1.attributes.title}</h3>
-            <div style={{ height: '700px', overflow: 'auto' }}>
+            <div style={{ height: '650px', overflow: 'auto' }}>
               <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                 <Viewer fileUrl={documento1} plugins={[highlightPluginInstance]} />
               </Worker>
             </div>
-          </div>
-          <div className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{
+              duration: 0.5, // Duración de la animación en segundos
+              ease: "easeInOut", // Tipo de suavizado
+            }}
+
+          className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
             <h3 className="text-lg font-medium mb-2">{doc2.attributes.title}</h3>
-            <div style={{ height: '700px', overflow: 'auto' }}>
+            <div style={{ height: '650px', overflow: 'auto' }}>
               <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
                 <Viewer fileUrl={documento2} plugins={[highlightPluginInstance2]} />
               </Worker>
             </div>
-          </div>
+          </motion.div>
         </div>
         <div className="mt-4 flex justify-between">
           <button
             onClick={() => setCurrentIndex(currentIndex - 1)}
             disabled={currentIndex === 0}
-            className="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-900 cursor-pointer "
+            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
+            <MdOutlineNavigateBefore className='ml-2'/>
             Anterior
           </button>
           
           <button
-            onClick={compareDocuments}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+            onClick={handleCompareClick}
+            className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
           >
+            <motion.div
+              animate={isComparing ? { rotate: 360 } : { rotate: 0 }}
+              transition={{ duration: 1, repeat: Infinity, 'ease': "linear" }}
+              style={{ originX: 0.5, originY: 0.5 }}
+              className="mr-2"
+            >
+              <FaCodeCompare />
+            </motion.div>
             Comparar
           </button>
 
           <button
             onClick={() => setCurrentIndex(currentIndex + 1)}
             disabled={currentIndex >= documents.length - 2}
-            className="bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-900 cursor-pointer "
+            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             Siguiente
+            <MdOutlineNavigateNext className="ml-2" />
           </button>
+
 
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

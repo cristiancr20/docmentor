@@ -178,7 +178,7 @@ const ProyectoDetalle = () => {
 
           <button
             onClick={handleCompareClick}
-            className="mb-4 bg-gray-200 text-gray-800 py-2 px-4 rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="mb-4 ml-4 bg-red-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
           >
             Comparar Versiones
           </button>
