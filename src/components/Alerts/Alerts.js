@@ -40,3 +40,13 @@ export const loginErrorAlert = () => {
   });
 }
 
+//ALERTA DE COMPARACIÓN DE DOCUMENTOS
+export const compareDocumentsAlert = (message, success) => {
+  Swal.fire({
+    icon: success ? 'success' : 'warning',
+    title: message,
+    showConfirmButton: false,
+    timer: 3000
+  });
+}
+

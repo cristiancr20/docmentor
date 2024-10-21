@@ -10,37 +10,17 @@ import { motion } from 'framer-motion';
 import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
 import { FaCodeCompare } from "react-icons/fa6";
 
+import { compareDocumentsAlert } from './Alerts/Alerts';
+
 GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
-const Alert = ({ message, onClose, isSuccess }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`fixed top-5 right-5 text-white p-4 rounded-md shadow-lg z-50 ${isSuccess ? 'bg-green-500' : 'bg-red-500'}`}
-    >
-      <p className="font-semibold">{message}</p>
-      <button 
-        onClick={onClose} 
-        className={`mt-2   text-white px-2 py-1 rounded-md ${isSuccess ? 'bg-green-700 hover:bg-green-800' : 'bg-red-700 hover:bg-red-800'}`}
-      >
-        Cerrar
-      </button>
-    </motion.div>
-  );
-};
 
 const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentIndex }) => {
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
+
   const [isComparing, setIsComparing] = useState(false);
 
   const handleCompareClick = async () => {
-    setIsComparing(true); // Activar la animación
     await compareDocuments(); // Ejecutar la comparación de documentos
-    setIsComparing(false); // Desactivar la animación
   };
 
   const doc1 = documents[currentIndex];
@@ -136,18 +116,14 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       const text2 = await extractTextFromPDF(documento2);
 
       if (text1 === text2) {
-        setAlertMessage('No hay cambios entre los documentos.');
-        setIsSuccess(true);
+        compareDocumentsAlert('Los documentos no tienen cambios', true);
+        
       } else {
-        setAlertMessage('Los documentos tienen cambios.');
-        setIsSuccess(false);
+        compareDocumentsAlert('Los documentos tienen cambios.', false);
       }
-      setShowAlert(true);
     } catch (error) {
       console.error("Error al comparar documentos:", error);
-      setAlertMessage('Error al comparar documentos.');
-      setIsSuccess(false);
-      setShowAlert(true);
+      compareDocumentsAlert('Error al comparar documentos.', false);
     }
   };
 
@@ -159,13 +135,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
 
     className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-11/12 h-11/12 overflow-hidden">
-        {showAlert && (
-          <Alert 
-            message={alertMessage} 
-            onClose={() => setShowAlert(false)} 
-            isSuccess={isSuccess}
-          />
-        )}
+        
         <button onClick={onClose} className="text-white hover:bg-red-700 mb-4 bg-red-500 p-2 rounded ">
           Cerrar
         </button>
