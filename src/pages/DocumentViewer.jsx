@@ -8,6 +8,9 @@ import {
   addCommentToDocument,
 } from "../core/Comments.js";
 
+import { motion } from "framer-motion";
+import { Calendar, CheckCircle, XCircle } from "lucide-react";
+
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 
 const DocumentoViewer = () => {
@@ -95,14 +98,85 @@ const DocumentoViewer = () => {
     <div>
       <Navbar />
 
-      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-        <h1 className="text-3xl font-bold mb-4">{documentAttributes.title}</h1>
+      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg ">
+        <div className="mb-6">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl font-bold mb-6 pb-3 border-b border-gray-200"
+          >
+            {documentAttributes.title}
+          </motion.h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fecha de Creación */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4"
+            >
+              <div className="bg-blue-100 p-3 rounded-lg">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-medium text-gray-500">
+                  Fecha de Creación
+                </h2>
+                <p className="text-lg font-semibold text-gray-900">
+                  {documentAttributes.fechaSubida}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Estado de Revisión */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className={`p-4 rounded-xl shadow-sm border flex items-center space-x-4 ${
+                documentAttributes.revisado
+                  ? "bg-green-50 border-green-100"
+                  : "bg-red-50 border-red-100"
+              }`}
+            >
+              <div
+                className={`p-3 rounded-lg ${
+                  documentAttributes.revisado ? "bg-green-100" : "bg-red-100"
+                }`}
+              >
+                {documentAttributes.revisado ? (
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                ) : (
+                  <XCircle className="w-6 h-6 text-red-600" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-sm font-medium text-gray-500">
+                  Estado de Revisión
+                </h2>
+                <p
+                  className={`text-lg font-semibold ${
+                    documentAttributes.revisado
+                      ? "text-green-700"
+                      : "text-red-700"
+                  }`}
+                >
+                  {documentAttributes.revisado ? "Revisado" : "Pendiente"}
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
         <div className="columns-2">
           {/* Panel del visor de documentos */}
-          <div className="p-4">
-            {" "}
-            {/* 75% del ancho */}
-            <div className="pdf-container" style={{ height: '100vh', overflow: 'auto' }}>
+          <div className="bg-gray-900 rounded-lg">
+            <div
+              className="pdf-container  p-2"
+              style={{ height: "100vh", overflow: "auto" }}
+            >
               <DisplayNotesSidebarExample
                 fileUrl={documentUrl}
                 notes={notes || []} // Pasar las notas con las áreas resaltadas
@@ -112,9 +186,10 @@ const DocumentoViewer = () => {
             </div>
           </div>
 
-          <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
-            {" "}
-            {/* 25% del ancho */}
+          <div
+            className="p-4 bg-gray-100 border border-gray-300 rounded-lg"
+            style={{ height: "100vh", overflow: "auto" }}
+          >
             <CommentsPanel
               comments={comments}
               onUpdateComments={fetchComments}

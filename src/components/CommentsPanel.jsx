@@ -59,7 +59,7 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
   };
 
   return (
-    <div className="comments-panel bg-gray-100 p-4 rounded">
+    <div className="comments-panel bg-gray-100 p-4 rounded ">
       <h3 className="text-lg font-bold mb-4">Comentarios</h3>
       <div className="p-4 bg-gray-900 rounded-lg shadow-md">
         {comments.length === 0 ? (
