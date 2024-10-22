@@ -5,8 +5,8 @@ import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
 import { motion } from "framer-motion";
+import { UserCircle } from "lucide-react";
 
-import Swal from "sweetalert2";
 import DocumentComparePopup from "../components/DocumentComparePopup";
 
 const ProyectoDetalle = () => {
@@ -46,37 +46,6 @@ const ProyectoDetalle = () => {
     setShowIsComparePopupOpen(false);
   };
 
-  const handleDeleteDocument = async (documentId) => {
-    Swal.fire({
-      title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar!",
-      cancelButtonText: "Cancelar",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          // Llamada a la función para eliminar el documento y las notificaciones
-          await deleteDocument(documentId);
-
-          // Volver a cargar los documentos después de la eliminación
-          fetchProject();
-          Swal.fire("Eliminado!", "El documento ha sido eliminado.", "success");
-        } catch (error) {
-          console.error("Error deleting document:", error);
-          Swal.fire(
-            "Error!",
-            "Hubo un problema al eliminar el documento.",
-            "error"
-          );
-        }
-      }
-    });
-  };
-
   if (!project) {
     return <p>Cargando detalles del proyecto...</p>;
   }
@@ -96,92 +65,106 @@ const ProyectoDetalle = () => {
       <Navbar />
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         {error && <p className="text-red-500 mb-4">{error}</p>}
+        <div className="flex flex-col lg:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
+          {/* Sección de información del proyecto */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+          >
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-4xl font-bold mb-4 text-gray-900 border-b pb-4 text-center"
+            >
+              {attributes.Title}
+            </motion.h1>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold mb-4"
-        >
-          {attributes.Title}
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-lg mb-4"
-        >
-          {attributes.Descripcion}
-        </motion.p>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-md text-gray-700 mb-6"
-        >
-          Fecha de Creación:{" "}
-          <span className="font-semibold">{attributes.FechaCreacion}</span>
-        </motion.p>
+            <h2 className="text-2xl font-bold ">Descripción del Proyecto:</h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-lg mb-4 text-gray-700 leading-relaxed"
+            >
+              {attributes.Descripcion}
+            </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-6"
-        >
-          <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-300 pb-2">
-            Tutor:
-          </h2>
-          <p className="text-md text-gray-800">
-            Nombre: <span className="font-medium">{tutor.username}</span>
-          </p>
-          <p className="text-md text-gray-800">
-            Email: <span className="font-medium">{tutor.email}</span>
-          </p>
-        </motion.div>
+            <div className="flex items-center">
+              <h2 className="text-1xl font-bold mr-4">
+                Fecha de Creación del Proyecto:
+              </h2>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700"
+              >
+                <span>{attributes.FechaCreacion}</span>
+              </motion.div>
+            </div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mb-6"
-        >
-          <h2 className="text-2xl font-semibold mb-2 border-b-2 border-gray-300 pb-2">
-            Estudiante:
-          </h2>
-          <p className="text-md text-gray-800">
-            Nombre: <span className="font-medium">{estudiante.username}</span>
-          </p>
-          <p className="text-md text-gray-800">
-            Email: <span className="font-medium">{estudiante.email}</span>
-          </p>
-        </motion.div>
+          {/* Sección del tutor */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                <UserCircle className="w-12 h-12" />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Tutor del Proyecto
+                </h2>
+                <p className="text-lg font-semibold text-blue-600">
+                  {tutor.username}
+                </p>
+                <p className="text-gray-600 bg-white px-3 py-1 rounded-full shadow-sm">
+                  {tutor.email}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
 
         <div>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2"
+            transition={{ duration: 0.5 }}
+            className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2 mt-5"
           >
             Historial de Versiones:
           </motion.h2>
 
           {rol === "estudiante" && (
-            <button
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
               onClick={() => setIsModalOpen(true)}
               className="mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Subir Nuevo Documento
-            </button>
+            </motion.button>
           )}
 
-          <button
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
             onClick={handleCompareClick}
             className="mb-4 ml-4 bg-red-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
           >
             Comparar Versiones
-          </button>
+          </motion.button>
 
           {isShowComparePopupOpen && (
             <DocumentComparePopup
@@ -222,7 +205,10 @@ const ProyectoDetalle = () => {
                             : "bg-gray-50";
 
                     return (
-                      <tr
+                      <motion.tr
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
                         key={doc.id}
                         className={`${rowColor} ${
                           index % 2 === 0 && doc.attributes.revisado === null
@@ -259,17 +245,8 @@ const ProyectoDetalle = () => {
                               No hay documento
                             </span>
                           )}
-                          {rol === "estudiante" && (
-                            <button
-                              onClick={() => handleDeleteDocument(doc.id)}
-                              title="Eliminar"
-                              className="text-red-600 hover:underline ml-4"
-                            >
-                              Eliminar
-                            </button>
-                          )}
                         </td>
-                      </tr>
+                      </motion.tr>
                     );
                   })}
                 </tbody>

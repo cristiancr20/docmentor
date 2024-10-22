@@ -17,7 +17,7 @@ function StudentDashboard () {
           ¡Bienvenido al Sistema de Gestión Documental!
         </h1>
         <p className="text-lg text-gray-700 mb-6">
-          Como estudiante, aquí podrás gestionar tus documentos, acceder a materiales y más.
+          Como estudiante, aquí podrás gestionar los documentos de tu Proyecto de Integración Curricular
         </p>
         
       </motion.div>

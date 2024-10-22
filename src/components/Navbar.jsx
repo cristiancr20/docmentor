@@ -22,7 +22,6 @@ function Navbar() {
     setUserName(name);
     setUserEmail(email);
 
-
     if (role === "tutor") {
       const token = localStorage.getItem("jwtToken");
       if (token) {
@@ -31,13 +30,12 @@ function Navbar() {
           .catch((error) =>
             console.error("Error al cargar notificaciones:", error)
           );
-        } else {
-          console.error("Token JWT no encontrado");
-        }
-        console.log(notifications)
+      } else {
+        console.error("Token JWT no encontrado");
+      }
+      console.log(notifications);
     }
   }, []);
-
 
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -111,7 +109,7 @@ function Navbar() {
                     to="/tutor/dashboard"
                     className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
                   >
-                    Tutor Dashboard
+                    Inicio
                   </Link>
                 </li>
                 <li>
@@ -126,6 +124,14 @@ function Navbar() {
             )}
             {userRole === "estudiante" && (
               <>
+                <li>
+                  <Link
+                    to="/student/dashboard"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
+                  >
+                    Inicio
+                  </Link>
+                </li>
                 <li>
                   <Link
                     to="/proyecto/ver"
@@ -175,7 +181,6 @@ function Navbar() {
                           ? "bg-gray-900 text-white"
                           : "bg-blue-100 text-gray-900"
                       }`}
-                      
                       onClick={() => markAsRead(notification)}
                     >
                       <p className="text-sm">

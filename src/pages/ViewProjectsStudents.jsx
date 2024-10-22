@@ -72,12 +72,15 @@ const ViewProjectsStudents = () => {
       <Navbar />
 
       <div className="container mx-auto p-4">
-        <button
+        <motion.button
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
           onClick={() => setIsModalOpen(true)}
           className="m-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           Crear Nuevo Proyecto
-        </button>
+        </motion.button>
 
         {error && <p className="text-red-500">{error}</p>}
         <ProjectsTable

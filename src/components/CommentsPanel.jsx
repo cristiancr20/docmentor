@@ -4,6 +4,7 @@ import { updateComment, deleteComment } from "../core/Comments";
 import Swal from "sweetalert2";
 import { FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import { motion } from "framer-motion";
 
 const CommentsPanel = ({ comments = [], onUpdateComments }) => {
   const rol = localStorage.getItem("rol");
@@ -64,8 +65,11 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
         {comments.length === 0 ? (
           <p className="text-gray-400 text-base">No hay comentarios</p>
         ) : (
-          comments.map((comment) => (
-            <div
+          comments.map((comment, index) => (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.2 }}
               key={comment.id}
               className="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition ease-in-out duration-150"
             >
@@ -105,6 +109,36 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
                         {comment.attributes.quote}
                       </p>
                     )}
+
+                    <p className="text-gray-600 text-sm mt-1">
+                      <strong className="font-semibold">Fecha de Creación:</strong>{" "}
+                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                        {new Date(
+                          comment.attributes.createdAt
+                        ).toLocaleDateString("es-ES", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </p>
+
+                    <p className="text-gray-600 text-sm mt-1">
+                      <strong className="font-semibold">Fecha de Modificación:</strong>{" "}
+                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-50 text-yellow-700 ">
+                        {new Date(
+                          comment.attributes.updatedAt
+                        ).toLocaleDateString("es-ES", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </p>
                   </div>
 
                   {rol === "tutor" && (
@@ -127,7 +161,7 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           ))
         )}
       </div>
