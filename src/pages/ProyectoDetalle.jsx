@@ -108,30 +108,105 @@ const ProyectoDetalle = () => {
           </motion.div>
 
           {/* Sección del tutor */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                <UserCircle className="w-12 h-12" />
-              </div>
+          {rol === "estudiante" && (
+            <>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                    <UserCircle className="w-12 h-12" />
+                  </div>
 
-              <div className="space-y-2">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Tutor del Proyecto
-                </h2>
-                <p className="text-lg font-semibold text-blue-600">
-                  {tutor.username}
-                </p>
-                <p className="text-gray-600 bg-white px-3 py-1 rounded-full shadow-sm">
-                  {tutor.email}
-                </p>
-              </div>
-            </div>
-          </motion.div>
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-bold text-gray-800">
+                      Tutor del Proyecto
+                    </h2>
+                    <p className="text-lg font-semibold text-blue-600">
+                      {tutor.username}
+                    </p>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="flex items-center m-1">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Correo:
+                        </h3>
+                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                          {tutor.email}
+                        </p>
+                      </div>
+                      {/* <div className="flex items-center m-1">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Carrera:
+                        </h3>
+                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                          {tutor.carrera}
+                        </p>
+                      </div> */}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {rol === "tutor" && (
+            <>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                    <UserCircle className="w-12 h-12" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-bold text-gray-800">
+                      Estudiante
+                    </h2>
+                    <p className="text-lg font-semibold text-blue-600">
+                      {estudiante.username}
+                    </p>
+
+                    <div className="flex flex-col items-center text-end">
+                      <div className="flex items-center m-1">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Correo:
+                        </h3>
+                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                          {estudiante.email}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center m-1">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Itineario:
+                        </h3>
+                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                          {estudiante.itinerario}
+                        </p>
+                      </div>
+
+
+                      {/* <div className="flex items-center m-1">
+                        <h3 className="text-sm font-semibold text-gray-800">
+                          Carrera:
+                        </h3>
+                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                          {estudiante.carrera}
+                        </p>
+                      </div> */}
+                    </div>                    
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
         </div>
 
         <div>
