@@ -795,6 +795,14 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       'oneToMany',
       'api::notificacion.notificacion'
     >;
+    carrera: Attribute.String;
+    itinerario: Attribute.Enumeration<
+      [
+        'Ingenieria de Software',
+        'Sistemas Inteligentes',
+        'Compuaci\u00F3n Aplicada'
+      ]
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -936,6 +944,13 @@ export interface ApiNewProjectNewProject extends Schema.CollectionType {
       'api::new-project.new-project',
       'manyToOne',
       'plugin::users-permissions.user'
+    >;
+    itinerario: Attribute.Enumeration<
+      [
+        'Ingenieria de Software',
+        'Sistemas Inteligentes',
+        'Compuaci\u00F3n Aplicada'
+      ]
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;

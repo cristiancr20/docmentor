@@ -94,6 +94,17 @@
       "relation": "oneToMany",
       "target": "api::notificacion.notificacion",
       "mappedBy": "tutor"
+    },
+    "carrera": {
+      "type": "string"
+    },
+    "itinerario": {
+      "type": "enumeration",
+      "enum": [
+        "Ingenieria de Software",
+        "Sistemas Inteligentes",
+        "Compuación Aplicada"
+      ]
     }
   }
 }
