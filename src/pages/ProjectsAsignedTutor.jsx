@@ -1,13 +1,16 @@
-// ViewProjects.jsx
-import React, { useEffect, useState } from 'react';
-import { getProjectsByTutor } from '../core/Projects';
-import Navbar from '../components/Navbar';
-import ProjectsTable from '../components/ProjectsTable';
+import React, { useEffect, useState } from "react";
+import { getProjectsByTutor } from "../core/Projects";
+import Navbar from "../components/Navbar";
+import ProjectsTable from "../components/ProjectsTable";
 
 const ProjectsAsignedTutor = () => {
   const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [error, setError] = useState(null);
-  const userId = localStorage.getItem('userId');
+  const [authorFilter, setAuthorFilter] = useState("");
+  const [itineraryFilter, setItineraryFilter] = useState("");
+  const [dateSortOrder, setDateSortOrder] = useState("recent"); // 'recent' or 'oldest'
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -15,23 +18,65 @@ const ProjectsAsignedTutor = () => {
         if (userId) {
           const userProjects = await getProjectsByTutor(userId);
           setProjects(userProjects);
+          setFilteredProjects(userProjects); // Set initial filtered projects
+          console.log(userProjects);
         } else {
-          setError('User ID is not available');
+          setError("User ID is not available");
         }
       } catch (error) {
-        setError('Error fetching projects');
-        console.error('Error fetching projects:', error);
+        setError("Error fetching projects");
+        console.error("Error fetching projects:", error);
       }
     };
 
     fetchProjects();
   }, [userId]);
 
+  // Filter projects whenever any filter value changes
+  useEffect(() => {
+    handleFilterChange();
+  }, [authorFilter, itineraryFilter, dateSortOrder]);
+
+  const handleFilterChange = () => {
+    let filtered = projects;
+
+    if (authorFilter) {
+      filtered = filtered.filter((project) =>
+        project.estudiante.email
+          .toLowerCase()
+          .includes(authorFilter.toLowerCase())
+      );
+    }
+
+    if (itineraryFilter) {
+      filtered = filtered.filter(
+        (project) =>
+          project.itinerario &&
+          project.itinerario.toLowerCase() === itineraryFilter.toLowerCase()
+      );
+    }
+
+    if (dateSortOrder) {
+      filtered.sort((a, b) => {
+        const dateA = new Date(a.FechaCreacion);
+        const dateB = new Date(b.FechaCreacion);
+        return dateSortOrder === "recent" ? dateB - dateA : dateA - dateB;
+      });
+    }
+
+    setFilteredProjects(filtered);
+  };
+
   const columns = [
-    { key: 'estudiante', label: 'Estudiante', render: (project) => project.estudiante.email },
-    { key: 'Title', label: 'Título' },
-    { key: 'Descripcion', label: 'Descripción' },
-    { key: 'FechaCreacion', label: 'Fecha de Creación' },
+    {
+      key: "estudiante",
+      label: "Estudiante",
+      render: (project) => project.estudiante.email,
+    },
+    { key: "Title", label: "Título" },
+    { key: "Descripcion", label: "Descripción" },
+    { key: "itinerario", label: "Itinerario" },
+    { key: "FechaCreacion", label: "Fecha de Creación" },
   ];
 
   return (
@@ -39,7 +84,46 @@ const ProjectsAsignedTutor = () => {
       <Navbar />
       <div className="container mx-auto p-4">
         {error && <p className="text-red-500">{error}</p>}
-        <ProjectsTable projects={projects} columns={columns} linkBase="/proyecto"/>
+
+        {/* Filters */}
+        <div className="mb-4 flex gap-4">
+          <input
+            type="text"
+            placeholder="Buscar por Autor"
+            value={authorFilter}
+            onChange={(e) => setAuthorFilter(e.target.value)}
+            className="p-2 border rounded"
+          />
+
+          <select
+            value={itineraryFilter}
+            onChange={(e) => setItineraryFilter(e.target.value)}
+            className="p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            >
+            <option value="" >Seleccionar Itinerario</option>
+            <option value="Ingenieria de Software">
+              Ingeniería de Software
+            </option>
+            <option value="Sistemas Inteligentes">Sistemas Inteligentes</option>
+            <option value="Computación Aplicada">Computación Aplicada</option>
+            {/* Asegúrate de que estos valores coincidan con los de los proyectos */}
+          </select>
+
+          <select
+            value={dateSortOrder}
+            onChange={(e) => setDateSortOrder(e.target.value)}
+            className="p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            >
+            <option value="recent">Más Recientes</option>
+            <option value="oldest">Más Antiguos</option>
+          </select>
+        </div>
+
+        <ProjectsTable
+          projects={filteredProjects}
+          columns={columns}
+          linkBase="/proyecto"
+        />
       </div>
     </div>
   );
