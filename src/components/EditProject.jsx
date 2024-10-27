@@ -6,7 +6,6 @@ import axios from "axios";
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
-  console.log("Proyecto a editar:", project);
 
   const [formData, setFormData] = useState({
     Title: "",

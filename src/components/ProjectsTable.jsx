@@ -32,7 +32,7 @@ const ProjectsTable = ({
       if (result.isConfirmed) {
         try {
           await deleteProject(projectId);
-          fetchProjects(); // Recarga los proyectos después de la eliminación
+          fetchProjects // Recarga los proyectos después de la eliminación
           Swal.fire("Eliminado!", "El proyecto ha sido eliminado.", "success");
         } catch (error) {
           console.error("Error al eliminar el proyecto:", error);

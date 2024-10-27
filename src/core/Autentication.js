@@ -18,11 +18,8 @@ export const registerUser = async (data) => {
 
 export const login = async (data) => {
   try {
-    // Verifica que los datos que se envían sean correctos
-    console.log("Datos enviados para login:", data);
 
     const response = await axios.post(`${API_URL}/api/auth/local`, data);
-    console.log("Login response:", response);
     return response.data;
   } catch (error) {
     // Captura y muestra detalles del error

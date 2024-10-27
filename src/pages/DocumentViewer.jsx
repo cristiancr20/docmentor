@@ -67,6 +67,7 @@ const DocumentoViewer = () => {
         quote
       );
       fetchComments(); // Refrescar los comentarios después de agregar uno nuevo
+      fetchDocument();
     } catch (error) {
       console.error("Error adding comment:", error);
     }

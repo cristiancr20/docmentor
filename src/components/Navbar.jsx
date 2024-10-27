@@ -33,7 +33,6 @@ function Navbar() {
       } else {
         console.error("Token JWT no encontrado");
       }
-      console.log(notifications);
     }
   }, []);
 
@@ -46,11 +45,8 @@ function Navbar() {
   };
 
   const markAsRead = async (notification) => {
-    console.log("Notificación seleccionada:", notification);
     const notificationId = notification.id;
     const documentData = notification.attributes.document?.data;
-    console.log("Marcando como leída la notificación:", notificationId);
-    console.log("Datos del documento asociado:", documentData);
 
     try {
       await axios.put(
@@ -74,7 +70,6 @@ function Navbar() {
       );
       if (documentData) {
         const documentId = documentData.id;
-        console.log("Redirigiendo a documento:", documentId);
 
         navigate(`/documento/${documentId}`);
       } else {

@@ -19,7 +19,6 @@ const ProjectsAsignedTutor = () => {
           const userProjects = await getProjectsByTutor(userId);
           setProjects(userProjects);
           setFilteredProjects(userProjects); // Set initial filtered projects
-          console.log(userProjects);
         } else {
           setError("User ID is not available");
         }

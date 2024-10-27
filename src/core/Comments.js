@@ -33,7 +33,6 @@ export const addCommentToDocument = async (
     }
 
     const result = await response.json();
-    console.log("Comment added:", result);
 
     // Actualizar el estado del documento para indicar que ha sido revisado
     const updateResponse = await fetch(
