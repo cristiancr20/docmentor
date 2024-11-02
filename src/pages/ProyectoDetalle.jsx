@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getDocumentsByProjectId, deleteDocument } from "../core/Document"; // Asegúrate de agregar deleteDocument a tus funciones core
+import { getDocumentsByProjectId } from "../core/Document"; // Asegúrate de agregar deleteDocument a tus funciones core
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
 import { motion } from "framer-motion";
 import { UserCircle } from "lucide-react";
+import { errorAlert } from "../components/Alerts/Alerts";
 
 import DocumentComparePopup from "../components/DocumentComparePopup";
 
@@ -30,7 +31,14 @@ const ProyectoDetalle = () => {
       setProject(projectDetails);
 
       const documentsResponse = await getDocumentsByProjectId(projectId);
-      setDocuments(documentsResponse.data);
+      const fetchedDocuments = documentsResponse.data;
+      setDocuments(fetchedDocuments);
+
+      if (fetchedDocuments.length > 1) {
+        setCurrentIndex(fetchedDocuments.length - 2);
+      } else {
+        setCurrentIndex(0); // Manejo seguro en caso de que haya solo un documento
+      }
     } catch (error) {
       setError("Error fetching project details");
       console.error("Error fetching project details:", error);
@@ -38,8 +46,12 @@ const ProyectoDetalle = () => {
   };
 
   const handleCompareClick = () => {
-    setShowIsComparePopupOpen(true);
-    setCurrentIndex(documents.length - 2);
+    if (documents.length > 1) {
+      setShowIsComparePopupOpen(true);
+      setCurrentIndex(documents.length - 2);
+    } else {
+      errorAlert("No existen los documentos suficientes para comparar");
+    }
   };
 
   const closeComparePopup = () => {
@@ -74,12 +86,12 @@ const ProyectoDetalle = () => {
             className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
           >
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: project ? 1 : 0.5, y: 0 }}
+              transition={{ duration: 0.3 }}
               className="text-4xl font-bold mb-4 text-gray-900 border-b pb-4 text-center"
             >
-              {attributes.Title}
+              {project ? attributes.Title : "Cargando..."}
             </motion.h1>
 
             <h2 className="text-2xl font-bold ">Descripción del Proyecto:</h2>
@@ -192,7 +204,6 @@ const ProyectoDetalle = () => {
                         </p>
                       </div>
 
-
                       {/* <div className="flex items-center m-1">
                         <h3 className="text-sm font-semibold text-gray-800">
                           Carrera:
@@ -201,7 +212,7 @@ const ProyectoDetalle = () => {
                           {estudiante.carrera}
                         </p>
                       </div> */}
-                    </div>                    
+                    </div>
                   </div>
                 </div>
               </motion.div>

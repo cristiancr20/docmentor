@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Button, PdfJs, Position, PrimaryButton, Tooltip, Viewer } from '@react-pdf-viewer/core';
-import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+/* import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout'; */
 import {
     HighlightArea,
     highlightPlugin,
@@ -25,16 +25,113 @@ interface HighlightExampleProps {
     notes: Note[];
     onAddNote: (note: Note) => void;
     isTutor: boolean;
+    selectedHighlightId?: number | null;
 }
 
-const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onAddNote, isTutor }) => {
+const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onAddNote, isTutor, selectedHighlightId }) => {
     const [message, setMessage] = React.useState('');
     let noteId = notes.length;
+    const viewerRef = React.useRef<any>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+
+    React.useEffect(() => {
+        if (selectedHighlightId !== null && selectedHighlightId !== undefined) {
+            const selectedNote = notes.find(note => note.id === selectedHighlightId);
+            if (selectedNote && selectedNote.highlightAreas.length > 0) {
+                const area = selectedNote.highlightAreas[0];
+                const pageIndex = area.pageIndex;
+                
+                // Scroll to the page first
+                if (viewerRef.current) {
+                    viewerRef.current.jumpToPage(pageIndex);
+                    
+                    // Wait for the page to be rendered
+                    setTimeout(() => {
+                        const pageElement = document.querySelector(`[data-page-number="${pageIndex + 1}"]`);
+                        if (pageElement) {
+                            const pageHeight = pageElement.clientHeight;
+                            const scrollPosition = pageHeight * (area.top / 100);
+                            
+                            pageElement.scrollIntoView({ behavior: 'smooth' });
+                            window.scrollBy(0, scrollPosition - window.innerHeight / 3);
+                        }
+                    }, 300);
+                }
+            }
+        }
+    }, [selectedHighlightId, notes]);
+
+    const scrollToHighlight = React.useCallback((highlightAreas: any[]) => {
+        if (!highlightAreas || highlightAreas.length === 0) return;
+
+        // Encontrar el primer área válida (con dimensiones no nulas)
+        const validArea = highlightAreas.find(area => 
+            area.height > 0 && area.width > 0 && area.pageIndex >= 0);
+
+        if (!validArea) return;
+
+        const pageIndex = validArea.pageIndex;
+        
+        console.log("entra")
+        if (viewerRef.current) {
+            // Primero, navegar a la página correcta
+            viewerRef.current.jumpToPage(pageIndex);
+            console.log("navegando a la pagina")
+
+            // Esperar a que la página se renderice
+            setTimeout(() => {
+                const pageElement = document.querySelector(
+                    `[data-page-number="${pageIndex + 1}"]`
+                );
+                console.log("renderiza")
+
+                if (pageElement) {
+                    const containerHeight = containerRef.current?.clientHeight || window.innerHeight;
+                    const pageHeight = pageElement.clientHeight;
+                    
+                    // Calcular la posición de scroll basada en el porcentaje de la página
+                    const scrollPosition = (pageHeight * validArea.top) / 100;
+                    
+                    // Ajustar el scroll del contenedor
+                    if (containerRef.current) {
+                        containerRef.current.scrollTop = scrollPosition - (containerHeight / 3);
+                    }
+
+                    // Resaltar visualmente el área
+                    const highlight = document.querySelector(`[data-highlight-id="${selectedHighlightId}"]`);
+                    if (highlight) {
+                        highlight.classList.add('highlight-flash');
+                        setTimeout(() => {
+                            highlight.classList.remove('highlight-flash');
+                        }, 2000);
+                    }
+                    console.log('Scrolling to:', {
+                        pageIndex: validArea.pageIndex,
+                        top: validArea.top,
+                        scrollPosition
+                    });
+                    
+                }
+                
+            }, 300);
+        }
+    }, [selectedHighlightId]);
+
+    React.useEffect(() => {
+        if (selectedHighlightId !== null && selectedHighlightId !== undefined) {
+            const selectedNote = notes.find(note => note.id === selectedHighlightId);
+            if (selectedNote && selectedNote.highlightAreas) {
+                scrollToHighlight(selectedNote.highlightAreas);
+            }
+        }
+    }, [selectedHighlightId, notes, scrollToHighlight]);
+
 
     const renderHighlightTarget = (props: RenderHighlightTargetProps) => (
         <div
             style={{
-                background: '#eee',
+                background: 'cyan',
                 display: isTutor ? 'flex' : 'none',
                
                 position: 'absolute',
@@ -47,7 +144,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
             <Tooltip
                 position={Position.TopCenter}
                 target={
-                    <Button onClick={props.toggle}>
+                    <Button onClick={props.toggle} >
                         <MessageIcon />
                     </Button>
                 }
@@ -86,6 +183,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
             >
                 <div>
                     <textarea
+                        required
                         rows={3}
                         style={{
                             border: '1px solid rgba(0, 0, 0, .3)',
@@ -113,15 +211,18 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
             {notes.map((note) => (
                 <React.Fragment key={note.id}>
                     {note.highlightAreas
-                        .filter((area) => area.pageIndex === props.pageIndex)
+                        .filter((area) => area.pageIndex === props.pageIndex && area.height > 0)
                         .map((area, idx) => (
                             <div
                                 key={idx}
+                                data-highlight-id={note.id}
+                                className={`highlight-area ${note.id === selectedHighlightId ? 'selected' : ''}`}
                                 style={Object.assign(
                                     {},
                                     {
-                                        background: 'yellow',
-                                        opacity: 0.4,
+                                        background: note.id === selectedHighlightId ? '#ffeb3b' : 'yellow',
+                                        opacity: note.id === selectedHighlightId ? 0.7 : 0.4,
+                                        transition: 'all 0.3s ease',
                                     },
                                     props.getCssProperties(area, props.rotation)
                                 )}
@@ -132,42 +233,50 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
         </div>
     );
 
+
     const highlightPluginInstance = highlightPlugin({
         renderHighlightTarget,
         renderHighlightContent,
         renderHighlights,
     });
 
-    const defaultLayoutPluginInstance = defaultLayoutPlugin({
-        
-        renderToolbar: (Toolbar) => {
-            return (
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '0 16px',
-                        height: '40px',
-                        backgroundColor: '#f5f5f5',
-                        borderBottom: '1px solid rgba(0, 0, 0, 0.2)',
-                    }}
-                >
-                  
-                </div>
-            );
-        },
-    });
+    
 
     return (
-        <div
-            style={{
+        <div 
+            ref={containerRef}
+            style={{ 
                 height: '100%',
+                position: 'relative',
+                overflow: 'auto'
             }}
         >
             <Viewer
+                ref={viewerRef}
                 fileUrl={fileUrl}
                 plugins={[highlightPluginInstance]}
+                defaultScale={1}
             />
+
+            <style>{`
+                .highlight-area {
+                    position: absolute;
+                    pointer-events: none;
+                }
+                
+                .highlight-area.selected {
+                    z-index: 1;
+                }
+                
+                @keyframes flashHighlight {
+                    0%, 100% { opacity: 0.4; }
+                    50% { opacity: 0.8; }
+                }
+                
+                .highlight-flash {
+                    animation: flashHighlight 1s ease-in-out;
+                }
+            `}</style>
         </div>
     );
 };

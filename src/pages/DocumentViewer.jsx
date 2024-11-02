@@ -7,10 +7,8 @@ import {
   getCommentsByDocument,
   addCommentToDocument,
 } from "../core/Comments.js";
-
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, XCircle } from "lucide-react";
-
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 
 const DocumentoViewer = () => {
@@ -22,6 +20,7 @@ const DocumentoViewer = () => {
   const STRAPI_URL = "http://localhost:1337";
   const tutorId = localStorage.getItem("userId");
   const rol = localStorage.getItem("rol");
+  const [selectedHighlightId, setSelectedHighlightId] = useState(null);
 
   useEffect(() => {
     fetchDocument();
@@ -37,21 +36,41 @@ const DocumentoViewer = () => {
     }
   };
 
+  const handleCommentClick = (comment) => {
+    try {
+      const highlightAreas = JSON.parse(comment.attributes.highlightAreas);
+      console.log("Highlight areas:", highlightAreas); // Para debug
+
+      // Verificar si hay áreas válidas
+      const validAreas = highlightAreas.filter(
+        (area) => area.height > 0 && area.width > 0 && area.pageIndex >= 0
+      );
+
+      if (validAreas.length > 0) {
+        setSelectedHighlightId(comment.id);
+      }
+
+      console.log("Comment clicked:", comment.id);
+      console.log("Parsed areas:", highlightAreas);
+      console.log("Valid areas:", validAreas);
+    } catch (error) {
+      console.error("Error parsing highlight areas:", error);
+    }
+   
+  };
+
   const fetchComments = async () => {
     try {
       const data = await getCommentsByDocument(documentId);
       setComments(data);
 
-      if (data) {
-        const notesWithHighlights = data.map((comment) => ({
-          id: comment.id,
-          content: comment.attributes.correccion,
-          highlightAreas: JSON.parse(comment.attributes.highlightAreas) || [],
-          quote: comment.attributes.quote || "",
-        }));
-
-        setNotes(notesWithHighlights);
-      }
+      const notesWithHighlights = data.map((comment) => ({
+        id: comment.id,
+        content: comment.attributes.correccion,
+        highlightAreas: JSON.parse(comment.attributes.highlightAreas) || [],
+        quote: comment.attributes.quote || "",
+      }));
+      setNotes(notesWithHighlights);
     } catch (error) {
       setError("Error fetching comments");
     }
@@ -66,7 +85,7 @@ const DocumentoViewer = () => {
         highlightAreas,
         quote
       );
-      fetchComments(); // Refrescar los comentarios después de agregar uno nuevo
+      fetchComments();
       fetchDocument();
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -85,21 +104,21 @@ const DocumentoViewer = () => {
     return <p>Cargando documento...</p>;
   }
 
-  const documentAttributes = document?.data?.attributes || {};
-  const documentFile =
-    documentAttributes?.documentFile?.data?.[0]?.attributes?.url;
+  const { title, fechaSubida, revisado, documentFile } =
+    document?.data?.attributes || {};
+  const documentUrl = documentFile
+    ? `${STRAPI_URL}${documentFile.data?.[0]?.attributes?.url}`
+    : null;
 
-  if (!documentFile) {
+  if (!documentUrl) {
     return <p>No se encontró el archivo del documento.</p>;
   }
-
-  const documentUrl = `${STRAPI_URL}${documentFile}`;
 
   return (
     <div>
       <Navbar />
 
-      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg ">
+      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="mb-6">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -107,11 +126,10 @@ const DocumentoViewer = () => {
             transition={{ duration: 0.5 }}
             className="text-3xl font-bold mb-6 pb-3 border-b border-gray-200"
           >
-            {documentAttributes.title}
+            {title}
           </motion.h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Fecha de Creación */}
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -126,28 +144,25 @@ const DocumentoViewer = () => {
                   Fecha de Creación
                 </h2>
                 <p className="text-lg font-semibold text-gray-900">
-                  {documentAttributes.fechaSubida}
+                  {fechaSubida}
                 </p>
               </div>
             </motion.div>
 
-            {/* Estado de Revisión */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               className={`p-4 rounded-xl shadow-sm border flex items-center space-x-4 ${
-                documentAttributes.revisado
+                revisado
                   ? "bg-green-50 border-green-100"
                   : "bg-red-50 border-red-100"
               }`}
             >
               <div
-                className={`p-3 rounded-lg ${
-                  documentAttributes.revisado ? "bg-green-100" : "bg-red-100"
-                }`}
+                className={`p-3 rounded-lg ${revisado ? "bg-green-100" : "bg-red-100"}`}
               >
-                {documentAttributes.revisado ? (
+                {revisado ? (
                   <CheckCircle className="w-6 h-6 text-green-600" />
                 ) : (
                   <XCircle className="w-6 h-6 text-red-600" />
@@ -158,42 +173,37 @@ const DocumentoViewer = () => {
                   Estado de Revisión
                 </h2>
                 <p
-                  className={`text-lg font-semibold ${
-                    documentAttributes.revisado
-                      ? "text-green-700"
-                      : "text-red-700"
-                  }`}
+                  className={`text-lg font-semibold ${revisado ? "text-green-700" : "text-red-700"}`}
                 >
-                  {documentAttributes.revisado ? "Revisado" : "Pendiente"}
+                  {revisado ? "Revisado" : "Pendiente"}
                 </p>
               </div>
             </motion.div>
           </div>
         </div>
 
-        <div className="columns-2">
-          {/* Panel del visor de documentos */}
-          <div className="bg-gray-900 rounded-lg">
-            <div
-              className="pdf-container  p-2"
-              style={{ height: "100vh", overflow: "auto" }}
-            >
-              <DisplayNotesSidebarExample
-                fileUrl={documentUrl}
-                notes={notes || []} // Pasar las notas con las áreas resaltadas
-                onAddNote={handleAddNote}
-                isTutor={rol === "tutor"}
-              />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div
+            className="bg-gray-900 rounded-lg p-2 h-full overflow-auto"
+            style={{ height: "100vh", overflow: "auto" }}
+          >
+            <DisplayNotesSidebarExample
+              fileUrl={documentUrl}
+              notes={notes}
+              onAddNote={handleAddNote}
+              isTutor={rol === "tutor"}
+              selectedHighlightId={selectedHighlightId}
+            />
           </div>
 
           <div
-            className="p-4 bg-gray-100 border border-gray-300 rounded-lg"
+            className="bg-gray-100 border border-gray-300 rounded-lg p-4 h-full overflow-auto"
             style={{ height: "100vh", overflow: "auto" }}
           >
             <CommentsPanel
               comments={comments}
               onUpdateComments={fetchComments}
+              onCommentClick={handleCommentClick}
             />
           </div>
         </div>

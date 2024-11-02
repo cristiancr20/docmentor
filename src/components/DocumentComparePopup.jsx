@@ -140,7 +140,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
           Cerrar
         </button>
         <h2 className="text-xl font-semibold mb-4">Comparar Documentos</h2>
-        <div className="flex space-x-4 h-full">
+        <div className="flex space-x-4 h-full ">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -158,6 +158,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
               </Worker>
             </div>
           </motion.div>
+
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

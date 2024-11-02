@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaArrowDown, FaBell } from "react-icons/fa";
+import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import axios from "axios";
 import { getNotifications } from "../core/Notification";
+import { motion, AnimatePresence } from "framer-motion";
 
 function Navbar() {
   const [userRole, setUserRole] = useState("");
@@ -11,6 +12,7 @@ function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -70,7 +72,6 @@ function Navbar() {
       );
       if (documentData) {
         const documentId = documentData.id;
-
         navigate(`/documento/${documentId}`);
       } else {
         console.warn("No hay documento asociado a la notificación");
@@ -87,157 +88,317 @@ function Navbar() {
     (notification) => !notification.attributes.leido
   ).length;
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("rol");
+    navigate("/", { replace: true });
+  };
+
+  const menuVariants = {
+    closed: {
+      opacity: 0,
+      height: 0,
+      y: -20,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+    open: {
+      opacity: 1,
+      height: "auto",
+      y: 0,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const dropdownVariants = {
+    closed: {
+      opacity: 0,
+      y: -10,
+      scale: 0.95,
+      transition: {
+        duration: 0.2,
+        ease: "easeInOut",
+      },
+    },
+    open: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.2,
+        ease: "easeInOut",
+      },
+    },
+  };
+
   return (
-    <nav className="bg-white border-gray-200 dark:bg-gray-900">
-      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 relative">
-        <Link to="/">
+    <div className="relative">
+      {/* Barra de navegación principal */}
+      <nav className="bg-white border-gray-200 dark:bg-gray-900">
+        <div className="max-w-screen-xl flex items-center justify-between mx-auto p-4">
           <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
             DocuTrack
           </span>
-        </Link>
-        <div className="hidden w-full md:block md:w-auto" id="navbar-default">
-          <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-            {userRole === "tutor" && (
-              <>
-                <li>
-                  <Link
-                    to="/tutor/dashboard"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Inicio
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/proyectos/asignados"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Proyectos asignados
-                  </Link>
-                </li>
-              </>
-            )}
-            {userRole === "estudiante" && (
-              <>
-                <li>
-                  <Link
-                    to="/student/dashboard"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Inicio
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/proyecto/ver"
-                    className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-                  >
-                    Ver mis Proyectos
-                  </Link>
-                </li>
-              </>
-            )}
-          </ul>
-        </div>
 
-        {/* Parte de notificaciones y user */}
-        <div className="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse relative">
-          {/* USER NOTIFICACIONES */}
-          {userRole === "tutor" && (
-            <div className="relative">
-              <button
-                type="button"
-                className="flex p-2 mx-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                id="notification-menu-button"
-                aria-expanded={isNotificationOpen}
-                onClick={handleNotificationToggle}
-                aria-controls="notification-dropdown"
-              >
-                <FaBell className="text-yellow-500" />
-                {unreadNotificationsCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
-                    {unreadNotificationsCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Dropdown de notificaciones justo debajo del botón */}
-              <div
-                className={`z-50 ${
-                  isNotificationOpen ? "absolute" : "hidden"
-                } right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600`}
-              >
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 rounded-lg mt-2 cursor-pointer ${
-                        notification.attributes.leido
-                          ? "bg-gray-900 text-white"
-                          : "bg-blue-100 text-gray-900"
-                      }`}
-                      onClick={() => markAsRead(notification)}
+          {/* Menú de escritorio */}
+          <div className="hidden md:flex md:items-center ">
+            <ul className="font-medium flex items-center space-x-8 ">
+              {userRole === "tutor" && (
+                <>
+                  <motion.li whileHover={{ scale: 1.05 }}>
+                    <Link
+                      to="/tutor/dashboard"
+                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      <p className="text-sm">
-                        {notification.attributes.mensaje}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="p-3 text-sm text-gray-700 dark:text-gray-400">
-                    No hay notificaciones.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+                      Inicio
+                    </Link>
+                  </motion.li>
+                  <motion.li whileHover={{ scale: 1.05 }}>
+                    <Link
+                      to="/proyectos/asignados"
+                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                    >
+                      Proyectos asignados
+                    </Link>
+                  </motion.li>
+                </>
+              )}
 
-          {/* USER PANEL */}
-          <div className="relative">
-            <button
-              type="button"
-              className="flex p-2 mx-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-              id="user-menu-button"
-              aria-expanded={isDropdownOpen}
-              onClick={handleDropdownToggle}
-              aria-controls="user-dropdown"
-            >
-              <span className="sr-only">Open user menu</span>
-              <span className="text-white">{userName}</span>
-              <FaArrowDown className="text-white" />
-            </button>
+              {userRole === "estudiante" && (
+                <>
+                  <motion.li whileHover={{ scale: 1.05 }}>
+                    <Link
+                      to="/student/dashboard"
+                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                    >
+                      Inicio
+                    </Link>
+                  </motion.li>
+                  <motion.li whileHover={{ scale: 1.05 }}>
+                    <Link
+                      to="/proyecto/ver"
+                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                    >
+                      Ver mis Proyectos
+                    </Link>
+                  </motion.li>
+                </>
+              )}
+            </ul>
+          </div>
 
-            {/* Dropdown de usuario justo debajo del botón */}
-            <div
-              className={`z-50 ${
-                isDropdownOpen ? "absolute" : "hidden"
-              } right-0 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600`}
-              id="user-dropdown"
+          <div className="flex items-center space-x-3">
+            {/* Botón de menú móvil */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsNavOpen(!isNavOpen)}
+              className="text-gray-500 dark:text-gray-300 md:hidden focus:outline-none"
             >
-              <div className="px-4 py-3">
-                <span className="block text-sm text-gray-900 dark:text-white">
-                  {userName}
-                </span>
-                <span className="block text-sm text-gray-500 truncate dark:text-gray-400">
-                  {userEmail}
-                </span>
-              </div>
-              <ul className="py-2" aria-labelledby="user-menu-button">
-                <li>
-                  <a
-                    href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+              {isNavOpen ? <FaTimes /> : <FaBars />}
+            </motion.button>
+
+            {/* Notificaciones y perfil */}
+            <div className="flex items-center space-x-3">
+              {userRole === "tutor" && (
+                <div className="relative">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                    onClick={handleNotificationToggle}
                   >
-                    Cerrar Sesión
-                  </a>
-                </li>
-              </ul>
+                    <FaBell className="text-yellow-500" />
+                    {unreadNotificationsCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full"
+                      >
+                        {unreadNotificationsCount}
+                      </motion.span>
+                    )}
+                  </motion.button>
+
+                  <AnimatePresence>
+                    {isNotificationOpen && (
+                      <motion.div
+                        initial="closed"
+                        animate="open"
+                        exit="closed"
+                        variants={dropdownVariants}
+                        className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700"
+                      >
+                        {notifications.length > 0 ? (
+                          notifications.map((notification) => (
+                            <motion.div
+                              key={notification.id}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              whileHover={{ scale: 1.02 }}
+                              className={`p-3 rounded-lg mt-2 cursor-pointer ${
+                                notification.attributes.leido
+                                  ? "bg-gray-900 text-white"
+                                  : "bg-blue-100 text-gray-900"
+                              }`}
+                              onClick={() => markAsRead(notification)}
+                            >
+                              <p className="text-sm">
+                                {notification.attributes.mensaje}
+                              </p>
+                            </motion.div>
+                          ))
+                        ) : (
+                          <p className="p-3 text-sm text-gray-700 dark:text-gray-400">
+                            No hay notificaciones.
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              <div className="relative">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                  onClick={handleDropdownToggle}
+                >
+                  <span className="text-white">{userName}</span>
+                  <motion.div
+                    animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <FaArrowDown className="text-white" />
+                  </motion.div>
+                </motion.button>
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial="closed"
+                      animate="open"
+                      exit="closed"
+                      variants={dropdownVariants}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow dark:bg-gray-700"
+                    >
+                      <div className="px-4 py-3">
+                        <span className="block text-sm text-gray-900 dark:text-white">
+                          {userName}
+                        </span>
+                        <span className="block text-sm text-gray-500 dark:text-gray-400">
+                          {userEmail}
+                        </span>
+                      </div>
+                      <ul className="py-2">
+                        <motion.li whileHover={{ scale: 1.02 }}>
+                          <button
+                            onClick={handleLogout}
+                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          >
+                            Cerrar sesión
+                          </button>
+                        </motion.li>
+                      </ul>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Menú móvil */}
+      <AnimatePresence>
+        {isNavOpen && (
+          <motion.div
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={menuVariants}
+            className="absolute w-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-xl md:hidden z-50 rounded-b-2xl border-b border-x border-gray-200 dark:border-gray-700"
+          >
+            <motion.div
+              className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-2"
+              initial={{ width: "2rem" }}
+              animate={{ width: "4rem" }}
+              transition={{ duration: 0.3 }}
+            />
+
+            <ul className="flex flex-col p-6 space-y-2">
+              {userRole === "tutor" && (
+                <>
+                  <motion.li
+                    whileHover={{ scale: 1.02, x: 10 }}
+                    className="overflow-hidden rounded-xl"
+                  >
+                    <Link
+                      to="/tutor/dashboard"
+                      className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
+                      onClick={() => setIsNavOpen(false)}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-3" />
+                      <span className="font-medium">Inicio</span>
+                    </Link>
+                  </motion.li>
+                  <motion.li
+                    whileHover={{ scale: 1.02, x: 10 }}
+                    className="overflow-hidden rounded-xl"
+                  >
+                    <Link
+                      to="/proyectos/asignados"
+                      className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
+                      onClick={() => setIsNavOpen(false)}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-3" />
+                      <span className="font-medium">Proyectos asignados</span>
+                    </Link>
+                  </motion.li>
+                </>
+              )}
+
+              {userRole === "estudiante" && (
+                <>
+                  <motion.li
+                    whileHover={{ scale: 1.02, x: 10 }}
+                    className="overflow-hidden rounded-xl"
+                  >
+                    <Link
+                      to="/student/dashboard"
+                      className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
+                      onClick={() => setIsNavOpen(false)}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-3" />
+                      <span className="font-medium">Inicio</span>
+                    </Link>
+                  </motion.li>
+                  <motion.li
+                    whileHover={{ scale: 1.02, x: 10 }}
+                    className="overflow-hidden rounded-xl"
+                  >
+                    <Link
+                      to="/proyecto/ver"
+                      className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
+                      onClick={() => setIsNavOpen(false)}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-green-500 mr-3" />
+                      <span className="font-medium">Ver mis Proyectos</span>
+                    </Link>
+                  </motion.li>
+                </>
+              )}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
-
 export default Navbar;

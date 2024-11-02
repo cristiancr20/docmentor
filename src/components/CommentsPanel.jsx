@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-
 import { updateComment, deleteComment } from "../core/Comments";
 import Swal from "sweetalert2";
 import { FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { motion } from "framer-motion";
 
-const CommentsPanel = ({ comments = [], onUpdateComments }) => {
+const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
   const rol = localStorage.getItem("rol");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [updatedContent, setUpdatedContent] = useState("");
@@ -59,7 +58,7 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
   };
 
   return (
-    <div className="comments-panel bg-gray-100 p-4 rounded ">
+    <div className="comments-panel bg-gray-100 p-4 rounded">
       <h3 className="text-lg font-bold mb-4">Comentarios</h3>
       <div className="p-4 bg-gray-900 rounded-lg shadow-md">
         {comments.length === 0 ? (
@@ -67,11 +66,13 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
         ) : (
           comments.map((comment, index) => (
             <motion.div
+              key={comment.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.2 }}
-              key={comment.id}
-              className="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition ease-in-out duration-150"
+              className="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200 
+                     hover:bg-gray-50 transition-all duration-300 cursor-pointer"
+              onClick={() => onCommentClick(comment)}
             >
               {editingCommentId === comment.id ? (
                 <div>
@@ -80,23 +81,24 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
                     onChange={(e) => setUpdatedContent(e.target.value)}
                     className="w-full p-2 mb-2 border rounded"
                   />
-
-                  <button
-                    onClick={() => handleEditSubmit(comment.id)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => setEditingCommentId(null)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
-                  >
-                    Cancelar
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEditSubmit(comment.id)}
+                      className="bg-blue-500 text-white px-4 py-2 rounded"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      onClick={() => setEditingCommentId(null)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-white shadow-md rounded-lg p-4 mb-4 flex items-start justify-between">
-                  <div>
+                  <div className="flex-grow">
                     <p className="text-gray-800 text-base">
                       <strong className="font-semibold">Comentario:</strong>{" "}
                       {comment.attributes.correccion}
@@ -109,9 +111,10 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
                         {comment.attributes.quote}
                       </p>
                     )}
-
                     <p className="text-gray-600 text-sm mt-1">
-                      <strong className="font-semibold">Fecha de Creación:</strong>{" "}
+                      <strong className="font-semibold">
+                        Fecha de Creación:
+                      </strong>{" "}
                       <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
                         {new Date(
                           comment.attributes.createdAt
@@ -124,10 +127,11 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
                         })}
                       </span>
                     </p>
-
                     <p className="text-gray-600 text-sm mt-1">
-                      <strong className="font-semibold">Fecha de Modificación:</strong>{" "}
-                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-50 text-yellow-700 ">
+                      <strong className="font-semibold">
+                        Fecha de Modificación:
+                      </strong>{" "}
+                      <span className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-50 text-yellow-700">
                         {new Date(
                           comment.attributes.updatedAt
                         ).toLocaleDateString("es-ES", {
@@ -140,7 +144,6 @@ const CommentsPanel = ({ comments = [], onUpdateComments }) => {
                       </span>
                     </p>
                   </div>
-
                   {rol === "tutor" && (
                     <div className="flex space-x-4 ml-4">
                       <button

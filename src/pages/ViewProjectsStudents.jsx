@@ -1,11 +1,9 @@
-// ViewProjectsStudents.jsx
 import React, { useEffect, useState } from "react";
 import { getProjectsByStudents } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
-
 import { motion } from "framer-motion";
 
 const ViewProjectsStudents = () => {
@@ -17,44 +15,32 @@ const ViewProjectsStudents = () => {
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    fetchProjects();
+    if (userId) {
+      fetchProjects();
+    } else {
+      setError("User ID is not available");
+    }
   }, [userId]);
 
   const fetchProjects = async () => {
     try {
-      if (userId) {
-        const userProjects = await getProjectsByStudents(userId);
-        setProjects(userProjects);
-      } else {
-        setError("User ID is not available");
-      }
+      const userProjects = await getProjectsByStudents(userId);
+      setProjects(userProjects);
     } catch (error) {
-      setError("Error fetching projects");
       console.error("Error fetching projects:", error);
+      setError("Error fetching projects");
     }
   };
-  
 
   const handleEdit = (projectId) => {
     const project = projects.find((project) => project.id === projectId);
     setCurrentProject(project);
     setIsEditModalOpen(true);
-  }
+  };
 
-  const handleUpdate = async () =>{
+  const handleUpdate = async () => {
     await fetchProjects();
     setIsEditModalOpen(false);
-  }
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setCurrentProject(null);
-  }
-
-  const closeModalNewProject = () => {
-    setIsModalOpen(false);
-    // Opcionalmente, podrías volver a cargar los proyectos aquí si es necesario
-    fetchProjects();
   };
 
   const columns = [
@@ -62,10 +48,7 @@ const ViewProjectsStudents = () => {
     { key: "Descripcion", label: "Descripción" },
     { key: "FechaCreacion", label: "Fecha de Creación" },
     { key: "tutor", label: "Tutor", render: (project) => project.tutor.email },
-
   ];
-
-
 
   return (
     <div>
@@ -92,6 +75,7 @@ const ViewProjectsStudents = () => {
         />
       </div>
 
+      {/* Modal para Nuevo Proyecto */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
@@ -115,21 +99,23 @@ const ViewProjectsStudents = () => {
               </svg>
               Cerrar
             </button>
-            <NewProject onClose={closeModalNewProject} fetchProjects={fetchProjects} />
+            <NewProject onClose={() => setIsModalOpen(false)} fetchProjects={fetchProjects} />
           </div>
         </div>
       )}
+
+      {/* Modal para Editar Proyecto */}
       {isEditModalOpen && currentProject && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
+          className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50"
+        >
           <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
-           
             <EditProject
               project={currentProject}
-              onClose={closeEditModal}
+              onClose={() => setIsEditModalOpen(false)}
               onUpdate={handleUpdate}
             />
           </div>

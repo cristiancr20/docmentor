@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login, getUserWithRole } from "../core/Autentication";
-import { loginSuccessAlert, loginErrorAlert } from "../components/Alerts/Alerts";
-
+import {
+  loginSuccessAlert,
+  loginErrorAlert,
+} from "../components/Alerts/Alerts";
 import { motion } from "framer-motion";
 
 const Login = () => {
@@ -14,7 +16,6 @@ const Login = () => {
     event.preventDefault();
 
     try {
-      // Autenticación del usuario
       const authResponse = await login({
         identifier: email,
         password: password,
@@ -22,22 +23,16 @@ const Login = () => {
 
       if (authResponse && authResponse.jwt) {
         const { jwt, user } = authResponse;
-
-        // Guardamos el token JWT en el localStorage
         localStorage.setItem("jwtToken", jwt);
 
         const userWithRole = await getUserWithRole(user.id);
-
-        // Ahora puedes redirigir según el rol del usuario
         const userRole = userWithRole.rol?.tipoRol;
         const username = user.username;
-        const useremail = user.email;
-        const userId = user.id;
 
         localStorage.setItem("rol", userRole);
         localStorage.setItem("username", username);
-        localStorage.setItem("email", useremail);
-        localStorage.setItem("userId", userId);
+        localStorage.setItem("email", user.email);
+        localStorage.setItem("userId", user.id);
 
         loginSuccessAlert(username);
         if (userRole === "tutor") {
@@ -50,69 +45,75 @@ const Login = () => {
       } else {
         loginErrorAlert("No se recibió respuesta válida del servidor.");
       }
-
     } catch (error) {
-      // Capturamos más detalles del error
       console.error("Error en login:", error);
-      loginErrorAlert("Error en el inicio de sesión. Verifica tus credenciales.");
+      loginErrorAlert(
+        "Error en el inicio de sesión. Verifica tus credenciales."
+      );
     }
   };
 
   return (
-    <div className="bg-cover bg-center bg-no-repeat bg-blend-multiply  min-h-screen bg-gray-900  bg-[url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')] ">
-      <div className="px-4 mx-auto max-w-screen-xl py-24 lg:py-56 ">
+    <div
+      className="min-h-screen bg-gray-900 bg-cover bg-center bg-no-repeat bg-blend-multiply"
+      style={{
+        backgroundImage:
+          "url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')",
+      }}
+    >
+      <div className="flex items-center justify-center px-4 py-24 mx-auto max-w-screen-md lg:py-56">
         <motion.form
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          class="max-w-sm mx-auto bg-gray-900 p-4 rounded-lg"
+          className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md"
           onSubmit={handleSubmit}
         >
-          <div class="mb-5">
+          <div className="mb-5">
             <label
-              for="email"
-              class="block mb-2 text-sm font-medium  text-white"
+              htmlFor="email"
+              className="block mb-2 text-sm font-medium text-white"
             >
               Email
             </label>
             <input
               type="email"
               id="email"
-              class="bg-gray-50 border border-gray-300  text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              className="w-full p-2.5 text-sm border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-white placeholder-gray-400"
               placeholder="nombre@unl.edu.ec"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div class="mb-5">
+          <div className="mb-5">
             <label
-              for="password"
-              class="block mb-2 text-sm font-medium  text-white"
+              htmlFor="password"
+              className="block mb-2 text-sm font-medium text-white"
             >
               Contraseña
             </label>
             <input
               type="password"
               id="password"
-              class="bg-gray-50 border border-gray-300  text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              required
+              className="w-full p-2.5 text-sm border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-white placeholder-gray-400"
               placeholder="********"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <button
             type="submit"
-            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            className="w-full px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg sm:w-auto hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >
             Iniciar Sesión
           </button>
-          <div className="m-2 text-white">
-            No tienes cuenta?{" "}
-            <span className="text-blue-700">
-              <Link to="/signup">REGISTRATE</Link>
-            </span>
+          <div className="mt-4 text-center text-white">
+            ¿No tienes cuenta?{" "}
+            <Link to="/signup" className="text-blue-500 hover:underline">
+              Regístrate
+            </Link>
           </div>
         </motion.form>
       </div>

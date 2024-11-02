@@ -97,24 +97,24 @@ const ProjectsAsignedTutor = () => {
           <select
             value={itineraryFilter}
             onChange={(e) => setItineraryFilter(e.target.value)}
-            className="p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            className="p-2 border border-gray-300 rounded bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
             >
-            <option value="" >Seleccionar Itinerario</option>
-            <option value="Ingenieria de Software">
+            <option value="" className="bg-white">Seleccionar Itinerario</option>
+            <option value="Ingenieria de Software"  className="bg-white">
               Ingeniería de Software
             </option>
-            <option value="Sistemas Inteligentes">Sistemas Inteligentes</option>
-            <option value="Computación Aplicada">Computación Aplicada</option>
+            <option value="Sistemas Inteligentes"  className="bg-white">Sistemas Inteligentes</option>
+            <option value="Computación Aplicada"  className="bg-white">Computación Aplicada</option>
             {/* Asegúrate de que estos valores coincidan con los de los proyectos */}
           </select>
 
           <select
             value={dateSortOrder}
             onChange={(e) => setDateSortOrder(e.target.value)}
-            className="p-2 border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            className="p-2 border border-gray-300 rounded bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
             >
-            <option value="recent">Más Recientes</option>
-            <option value="oldest">Más Antiguos</option>
+            <option value="recent"  className="bg-white">Más Recientes</option>
+            <option value="oldest"  className="bg-white">Más Antiguos</option>
           </select>
         </div>
 
