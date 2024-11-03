@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
+const API_URL = process.env.STRAPI_APP_API_URL || "http://localhost:1337";
 
 export const addCommentToDocument = async (
   documentId,
