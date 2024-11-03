@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { updateProject } from "../core/Projects";
 import Swal from "sweetalert2";
 import axios from "axios";
+import { motion } from "framer-motion";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
-
   const [formData, setFormData] = useState({
     Title: "",
     Descripcion: "",
@@ -17,9 +17,9 @@ const EditProject = ({ project, onClose, onUpdate }) => {
   useEffect(() => {
     if (project) {
       setFormData({
-        Title: project.Title || '',
-        Descripcion: project.Descripcion || '',
-        tutor: project.tutor ? project.tutor.id : '', // Extraer el ID del tutor
+        Title: project.Title || "",
+        Descripcion: project.Descripcion || "",
+        tutor: project.tutor ? project.tutor.id : "", // Extraer el ID del tutor
       });
     }
 
@@ -33,7 +33,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       );
       setTutors(response.data);
     } catch (error) {
-      console.error('Error al obtener la lista de tutores:', error);
+      console.error("Error al obtener la lista de tutores:", error);
     }
   };
 
@@ -68,69 +68,96 @@ const EditProject = ({ project, onClose, onUpdate }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Título
-        </label>
-        <input
-          type="text"
-          name="Title"
-          value={formData.Title}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Descripción
-        </label>
-        <textarea
-          name="Descripcion"
-          value={formData.Descripcion}
-          onChange={handleChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-        />
-      </div>
-
-      <div className="mb-4">
-        <label htmlFor="tutor" className="block text-gray-700 font-semibold mb-2">
-          Seleccionar Tutor
-        </label>
-        <select
-          id="tutor"
-          name="tutor"
-          value={formData.tutor}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
-          required
+    <motion.form
+      onSubmit={handleSubmit}
+      className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-6 md:p-8"
+      initial={{ scale: 0.95 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
         >
-          <option value="">Selecciona un tutor</option>
-          {tutors.map((tutor) => (
-            <option key={tutor.id} value={tutor.id}>
-              {tutor.username}
-            </option>
-          ))}
-        </select>
-      </div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Título
+          </label>
+          <input
+            type="text"
+            name="Title"
+            value={formData.Title}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+          />
+        </motion.div>
 
-      <div className="flex items-center justify-between m-2">
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 px-4 m-2 rounded"
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
         >
-          Guardar Cambios
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold p-2 px-4 m-2 rounded"
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Descripción
+          </label>
+          <textarea
+            name="Descripcion"
+            value={formData.Descripcion}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
+          />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
         >
-          Cancelar
-        </button>
+          <label
+            htmlFor="tutor"
+            className="block text-gray-700 font-semibold mb-2"
+          >
+            Seleccionar Tutor
+          </label>
+          <select
+            id="tutor"
+            name="tutor"
+            value={formData.tutor}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            required
+          >
+            <option value="">Selecciona un tutor</option>
+            {tutors.map((tutor) => (
+              <option key={tutor.id} value={tutor.id}>
+                {tutor.username}
+              </option>
+            ))}
+          </select>
+        </motion.div>
+
+        <motion.div 
+          initial={{opacity:0, y:-20}}
+          animate={{opacity:1, y:0}}
+          transition={{delay:0.6}}
+        className="flex items-center justify-between m-2">
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 px-4 m-2 rounded"
+          >
+            Guardar Cambios
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-red-500 hover:bg-red-700 text-white font-bold p-2 px-4 m-2 rounded"
+          >
+            Cancelar
+          </button>
+        </motion.div>
       </div>
-    </form>
+    </motion.form>
   );
 };
 

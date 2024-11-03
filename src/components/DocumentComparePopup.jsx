@@ -96,12 +96,12 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       const pdf = await loadingTask.promise;
       const promises = [];
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      promises.push(pdf.getPage(i).then(page => page.getTextContent()));
-    }
+      for (let i = 1; i <= pdf.numPages; i++) {
+        promises.push(pdf.getPage(i).then(page => page.getTextContent()));
+      }
 
-    const pagesContent = await Promise.all(promises);
-    const text = pagesContent.map(content => content.items.map(item => item.str).join(' ')).join(' ');
+      const pagesContent = await Promise.all(promises);
+      const text = pagesContent.map(content => content.items.map(item => item.str).join(' ')).join(' ');
 
       return text.trim();
     } catch (error) {
@@ -117,7 +117,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
 
       if (text1 === text2) {
         compareDocumentsAlert('Los documentos no tienen cambios', true);
-        
+
       } else {
         compareDocumentsAlert('Los documentos tienen cambios.', false);
       }
@@ -128,20 +128,45 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
 
-    className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+      className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-11/12 h-11/12 overflow-hidden">
-        
-        <button onClick={onClose} className="text-white hover:bg-red-700 mb-4 bg-red-500 p-2 rounded ">
-          Cerrar
-        </button>
-        <h2 className="text-xl font-semibold mb-4">Comparar Documentos</h2>
+
+
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Comparar Documentos
+          </h2>
+
+          <motion.button onClick={onClose}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-lg p-2 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            <svg
+              className="w-6 h-6 md:w-7 md:h-7"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </motion.button>
+        </div>
+
+
         <div className="flex space-x-4 h-full ">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -150,7 +175,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
               ease: "easeInOut", // Tipo de suavizado
             }}
 
-          className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
+            className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
             <h3 className="text-lg font-medium mb-2">{doc1.attributes.title}</h3>
             <div style={{ height: '650px', overflow: 'auto' }}>
               <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
@@ -159,7 +184,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -168,7 +193,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
               ease: "easeInOut", // Tipo de suavizado
             }}
 
-          className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
+            className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
             <h3 className="text-lg font-medium mb-2">{doc2.attributes.title}</h3>
             <div style={{ height: '650px', overflow: 'auto' }}>
               <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
@@ -183,10 +208,10 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             disabled={currentIndex === 0}
             className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
-            <MdOutlineNavigateBefore className='ml-2'/>
+            <MdOutlineNavigateBefore className='ml-2' />
             Anterior
           </button>
-          
+
           <button
             onClick={handleCompareClick}
             className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
@@ -213,6 +238,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
 
 
         </div>
+
       </div>
     </motion.div>
   );
