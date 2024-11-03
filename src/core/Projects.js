@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = process.env.STRAPI_APP_API_URL|| "http://localhost:1337";
+//const API_URL = process.env.STRAPI_APP_API_URL|| "http://localhost:1337";
+const API_URL = process.env.STRAPI_APP_API_URL || "https://doc-version-backend-production.up.railway.app";
 
 //METODO PARA CREAR UN NUEVO PROYECTO
 export const createProject = async (projectData) => {

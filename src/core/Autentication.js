@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = process.env.STRAPI_APP_API_URL|| "http://localhost:1337";
+//const API_URL = process.env.STRAPI_APP_API_URL|| "http://localhost:1337";
+const API_URL = process.env.STRAPI_APP_API_URL || "https://doc-version-backend-production.up.railway.app";
 
 //METODO PARA REGISTRAR UN USUARIO
 export const registerUser = async (data) => {
