@@ -1,7 +1,6 @@
 import axios from "axios";
 
-//const API_URL = process.env.STRAPI_APP_API_URL|| "http://localhost:1337";
-const API_URL = process.env.STRAPI_APP_API_URL || "https://doc-version-backend-production.up.railway.app";
+import { API_URL } from "./config";
 
 export const getNotifications = async (token) => {
   try {
@@ -34,3 +33,19 @@ export const getNotifications = async (token) => {
   }
 };
 
+export const markAsReadNotification = async (notificationId) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/api/notificacions/${notificationId}`,
+      {
+        data: {
+          leido: true,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al marcar la notificación como leída:", error);
+    throw error; // re-lanza el error para manejarlo en el frontend
+  }
+};

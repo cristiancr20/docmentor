@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { updateProject } from "../core/Projects";
 import Swal from "sweetalert2";
-import axios from "axios";
+import { fetchTutors } from "../core/Projects";
 import { motion } from "framer-motion";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:1337";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -23,14 +22,12 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       });
     }
 
-    fetchTutors();
+    obtenerTutors();
   }, [project]);
 
-  const fetchTutors = async () => {
+  const obtenerTutors = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:1337/api/users?filters[rol][tipoRol][$eq]=tutor"
-      );
+      const response = await fetchTutors();
       setTutors(response.data);
     } catch (error) {
       console.error("Error al obtener la lista de tutores:", error);

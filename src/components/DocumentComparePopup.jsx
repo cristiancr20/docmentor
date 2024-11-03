@@ -6,6 +6,8 @@ import { GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { motion } from 'framer-motion';
+import { API_URL } from "../core/config";
+
 
 import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
 import { FaCodeCompare } from "react-icons/fa6";
@@ -26,8 +28,6 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
   const doc1 = documents[currentIndex];
   const doc2 = documents[currentIndex + 1];
 
-  const baseURL = "http://localhost:1337";
-
   if (!doc1 || !doc2) {
     return (
       <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
@@ -42,8 +42,8 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
     );
   }
 
-  const documento1 = `${baseURL}${doc1.attributes.documentFile.data[0].attributes.url}`;
-  const documento2 = `${baseURL}${doc2.attributes.documentFile.data[0].attributes.url}`;
+  const documento1 = `${API_URL}${doc1.attributes.documentFile.data[0].attributes.url}`;
+  const documento2 = `${API_URL}${doc2.attributes.documentFile.data[0].attributes.url}`;
 
   const comments1 = doc1.attributes.comments.data || [];
   const comments2 = doc2.attributes.comments.data || [];

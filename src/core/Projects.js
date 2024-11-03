@@ -1,7 +1,6 @@
 import axios from "axios";
 
-//const API_URL = process.env.STRAPI_APP_API_URL|| "http://localhost:1337";
-const API_URL = process.env.STRAPI_APP_API_URL || "https://doc-version-backend-production.up.railway.app";
+import { API_URL } from "./config";
 
 //METODO PARA CREAR UN NUEVO PROYECTO
 export const createProject = async (projectData) => {
@@ -91,6 +90,20 @@ export const getProjectsByTutor = async (userId) => {
     return response.data.project_ts;
   } catch (error) {
     console.error("Error fetching user documents:", error);
+    throw error;
+  }
+};
+
+
+// Function to fetch tutors
+export const fetchTutors = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/api/users?filters[rol][tipoRol][$eq]=tutor`
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tutors:', error);
     throw error;
   }
 };

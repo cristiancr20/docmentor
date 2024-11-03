@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createProject } from "../core/Projects";
-import axios from "axios";
+import { fetchTutors } from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";
 
@@ -12,14 +12,12 @@ const NewProject = ({ onClose, fetchProjects }) => {
 
   useEffect(() => {
     // Fetch tutors from the API (ensure that you have an endpoint for fetching users with the role 'tutor')
-    const fetchTutors = async () => {
-      const response = await axios.get(
-        "http://localhost:1337/api/users?filters[rol][tipoRol][$eq]=tutor"
-      );
+    const obtenerTutors = async () => {
+      const response = await fetchTutors();
       setTutor(response.data);
     };
 
-    fetchTutors();
+    obtenerTutors();
   }, []);
 
   const userId = localStorage.getItem("userId");

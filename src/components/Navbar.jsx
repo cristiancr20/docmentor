@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
-import axios from "axios";
-import { getNotifications } from "../core/Notification";
+import { getNotifications, markAsReadNotification } from "../core/Notification";
 import { motion, AnimatePresence } from "framer-motion";
 
 function Navbar() {
@@ -51,14 +50,7 @@ function Navbar() {
     const documentData = notification.attributes.document?.data;
 
     try {
-      await axios.put(
-        `http://localhost:1337/api/notificacions/${notificationId}`,
-        {
-          data: {
-            leido: true,
-          },
-        }
-      );
+      await markAsReadNotification(notificationId);
 
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
@@ -141,9 +133,13 @@ function Navbar() {
       {/* Barra de navegación principal */}
       <nav className="bg-white border-gray-200 dark:bg-gray-900">
         <div className="max-w-screen-xl flex items-center justify-between mx-auto p-4">
-          <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-            DocuTrack
-          </span>
+          <div className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
+            {/* Texto abreviado en dispositivos pequeños */}
+            <span className="block sm:hidden">DocT</span>
+
+            {/* Texto completo en pantallas medianas o mayores */}
+            <span className="hidden sm:block">DocuTrack</span>
+          </div>
 
           {/* Menú de escritorio */}
           <div className="hidden md:flex md:items-center ">
