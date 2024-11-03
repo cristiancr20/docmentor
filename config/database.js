@@ -70,7 +70,7 @@ module.exports = ({ env }) => {
       },
       pool: { min: env.int('DATABASE_POOL_MIN', 2), max: env.int('DATABASE_POOL_MAX', 10) },
     },
-    sqlite: {
+    /* sqlite: {
       connection: {
         filename: path.join(
           __dirname,
@@ -79,7 +79,14 @@ module.exports = ({ env }) => {
         ),
       },
       useNullAsDefault: true,
+    }, */
+    sqlite: {
+      connection: {
+        filename: env('DATABASE_FILENAME', '.tmp/data.db'),
+      },
+      useNullAsDefault: true,
     },
+
   };
 
   return {

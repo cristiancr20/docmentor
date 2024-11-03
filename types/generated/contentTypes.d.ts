@@ -945,13 +945,6 @@ export interface ApiNewProjectNewProject extends Schema.CollectionType {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
-    itinerario: Attribute.Enumeration<
-      [
-        'Ingenieria de Software',
-        'Sistemas Inteligentes',
-        'Compuaci\u00F3n Aplicada'
-      ]
-    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

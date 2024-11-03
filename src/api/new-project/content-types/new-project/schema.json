@@ -38,14 +38,6 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
       "inversedBy": "project_es"
-    },
-    "itinerario": {
-      "type": "enumeration",
-      "enum": [
-        "Ingenieria de Software",
-        "Sistemas Inteligentes",
-        "Compuación Aplicada"
-      ]
     }
   }
 }
