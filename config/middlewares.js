@@ -5,7 +5,7 @@ module.exports = [
   {
     name: 'strapi::cors',
     config: {
-      origin: ['https://docutrack.vercel.app'], // Aquí pones tu dominio de Vercel
+      origin: ['http://localhost:3000', 'https://docutrack.vercel.app'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       exposedHeaders: [],
