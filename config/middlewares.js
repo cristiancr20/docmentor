@@ -5,7 +5,9 @@ module.exports = [
   {
     name: 'strapi::cors',
     config: {
-      origin: ['http://localhost:3000', 'https://docutrack.vercel.app'],
+      origin: process.env.NODE_ENV === 'production'
+        ? ['https://docutrack.vercel.app']
+        : ['http://localhost:3000'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       exposedHeaders: [],
