@@ -10,6 +10,7 @@ import {
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, XCircle } from "lucide-react";
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
+import { API_URL } from "../core/config.js";
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -17,7 +18,6 @@ const DocumentoViewer = () => {
   const [error, setError] = useState(null);
   const [comments, setComments] = useState([]);
   const [notes, setNotes] = useState([]);
-  const STRAPI_URL = "http://localhost:1337";
   const tutorId = localStorage.getItem("userId");
   const rol = localStorage.getItem("rol");
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
@@ -103,7 +103,7 @@ const DocumentoViewer = () => {
   const { title, fechaSubida, revisado, documentFile } =
     document?.data?.attributes || {};
   const documentUrl = documentFile
-    ? `${STRAPI_URL}${documentFile.data?.[0]?.attributes?.url}`
+    ? `${API_URL}${documentFile.data?.[0]?.attributes?.url}`
     : null;
 
   if (!documentUrl) {
