@@ -74,6 +74,7 @@ export const getProjectById = async (projectId) => {
     const response = await axios.get(
       `${API_URL}/api/new-projects/${projectId}?populate=*`
     );
+    console.log("obtener projectos por id pai",response.data.data);
     return response.data.data;
   } catch (error) {
     console.error("Error fetching project details:", error);
@@ -95,8 +96,7 @@ export const getProjectsByTutor = async (userId) => {
 };
 
 
-// Function to fetch tutors
-export const fetchTutors = async () => {
+export const getTutors = async () => {
   try {
     const response = await axios.get(
       `${API_URL}/api/users?filters[rol][tipoRol][$eq]=tutor`

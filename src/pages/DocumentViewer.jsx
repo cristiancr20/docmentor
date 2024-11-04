@@ -39,7 +39,6 @@ const DocumentoViewer = () => {
   const handleCommentClick = (comment) => {
     try {
       const highlightAreas = JSON.parse(comment.attributes.highlightAreas);
-      console.log("Highlight areas:", highlightAreas); // Para debug
 
       // Verificar si hay áreas válidas
       const validAreas = highlightAreas.filter(
@@ -50,9 +49,6 @@ const DocumentoViewer = () => {
         setSelectedHighlightId(comment.id);
       }
 
-      console.log("Comment clicked:", comment.id);
-      console.log("Parsed areas:", highlightAreas);
-      console.log("Valid areas:", validAreas);
     } catch (error) {
       console.error("Error parsing highlight areas:", error);
     }

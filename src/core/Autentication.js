@@ -1,8 +1,6 @@
 import axios from "axios";
+
 import { API_URL } from "./config";
-
-console.log("API URL:", API_URL);
-
 
 //METODO PARA REGISTRAR UN USUARIO
 export const registerUser = async (data) => {

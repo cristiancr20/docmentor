@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { updateProject } from "../core/Projects";
 import Swal from "sweetalert2";
-import { fetchTutors } from "../core/Projects";
+import { getTutors } from "../core/Projects";
 import { motion } from "framer-motion";
 
 
@@ -11,7 +11,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
     Descripcion: "",
     tutor: "", // Asegúrate de que esto esté alineado con tus datos
   });
-  const [tutors, setTutors] = useState([]);
+  const [tutores, setTutores] = useState([]);
 
   useEffect(() => {
     if (project) {
@@ -27,8 +27,8 @@ const EditProject = ({ project, onClose, onUpdate }) => {
 
   const obtenerTutors = async () => {
     try {
-      const response = await fetchTutors();
-      setTutors(response.data);
+      const response = await getTutors();
+      setTutores(response);
     } catch (error) {
       console.error("Error al obtener la lista de tutores:", error);
     }
@@ -126,11 +126,15 @@ const EditProject = ({ project, onClose, onUpdate }) => {
             required
           >
             <option value="">Selecciona un tutor</option>
-            {tutors.map((tutor) => (
-              <option key={tutor.id} value={tutor.id}>
-                {tutor.username}
-              </option>
-            ))}
+            {Array.isArray(tutores) && tutores.length > 0 ? (
+                tutores.map((tutor) => (
+                  <option key={tutor.id} value={tutor.id}>
+                    {tutor.username}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Cargando tutores...</option>
+              )}
           </select>
         </motion.div>
 

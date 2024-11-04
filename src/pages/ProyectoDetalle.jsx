@@ -29,6 +29,7 @@ const ProyectoDetalle = () => {
     try {
       const projectDetails = await getProjectById(projectId);
       setProject(projectDetails);
+      console.log(projectDetails);
 
       const documentsResponse = await getDocumentsByProjectId(projectId);
       const fetchedDocuments = documentsResponse.data;

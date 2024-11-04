@@ -73,18 +73,16 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({ fileUrl, notes, onA
 
         const pageIndex = validArea.pageIndex;
         
-        console.log("entra")
         if (viewerRef.current) {
             // Primero, navegar a la página correcta
             viewerRef.current.jumpToPage(pageIndex);
-            console.log("navegando a la pagina")
+          
 
             // Esperar a que la página se renderice
             setTimeout(() => {
                 const pageElement = document.querySelector(
                     `[data-page-number="${pageIndex + 1}"]`
                 );
-                console.log("renderiza")
 
                 if (pageElement) {
                     const containerHeight = containerRef.current?.clientHeight || window.innerHeight;

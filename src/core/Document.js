@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { API_URL } from "./config";
+console.log(API_URL);
 
 //METODO PARA SUBIR DOCUMENTO
 export const uploadFile = async (file) => {
@@ -39,6 +40,7 @@ export const createDocument = async (title, fileId, projectId) => {
     },
   };
 
+  console.log("Document data:", documentData);
   try {
     const response = await axios.post(
       `${API_URL}/api/documents`,
@@ -95,11 +97,17 @@ export const createDocument = async (title, fileId, projectId) => {
 
     return document;
   } catch (error) {
-    console.error(
-      "Error al crear el documento:",
-      error.response || error.message
-    );
-    throw error;
+    if (error.response) {
+      // La solicitud se realizó y el servidor respondió con un código de estado
+      // que no está en el rango de 2xx
+      console.error("Error de respuesta:", error.response.data);
+    } else if (error.request) {
+      // La solicitud se realizó pero no hubo respuesta
+      console.error("Error en la solicitud:", error.request);
+    } else {
+      // Algo sucedió al configurar la solicitud que lanzó un Error
+      console.error("Error:", error.message);
+    }
   }
 };
 

@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { createProject } from "../core/Projects";
-import { fetchTutors } from "../core/Projects";
+import { getTutors } from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";
 
 const NewProject = ({ onClose, fetchProjects }) => {
   const [title, setTitle] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [tutor, setTutor] = useState([]);
+  const [tutores, setTutores] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState("");
 
   useEffect(() => {
     // Fetch tutors from the API (ensure that you have an endpoint for fetching users with the role 'tutor')
     const obtenerTutors = async () => {
-      const response = await fetchTutors();
-      setTutor(response.data);
+      try {
+        const response = await getTutors();
+        setTutores(response);
+      } catch (error) {
+        console.error("Error al obtener los tutores:", error);
+      }
     };
-
     obtenerTutors();
   }, []);
 
@@ -125,11 +128,15 @@ const NewProject = ({ onClose, fetchProjects }) => {
               required
             >
               <option value="">Seleccione un tutor</option>
-              {tutor.map((tutor) => (
-                <option key={tutor.id} value={tutor.id}>
-                  {tutor.username}
-                </option>
-              ))}
+              {Array.isArray(tutores) && tutores.length > 0 ? (
+                tutores.map((tutor) => (
+                  <option key={tutor.id} value={tutor.id}>
+                    {tutor.username}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Cargando tutores...</option>
+              )}
             </select>
           </motion.div>
 
