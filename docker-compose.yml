@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      context: ./Doc-version-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:1337  # Cambiado a localhost
+
+  backend:
+    build:
+      context: ./doc-version-backend
+    ports:
+      - "1337:1337"
+    volumes:
+      - ./doc-version-backend:/app
+      - /app/node_modules  # Añadido para preservar node_modules del contenedor
+    environment:
+      NODE_ENV: development
+      DATABASE_CLIENT: sqlite
+      DATABASE_FILENAME: ./data.db  # Cambiado de DATABASE_NAME a DATABASE_FILENAME
