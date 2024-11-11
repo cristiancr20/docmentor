@@ -1,7 +1,7 @@
 import axios from "axios";
 
 import { API_URL } from "./config";
-console.log(API_URL);
+//const API_URL = "http://localhost:1337";
 
 //METODO PARA SUBIR DOCUMENTO
 export const uploadFile = async (file) => {
@@ -30,6 +30,9 @@ export const uploadFile = async (file) => {
 
 // MÉTODO PARA AGREGAR EL DOCUMENTO AL PROYECTO
 export const createDocument = async (title, fileId, projectId) => {
+  console.log('Ambiente actual:', process.env.NODE_ENV);
+  console.log('API URL en uso:', API_URL);
+
   const documentData = {
     data: {
       title: title,
@@ -40,11 +43,18 @@ export const createDocument = async (title, fileId, projectId) => {
     },
   };
 
-  console.log("Document data:", documentData);
+   console.log("Intentando crear documento en:", `${API_URL}/api/documents`);
+  console.log("Con datos:", documentData);
+
   try {
     const response = await axios.post(
-      `${API_URL}/api/documents`,
-      documentData
+      `${API_URL}/api/documents`, 
+      documentData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
 
     const documentoId = response.data.data.id;

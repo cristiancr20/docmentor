@@ -17,6 +17,7 @@ const SubirDocumento = ({ projectId, onClose }) => { // Asegúrate de recibir on
     try {
       const uploadedFile = await uploadFile(file);
       const documentData = await createDocument(title, uploadedFile.id, projectId); // Pasa el projectId
+      console.log("Documento creado:", documentData);
       successAlert();
       setTitle("");
       setFile(null);

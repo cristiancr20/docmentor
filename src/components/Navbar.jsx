@@ -81,8 +81,11 @@ function Navbar() {
   ).length;
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("jwtToken");
     localStorage.removeItem("rol");
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    localStorage.removeItem("userId");
     navigate("/", { replace: true });
   };
 

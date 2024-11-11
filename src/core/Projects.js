@@ -68,7 +68,7 @@ export const getProjectsByStudents = async (userId) => {
   }
 };
 
-// OBTENER DETALLES DE UN PROYECTO POR ID
+// OBTENER DETALLES DE UN PROYECTO POR ID DEL PROYECTO
 export const getProjectById = async (projectId) => {
   try {
     const response = await axios.get(

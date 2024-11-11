@@ -29,14 +29,17 @@ const Login = () => {
         const userRole = userWithRole.rol?.tipoRol;
         const username = user.username;
 
+        // Almacenar datos no sensibles en `sessionStorage` si es necesario
+        /* sessionStorage.setItem("username", username);
+        sessionStorage.setItem("userRole", userRole); */
         localStorage.setItem("rol", userRole);
         localStorage.setItem("username", username);
         localStorage.setItem("email", user.email);
         localStorage.setItem("userId", user.id);
 
-        loginSuccessAlert(username);
         if (userRole === "tutor") {
           navigate("/tutor/dashboard");
+          loginSuccessAlert(username);
         } else if (userRole === "estudiante") {
           navigate("/student/dashboard");
         } else {

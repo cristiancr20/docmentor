@@ -48,17 +48,16 @@ const DocumentoViewer = () => {
       if (validAreas.length > 0) {
         setSelectedHighlightId(comment.id);
       }
-
     } catch (error) {
       console.error("Error parsing highlight areas:", error);
     }
-   
   };
 
   const fetchComments = async () => {
     try {
       const data = await getCommentsByDocument(documentId);
       setComments(data);
+      console.log(data);
 
       const notesWithHighlights = data.map((comment) => ({
         id: comment.id,
@@ -67,6 +66,7 @@ const DocumentoViewer = () => {
         quote: comment.attributes.quote || "",
       }));
       setNotes(notesWithHighlights);
+      return data;
     } catch (error) {
       setError("Error fetching comments");
     }
@@ -115,12 +115,12 @@ const DocumentoViewer = () => {
       <Navbar />
 
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-        <div className="mb-6">
+        <div className="mb-2">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-3xl font-bold mb-6 pb-3 border-b border-gray-200"
+            className="text-3xl font-bold mb-2 pb-3 border-b border-gray-200"
           >
             {title}
           </motion.h1>
@@ -139,7 +139,7 @@ const DocumentoViewer = () => {
                 <h2 className="text-sm font-medium text-gray-500">
                   Fecha de Creación
                 </h2>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-sm md:text-lg font-semibold text-gray-900">
                   {fechaSubida}
                 </p>
               </div>
@@ -169,7 +169,7 @@ const DocumentoViewer = () => {
                   Estado de Revisión
                 </h2>
                 <p
-                  className={`text-lg font-semibold ${revisado ? "text-green-700" : "text-red-700"}`}
+                  className={`text-sm md:text-lg font-semibold ${revisado ? "text-green-700" : "text-red-700"}`}
                 >
                   {revisado ? "Revisado" : "Pendiente"}
                 </p>
@@ -178,7 +178,19 @@ const DocumentoViewer = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div
+          className="grid grid-cols-1 lg:grid-cols-2 gap-2 "
+       
+        >
+          <div className="gap-2 border rounded-lg overflow-auto"
+             >
+            <CommentsPanel
+              comments={comments}
+              onUpdateComments={fetchComments}
+              onCommentClick={handleCommentClick}
+            />
+          </div>
+
           <div
             className="bg-gray-900 rounded-lg p-2 h-full overflow-auto"
             style={{ height: "100vh", overflow: "auto" }}
@@ -189,17 +201,6 @@ const DocumentoViewer = () => {
               onAddNote={handleAddNote}
               isTutor={rol === "tutor"}
               selectedHighlightId={selectedHighlightId}
-            />
-          </div>
-
-          <div
-            className="bg-gray-100 border border-gray-300 rounded-lg p-4 h-full overflow-auto"
-            style={{ height: "100vh", overflow: "auto" }}
-          >
-            <CommentsPanel
-              comments={comments}
-              onUpdateComments={fetchComments}
-              onCommentClick={handleCommentClick}
             />
           </div>
         </div>
