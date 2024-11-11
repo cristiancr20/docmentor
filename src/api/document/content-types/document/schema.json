@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "documents",
+  "info": {
+    "singularName": "document",
+    "pluralName": "documents",
+    "displayName": "Document",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::new-project.new-project",
+      "inversedBy": "documents"
+    },
+    "fechaSubida": {
+      "type": "date"
+    },
+    "revisado": {
+      "type": "boolean"
+    },
+    "documentFile": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "comments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::comment.comment",
+      "mappedBy": "document"
+    },
+    "notificacion": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::notificacion.notificacion",
+      "mappedBy": "document"
+    }
+  }
+}
