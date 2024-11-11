@@ -72,7 +72,7 @@ module.exports = ({ env }) => {
     },
     //Cristian Capa 
     // DocuTrack
-    /* sqlite: {
+/*     sqlite: {
       connection: {
         filename: path.join(
           __dirname,
