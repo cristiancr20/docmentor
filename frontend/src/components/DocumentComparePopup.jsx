@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { highlightPlugin, RenderHighlightsProps } from '@react-pdf-viewer/highlight';
-import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import { GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { motion } from 'framer-motion';
-import { API_URL } from "../core/config";
+import { API_URL, WORKER_URL} from "../core/config";
 
 
 import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
@@ -14,7 +14,7 @@ import { FaCodeCompare } from "react-icons/fa6";
 
 import { compareDocumentsAlert } from './Alerts/Alerts';
 
-GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+GlobalWorkerOptions.workerSrc = WORKER_URL;
 
 
 const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentIndex }) => {
@@ -178,7 +178,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
             <h3 className="text-lg font-medium mb-2">{doc1.attributes.title}</h3>
             <div style={{ height: '650px', overflow: 'auto' }}>
-              <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+              <Worker workerUrl={WORKER_URL}>
                 <Viewer fileUrl={documento1} plugins={[highlightPluginInstance]} />
               </Worker>
             </div>
@@ -196,7 +196,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
             <h3 className="text-lg font-medium mb-2">{doc2.attributes.title}</h3>
             <div style={{ height: '650px', overflow: 'auto' }}>
-              <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+              <Worker workerUrl={WORKER_URL}>
                 <Viewer fileUrl={documento2} plugins={[highlightPluginInstance2]} />
               </Worker>
             </div>

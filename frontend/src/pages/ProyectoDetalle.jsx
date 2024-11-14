@@ -29,7 +29,6 @@ const ProyectoDetalle = () => {
     try {
       const projectDetails = await getProjectById(projectId);
       setProject(projectDetails);
-      console.log(projectDetails);
 
       const documentsResponse = await getDocumentsByProjectId(projectId);
       const fetchedDocuments = documentsResponse.data;
@@ -78,7 +77,7 @@ const ProyectoDetalle = () => {
       <Navbar />
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         {error && <p className="text-red-500 mb-4">{error}</p>}
-        <div className="flex flex-col lg:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
+        <div className="flex flex-col md:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
           {/* Sección de información del proyecto */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -105,52 +104,53 @@ const ProyectoDetalle = () => {
               {attributes.Descripcion}
             </motion.p>
 
-            <div className="flex items-center">
+            <div className="flex items-center ">
               <h2 className="text-1xl font-bold mr-4">
-                Fecha de Creación del Proyecto:
+                Creación del Proyecto:
               </h2>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700"
+                className="inline-flex items-center p-2 rounded-full bg-blue-50 text-blue-700"
               >
-                <span>{attributes.FechaCreacion}</span>
+                <span className="text-xs md:text-base">{attributes.FechaCreacion}</span>
               </motion.div>
             </div>
           </motion.div>
 
-          {/* Sección del tutor */}
-          {rol === "estudiante" && (
-            <>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                    <UserCircle className="w-12 h-12" />
-                  </div>
+          <div >
+            {/* Sección del tutor o estudiante */}
+            {rol === "estudiante" && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                      <UserCircle className="w-12 h-12" />
+                    </div>
 
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-bold text-gray-800">
-                      Tutor del Proyecto
-                    </h2>
-                    <p className="text-lg font-semibold text-blue-600">
-                      {tutor.username}
-                    </p>
-                    <div className="flex flex-col items-center text-center">
-                      <div className="flex items-center m-1">
-                        <h3 className="text-sm font-semibold text-gray-800">
-                          Correo:
-                        </h3>
-                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                          {tutor.email}
-                        </p>
-                      </div>
-                      {/* <div className="flex items-center m-1">
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-bold text-gray-800">
+                        Tutor del Proyecto
+                      </h2>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {tutor.username}
+                      </p>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex items-center m-1">
+                          <h3 className="text-sm font-semibold text-gray-800">
+                            Correo:
+                          </h3>
+                          <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                            {tutor.email}
+                          </p>
+                        </div>
+                        {/* <div className="flex items-center m-1">
                         <h3 className="text-sm font-semibold text-gray-800">
                           Carrera:
                         </h3>
@@ -158,54 +158,54 @@ const ProyectoDetalle = () => {
                           {tutor.carrera}
                         </p>
                       </div> */}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            </>
-          )}
+                </motion.div>
+              </>
+            )}
 
-          {rol === "tutor" && (
-            <>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                    <UserCircle className="w-12 h-12" />
-                  </div>
+            {rol === "tutor" && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                      <UserCircle className="w-12 h-12" />
+                    </div>
 
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-bold text-gray-800">
-                      Estudiante
-                    </h2>
-                    <p className="text-lg font-semibold text-blue-600">
-                      {estudiante.username}
-                    </p>
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-bold text-gray-800">
+                        Estudiante
+                      </h2>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {estudiante.username}
+                      </p>
 
-                    <div className="flex flex-col items-center text-end">
-                      <div className="flex items-center m-1">
-                        <h3 className="text-sm font-semibold text-gray-800">
-                          Correo:
-                        </h3>
-                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                          {estudiante.email}
-                        </p>
-                      </div>
+                      <div className="flex flex-col items-center text-end">
+                        <div className="flex items-center m-1">
+                          <h3 className="text-sm font-semibold text-gray-800">
+                            Correo:
+                          </h3>
+                          <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                            {estudiante.email}
+                          </p>
+                        </div>
 
-                      <div className="flex items-center m-1">
-                        <h3 className="text-sm font-semibold text-gray-800">
-                          Itineario:
-                        </h3>
-                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                          {estudiante.itinerario}
-                        </p>
-                      </div>
+                        <div className="flex items-center m-1">
+                          <h3 className="text-sm font-semibold text-gray-800">
+                            Itineario:
+                          </h3>
+                          <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                            {estudiante.itinerario}
+                          </p>
+                        </div>
 
-                      {/* <div className="flex items-center m-1">
+                        {/* <div className="flex items-center m-1">
                         <h3 className="text-sm font-semibold text-gray-800">
                           Carrera:
                         </h3>
@@ -213,12 +213,13 @@ const ProyectoDetalle = () => {
                           {estudiante.carrera}
                         </p>
                       </div> */}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            </>
-          )}
+                </motion.div>
+              </>
+            )}
+          </div>
         </div>
 
         <div>
@@ -237,7 +238,7 @@ const ProyectoDetalle = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
               onClick={() => setIsModalOpen(true)}
-              className="mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="font-bold mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Subir Nuevo Documento
             </motion.button>
@@ -248,7 +249,7 @@ const ProyectoDetalle = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             onClick={handleCompareClick}
-            className="mb-4 ml-4 bg-red-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
+            className="font-bold mb-4 ml-4 bg-red-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
           >
             Comparar Versiones
           </motion.button>
@@ -370,7 +371,7 @@ const ProyectoDetalle = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-lg p-2 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
+                >
                   <svg
                     className="w-6 h-6 md:w-7 md:h-7"
                     xmlns="http://www.w3.org/2000/svg"

@@ -138,10 +138,10 @@ function Navbar() {
         <div className="max-w-screen-xl flex items-center justify-between mx-auto p-4">
           <div className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
             {/* Texto abreviado en dispositivos pequeños */}
-            <span className="block sm:hidden">DocT</span>
+            <span className="block sm:hidden">DocM</span>
 
             {/* Texto completo en pantallas medianas o mayores */}
-            <span className="hidden sm:block">DocuTrack</span>
+            <span className="hidden sm:block">DocMentor</span>
           </div>
 
           {/* Menú de escritorio */}
@@ -322,15 +322,8 @@ function Navbar() {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="absolute w-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-xl md:hidden z-50 rounded-b-2xl border-b border-x border-gray-200 dark:border-gray-700"
+            className="absolute w-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-xl md:hidden z-50 rounded-b-2xl border-b border-x border-gray-500 dark:border-gray-700"
           >
-            <motion.div
-              className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mt-2"
-              initial={{ width: "2rem" }}
-              animate={{ width: "4rem" }}
-              transition={{ duration: 0.3 }}
-            />
-
             <ul className="flex flex-col p-6 space-y-2">
               {userRole === "tutor" && (
                 <>
@@ -394,6 +387,13 @@ function Navbar() {
                 </>
               )}
             </ul>
+
+            <motion.div
+              className="w-16 h-1 bg-gray-600 rounded-full mx-auto mb-2"
+              initial={{ width: "2rem" }}
+              animate={{ width: "4rem" }}
+              transition={{ duration: 0.3 }}
+            />
           </motion.div>
         )}
       </AnimatePresence>

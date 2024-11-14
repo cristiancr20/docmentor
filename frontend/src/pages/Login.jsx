@@ -37,9 +37,9 @@ const Login = () => {
         localStorage.setItem("email", user.email);
         localStorage.setItem("userId", user.id);
 
+        loginSuccessAlert(username);
         if (userRole === "tutor") {
           navigate("/tutor/dashboard");
-          loginSuccessAlert(username);
         } else if (userRole === "estudiante") {
           navigate("/student/dashboard");
         } else {

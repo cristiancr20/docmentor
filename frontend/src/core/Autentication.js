@@ -1,8 +1,6 @@
 import axios from "axios";
 import { API_URL } from "./config";
 
-console.log("API_URL_core:", API_URL);
-
 // Configurar axios para que incluya cookies en cada solicitud
 /* axios.defaults.withCredentials = true; */
 

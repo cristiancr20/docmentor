@@ -17,7 +17,7 @@ const Dashboard = () => {
               ease: "easeInOut", // Tipo de suavizado
             }}
           className="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
-            Bienvenido a DocuTrack
+            Bienvenido a DocMentor
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -28,14 +28,14 @@ const Dashboard = () => {
             }}
 
           className="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400">
-            DocuTrack es el sistema de versionado documental que transforma la
+            DocMentor es el sistema de versionado documental que transforma la
             forma en que gestionas tus documentos. Con un enfoque en la
-            colaboración entre estudiantes y tutores, DocuTrack te permite
+            colaboración entre estudiantes y tutores, DocMentor te permite
             rastrear, revisar y mejorar documentos de manera eficiente. Mantén
             un historial completo de versiones, accede a comentarios detallados
             y sube nuevas versiones sin perder nunca de vista el progreso de tu
             proyecto. Simplifica la gestión documental y maximiza tu
-            productividad con DocuTrack
+            productividad con DocMentor
           </motion.p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:justify-center sm:space-y-0">
             <motion.button
