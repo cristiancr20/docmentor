@@ -22,7 +22,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
   const [isComparing, setIsComparing] = useState(false);
 
   const handleCompareClick = async () => {
-    await compareDocuments(); // Ejecutar la comparación de documentos
+    await compareDocuments(); 
   };
 
   const doc1 = documents[currentIndex];

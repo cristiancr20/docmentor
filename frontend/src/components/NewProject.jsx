@@ -11,7 +11,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const [selectedTutor, setSelectedTutor] = useState("");
 
   useEffect(() => {
-    // Fetch tutors from the API (ensure that you have an endpoint for fetching users with the role 'tutor')
     const obtenerTutors = async () => {
       try {
         const response = await getTutors();

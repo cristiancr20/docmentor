@@ -20,8 +20,8 @@ export const registerUser = async (data) => {
 
 export const login = async (data) => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/local`, data,{
-      
+    const response = await axios.post(`${API_URL}/api/auth/local`, data, {
+
     });
     return response.data;
   } catch (error) {
@@ -30,6 +30,38 @@ export const login = async (data) => {
     throw error;  // Para que el error sea capturado en el `handleSubmit`
   }
 };
+
+
+export const loginOrRegister = async (data) => {
+  try {
+    const loginData = {
+      identifier: data.email,
+      password: data.password,
+    };
+    try {
+      const loginResponse = await login(loginData);
+      return loginResponse;
+    } catch (error) {
+      if (error.response?.status === 400 && error.response?.data?.error?.message?.includes('Identifier or password invalid')) {
+        const registerData = {
+          username: data.email,
+          email: data.email,
+          password: data.password,
+          rol: data.rol,
+        };
+
+        const registerResponse = await registerUser(registerData);
+        return registerResponse;
+
+      } else {
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error("Error en login o registro:", error);
+    throw error;
+  }
+}
 
 // Método para obtener el usuario con el rol incluido
 export const getUserWithRole = async (userId) => {

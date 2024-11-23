@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { uploadFile, createDocument } from "../core/Document";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 
-const SubirDocumento = ({ projectId, onClose }) => { // Asegúrate de recibir onClose como prop
+const SubirDocumento = ({ projectId, onClose }) => {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState(null);
 
@@ -16,12 +16,12 @@ const SubirDocumento = ({ projectId, onClose }) => { // Asegúrate de recibir on
 
     try {
       const uploadedFile = await uploadFile(file);
-      const documentData = await createDocument(title, uploadedFile.id, projectId); // Pasa el projectId
+      const documentData = await createDocument(title, uploadedFile.id, projectId); 
       console.log("Documento creado:", documentData);
       successAlert();
       setTitle("");
       setFile(null);
-      if (onClose) onClose(); // Llama a onClose para cerrar el modal
+      if (onClose) onClose(); 
     } catch (error) {
       console.error("Error uploading document:", error);
       errorAlert();

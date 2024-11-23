@@ -1,11 +1,18 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login, getUserWithRole } from "../core/Autentication";
+import { loginOrRegister, getUserWithRole } from "../core/Autentication";
 import {
   loginSuccessAlert,
   loginErrorAlert,
 } from "../components/Alerts/Alerts";
 import { motion } from "framer-motion";
+
+import {
+  ROLE_ROUTES,
+  USER_STORAGE_KEYS,
+  saveUserData,
+  validateAuthResponse,
+} from "../utils/auth.utils";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,43 +23,51 @@ const Login = () => {
     event.preventDefault();
 
     try {
-      const authResponse = await login({
-        identifier: email,
+      // 1. Intento de login o registro
+      const authResponse = await loginOrRegister({
+        email: email,
         password: password,
+        username: email,
+        rol: "estudiante"
       });
 
-      if (authResponse && authResponse.jwt) {
-        const { jwt, user } = authResponse;
-        localStorage.setItem("jwtToken", jwt);
+      // 2. Validar la respuesta
+      validateAuthResponse(authResponse);
 
-        const userWithRole = await getUserWithRole(user.id);
-        const userRole = userWithRole.rol?.tipoRol;
-        const username = user.username;
+      // 3. Extraer datos y guardar JWT
+      const { jwt, user } = authResponse;
+      localStorage.setItem("jwtToken", jwt);
 
-        // Almacenar datos no sensibles en `sessionStorage` si es necesario
-        /* sessionStorage.setItem("username", username);
-        sessionStorage.setItem("userRole", userRole); */
-        localStorage.setItem("rol", userRole);
-        localStorage.setItem("username", username);
-        localStorage.setItem("email", user.email);
-        localStorage.setItem("userId", user.id);
+      // 4. Obtener rol del usuario
+      const userWithRole = await getUserWithRole(user.id);
+      const userRole = userWithRole.rol?.tipoRol;
 
-        loginSuccessAlert(username);
-        if (userRole === "tutor") {
-          navigate("/tutor/dashboard");
-        } else if (userRole === "estudiante") {
-          navigate("/student/dashboard");
-        } else {
-          console.error("Rol desconocido");
-        }
+      if (!userRole) {
+        throw new Error("No se pudo obtener el rol del usuario");
+      }
+
+      // 5. Guardar datos del usuario
+      saveUserData(user, userRole);
+
+      // 6. Mostrar mensaje de éxito
+      loginSuccessAlert(user.username);
+
+      // 7. Redireccionar según el rol
+      const route = ROLE_ROUTES[userRole];
+      if (route) {
+        navigate(route);
       } else {
-        loginErrorAlert("No se recibió respuesta válida del servidor.");
+        throw new Error(`Rol desconocido: ${userRole}`);
       }
     } catch (error) {
-      console.error("Error en login:", error);
-      loginErrorAlert(
-        "Error en el inicio de sesión. Verifica tus credenciales."
-      );
+      console.error("Error en el proceso de autenticación:", error);
+
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.message ||
+        "Error en el inicio de sesión. Verifica tus credenciales.";
+
+      loginErrorAlert(errorMessage);
     }
   };
 
