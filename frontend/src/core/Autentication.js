@@ -31,37 +31,68 @@ export const login = async (data) => {
   }
 };
 
+export const checkUserExists = async (email) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/users?filters[email][$eq]=${email}`);
+    return response.data.length > 0;
+  } catch (error) {
+    console.error("Error verificando usuario:", error);
+    throw error;
+  }
+};
+
 
 export const loginOrRegister = async (data) => {
   try {
-    const loginData = {
-      identifier: data.email,
-      password: data.password,
-    };
-    try {
+    // Primero verificamos si el usuario existe
+    const userExists = await checkUserExists(data.email);
+    
+    if (userExists) {
+      // Si el usuario existe, intentamos el login
+      const loginData = {
+        identifier: data.email,
+        password: data.password,
+      };
+      
+      console.log("Usuario existente, intentando login...");
       const loginResponse = await login(loginData);
       return loginResponse;
-    } catch (error) {
-      if (error.response?.status === 400 && error.response?.data?.error?.message?.includes('Identifier or password invalid')) {
-        const registerData = {
-          username: data.email,
-          email: data.email,
-          password: data.password,
-          rol: data.rol,
-        };
-
-        const registerResponse = await registerUser(registerData);
-        return registerResponse;
-
-      } else {
-        throw error;
-      }
+      
+    } else {
+      // Si el usuario no existe, lo registramos
+      const registerData = {
+        username: data.email,
+        email: data.email,
+        password: data.password,
+        rol: data.rol,
+      };
+      
+      console.log("Usuario no existe, registrando:", registerData);
+      const registerResponse = await registerUser(registerData);
+      
+      // Después del registro exitoso, hacemos login automáticamente
+      const loginData = {
+        identifier: data.email,
+        password: data.password,
+      };
+      
+      console.log("Registro exitoso, iniciando sesión...");
+      const loginResponse = await login(loginData);
+      return loginResponse;
     }
   } catch (error) {
     console.error("Error en login o registro:", error);
+    // Agregar más detalles del error para debugging
+    if (error.response) {
+      console.error("Detalles del error:", {
+        data: error.response.data,
+        status: error.response.status,
+        headers: error.response.headers
+      });
+    }
     throw error;
   }
-}
+};
 
 // Método para obtener el usuario con el rol incluido
 export const getUserWithRole = async (userId) => {

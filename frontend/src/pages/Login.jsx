@@ -28,7 +28,7 @@ const Login = () => {
         email: email,
         password: password,
         username: email,
-        rol: "estudiante"
+        rol: 1
       });
 
       // 2. Validar la respuesta
