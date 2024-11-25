@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { API_URL } from "./config";
 
+// MÉTODO PARA AGREGAR COMENTARIO AL DOCUMENTO
 export const addCommentToDocument = async (
   documentId,
   newComment,
@@ -10,59 +11,87 @@ export const addCommentToDocument = async (
   quote
 ) => {
   try {
-    const response = await fetch(`${API_URL}/api/comments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        data: {
-          correccion: newComment,
-          correccionTutor: tutorId,
-          document: documentId,
-          highlightAreas: JSON.stringify(
-            Array.isArray(highlightAreas) ? highlightAreas : []
-          ), // Asegúrate de que sea un array
-          quote: quote, // Usa el comentario como cita
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    // Actualizar el estado del documento para indicar que ha sido revisado
-    const updateResponse = await fetch(
-      `${API_URL}/api/documents/${documentId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: {
-            revisado: true, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
-          },
-        }),
-      }
+    const commentResponse = await postComment(
+      documentId,
+      newComment,
+      tutorId,
+      highlightAreas,
+      quote
     );
 
-    if (!updateResponse.ok) {
-      throw new Error(
-        `HTTP error during document update! status: ${updateResponse.status}`
-      );
-    }
+    const updateResponse = await updateDocumentStatus(documentId);
 
-    const updateResult = await updateResponse.json();
-
-    return result;
+    return { commentResponse, updateResponse };
   } catch (error) {
-    console.error("Error adding comment:", error.message);
+    handleError(error);
   }
 };
+
+// MÉTODO PARA PUBLICAR COMENTARIO
+const postComment = async (
+  documentId,
+  newComment,
+  tutorId,
+  highlightAreas,
+  quote
+) => {
+  const response = await fetch(`${API_URL}/api/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      data: {
+        correccion: newComment,
+        correccionTutor: tutorId,
+        document: documentId,
+        highlightAreas: JSON.stringify(
+          Array.isArray(highlightAreas) ? highlightAreas : []
+        ), // Asegúrate de que sea un array
+        quote: quote, // Usa el comentario como cita
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// MÉTODO PARA ACTUALIZAR EL ESTADO DEL DOCUMENTO
+const updateDocumentStatus = async (documentId) => {
+  const response = await fetch(`${API_URL}/api/documents/${documentId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      data: {
+        revisado: true, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("HTTP error during document update! status: ${response.status}");
+  }
+
+  return await response.json();
+};
+
+// MÉTODO PARA MANEJAR ERRORES
+const handleError = (error) => {
+  if (error.response) {
+    console.error("Error de respuesta:", error.response.data);
+  } else if (error.request) {
+    console.error("Error en la solicitud:", error.request);
+  } else {
+    console.error("Error:", error.message);
+  }
+};
+
 
 export const getCommentsByDocument = async (documentId) => {
   try {

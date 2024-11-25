@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { getNotifications, markAsReadNotification } from "../core/Notification";
 import { motion, AnimatePresence } from "framer-motion";
+import jwtDecode from 'jwt-decode';
 
 function Navbar() {
   const [userRole, setUserRole] = useState("");
@@ -22,6 +23,18 @@ function Navbar() {
     setUserRole(role);
     setUserName(name);
     setUserEmail(email);
+
+    const token = localStorage.getItem('jwtToken'); // Asegúrate de que el token está almacenado en localStorage
+
+    if (token) {
+      const payload = jwtDecode(token); // Decodifica el token
+      console.log('Contenido del token:', payload);
+    
+      // Acceder a valores específicos
+      console.log('Usuario:', payload.username);
+      console.log('Rol:', payload.rol);
+    }
+
 
     if (role === "tutor") {
       const token = localStorage.getItem("jwtToken");
@@ -230,7 +243,8 @@ function Navbar() {
                         animate="open"
                         exit="closed"
                         variants={dropdownVariants}
-                        className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700"
+                        className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700 z-50"
+
                       >
                         {notifications.length > 0 ? (
                           notifications.map((notification) => (

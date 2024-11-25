@@ -36,6 +36,7 @@ const Login = () => {
 
       // 3. Extraer datos y guardar JWT
       const { jwt, user } = authResponse;
+
       localStorage.setItem("jwtToken", jwt);
 
       // 4. Obtener rol del usuario

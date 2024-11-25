@@ -54,7 +54,6 @@ export const loginOrRegister = async (data) => {
         password: data.password,
       };
       
-      console.log("Usuario existente, intentando login...");
       const loginResponse = await login(loginData);
       return loginResponse;
       
@@ -67,7 +66,6 @@ export const loginOrRegister = async (data) => {
         rol: data.rol,
       };
       
-      console.log("Usuario no existe, registrando:", registerData);
       const registerResponse = await registerUser(registerData);
       
       // Después del registro exitoso, hacemos login automáticamente
@@ -76,13 +74,11 @@ export const loginOrRegister = async (data) => {
         password: data.password,
       };
       
-      console.log("Registro exitoso, iniciando sesión...");
       const loginResponse = await login(loginData);
       return loginResponse;
     }
   } catch (error) {
     console.error("Error en login o registro:", error);
-    // Agregar más detalles del error para debugging
     if (error.response) {
       console.error("Detalles del error:", {
         data: error.response.data,

@@ -30,25 +30,19 @@ export const uploadFile = async (file) => {
 
 // MÉTODO PARA AGREGAR EL DOCUMENTO AL PROYECTO
 export const createDocument = async (title, fileId, projectId) => {
-  console.log('Ambiente actual:', process.env.NODE_ENV);
-  console.log('API URL en uso:', API_URL);
-
   const documentData = {
     data: {
       title: title,
-      documentFile: [fileId], // Asegúrate de que 'documentFile' es un array si Strapi lo requiere así
-      project: projectId, // Enviar el ID del proyecto directamente
-      fechaSubida: new Date().toISOString(), // Fecha de subida
-      revisado: false, // Estado inicial
+      documentFile: [fileId],
+      project: projectId,
+      fechaSubida: new Date().toISOString(),
+      revisado: false,
     },
   };
 
-   console.log("Intentando crear documento en:", `${API_URL}/api/documents`);
-  console.log("Con datos:", documentData);
-
   try {
     const response = await axios.post(
-      `${API_URL}/api/documents`, 
+      `${API_URL}/api/documents`,
       documentData,
       {
         headers: {
@@ -57,9 +51,6 @@ export const createDocument = async (title, fileId, projectId) => {
       }
     );
 
-    const documentoId = response.data.data.id;
-
-    // Verificar la respuesta del documento
     if (!response || !response.data || !response.data.data) {
       throw new Error(
         "Error inesperado al crear el documento. Estructura de respuesta inválida."
@@ -67,13 +58,23 @@ export const createDocument = async (title, fileId, projectId) => {
     }
 
     const document = response.data;
+    const documentoId = response.data.data.id;
 
-    // Obtener el proyecto para identificar al tutor asociado
+    await createNotification(title, projectId, documentoId);
+    
+    return document;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+// MÉTODO PARA CREAR UNA NOTIFICACIÓN
+const createNotification = async (title, projectId, documentoId) => {
+  try {
     const projectResponse = await axios.get(
       `${API_URL}/api/new-projects/${projectId}?populate=tutor,estudiante`
     );
 
-    // Verificar la respuesta del proyecto
     if (
       !projectResponse ||
       !projectResponse.data ||
@@ -89,35 +90,30 @@ export const createDocument = async (title, fileId, projectId) => {
     const student = projectAttributes.estudiante.data;
 
     if (tutor && student) {
-      // Crear la notificación para el tutor con el nombre del estudiante
       const notificationData = {
         data: {
           mensaje: `El estudiante ${student.attributes.username} ha subido un nuevo documento: ${title}`,
-          tutor: tutor.id, // ID del tutor
-          document: documentoId, // ID del documento recién creado
-          leido: false, // Inicialmente no leída
+          tutor: tutor.id,
+          document: documentoId,
+          leido: false,
         },
       };
 
-      await axios.post(
-        `${API_URL}/api/notificacions`,
-        notificationData
-      );
+      await axios.post(`${API_URL}/api/notificacions`, notificationData);
     }
-
-    return document;
   } catch (error) {
-    if (error.response) {
-      // La solicitud se realizó y el servidor respondió con un código de estado
-      // que no está en el rango de 2xx
-      console.error("Error de respuesta:", error.response.data);
-    } else if (error.request) {
-      // La solicitud se realizó pero no hubo respuesta
-      console.error("Error en la solicitud:", error.request);
-    } else {
-      // Algo sucedió al configurar la solicitud que lanzó un Error
-      console.error("Error:", error.message);
-    }
+    handleError(error);
+  }
+};
+
+// MÉTODO PARA MANEJAR ERRORES
+const handleError = (error) => {
+  if (error.response) {
+    console.error("Error de respuesta:", error.response.data);
+  } else if (error.request) {
+    console.error("Error en la solicitud:", error.request);
+  } else {
+    console.error("Error:", error.message);
   }
 };
 

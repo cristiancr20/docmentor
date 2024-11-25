@@ -55,12 +55,12 @@ function TutorDashboard() {
               repeatType: "reverse", // Usamos "reverse" en lugar de "mirror"
               ease: "easeInOut", // Mantiene la transición suave
             }}
-            className="md:w-1/2 flex justify-center"
+            className="relative md:w-1/2 flex justify-center z-10"
           >
             <img
               src={iconImageTutor}
               alt="Bienvenida al sistema de gestión documental"
-              className="w-64 h-auto md:w-96 lg:w-[30rem] rounded-lg"
+              className="w-64 h-auto md:w-96 lg:w-[30rem] rounded-lg "
             />
           </motion.div>
         </div>
