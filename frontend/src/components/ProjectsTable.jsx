@@ -7,6 +7,7 @@ import { deleteProject } from "../core/Projects";
 import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
+import { decryptData } from "../utils/encryption";
 
 const ProjectsTable = ({
   projects,
@@ -15,7 +16,22 @@ const ProjectsTable = ({
   onDelete: fetchProjects,
   onEdit,
 }) => {
-  const rol = localStorage.getItem("rol");
+
+  const encryptedUserData = localStorage.getItem("userData");
+  let rol = null;
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+    rol = decryptedUserData.rol;
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
+
+  
 
   const handleDelete = async (projectId) => {
     // Muestra la alerta de confirmación antes de eliminar

@@ -9,6 +9,7 @@ import { UserCircle } from "lucide-react";
 import { errorAlert } from "../components/Alerts/Alerts";
 
 import DocumentComparePopup from "../components/DocumentComparePopup";
+import { decryptData } from "../utils/encryption";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -17,9 +18,23 @@ const ProyectoDetalle = () => {
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
-  const rol = localStorage.getItem("rol");
+  let rol = null;
   const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(documents.length - 2);
+
+  const encryptedUserData = localStorage.getItem("userData");
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+    rol = decryptedUserData.rol;
+
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   useEffect(() => {
     fetchProject();

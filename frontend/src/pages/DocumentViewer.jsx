@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { Calendar, CheckCircle, XCircle } from "lucide-react";
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 import { API_URL } from "../core/config.js";
+import { decryptData } from "../utils/encryption.js";
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -18,9 +19,23 @@ const DocumentoViewer = () => {
   const [error, setError] = useState(null);
   const [comments, setComments] = useState([]);
   const [notes, setNotes] = useState([]);
-  const tutorId = localStorage.getItem("userId");
-  const rol = localStorage.getItem("rol");
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
+  let tutorId = null;
+  let rol = null;
+
+  const encryptedUserData = localStorage.getItem("userData");
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+    rol = decryptedUserData.rol;
+    tutorId= decryptedUserData.id
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   useEffect(() => {
     fetchDocument();

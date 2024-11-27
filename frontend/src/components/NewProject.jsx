@@ -3,12 +3,27 @@ import { createProject } from "../core/Projects";
 import { getTutors } from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";
+import { decryptData } from "../utils/encryption";
 
 const NewProject = ({ onClose, fetchProjects }) => {
   const [title, setTitle] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [tutores, setTutores] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState("");
+
+  const encryptedUserData = localStorage.getItem("userData");
+  let userId = null;
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+    userId = decryptedUserData.id;
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   useEffect(() => {
     const obtenerTutors = async () => {
@@ -22,7 +37,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
     obtenerTutors();
   }, []);
 
-  const userId = localStorage.getItem("userId");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 

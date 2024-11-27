@@ -2,9 +2,22 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import iconImageTutor from "../assets/tutor_icon.png";
 import { motion } from "framer-motion";
+import { decryptData } from "../utils/encryption";
 
 function TutorDashboard() {
-  const username = localStorage.getItem("username");
+  let username = null;
+  const encryptedUserData = localStorage.getItem("userData");
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+    username = decryptedUserData.username;
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   return (
     <div className="Tutor">

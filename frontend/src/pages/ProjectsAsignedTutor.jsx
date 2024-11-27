@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getProjectsByTutor } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
+import { decryptData } from "../utils/encryption";
 
 const ProjectsAsignedTutor = () => {
   const [projects, setProjects] = useState([]);
@@ -10,7 +11,21 @@ const ProjectsAsignedTutor = () => {
   const [authorFilter, setAuthorFilter] = useState("");
   const [itineraryFilter, setItineraryFilter] = useState("");
   const [dateSortOrder, setDateSortOrder] = useState("recent"); // 'recent' or 'oldest'
-  const userId = localStorage.getItem("userId");
+  let userId = null;
+
+  const encryptedUserData = localStorage.getItem("userData");
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+
+    userId= decryptedUserData.id
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   useEffect(() => {
     const fetchProjects = async () => {

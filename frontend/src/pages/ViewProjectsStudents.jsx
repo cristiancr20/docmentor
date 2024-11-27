@@ -5,6 +5,7 @@ import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
 import { motion, AnimatePresence } from "framer-motion";
+import { decryptData } from "../utils/encryption";
 
 const ViewProjectsStudents = () => {
   const [projects, setProjects] = useState([]);
@@ -12,7 +13,22 @@ const ViewProjectsStudents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const userId = localStorage.getItem("userId");
+  let userId = null;
+
+
+  const encryptedUserData = localStorage.getItem("userData");
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+
+    userId= decryptedUserData.id
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   useEffect(() => {
     if (userId) {

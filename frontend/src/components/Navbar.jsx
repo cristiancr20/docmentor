@@ -3,7 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { getNotifications, markAsReadNotification } from "../core/Notification";
 import { motion, AnimatePresence } from "framer-motion";
-import jwtDecode from 'jwt-decode';
+import jwtDecode from "jwt-decode";
+import { getToken } from "../utils/auth.utils";
+import { decryptData } from "../utils/encryption";
 
 function Navbar() {
   const [userRole, setUserRole] = useState("");
@@ -17,27 +19,49 @@ function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const role = localStorage.getItem("rol");
-    const name = localStorage.getItem("username");
-    const email = localStorage.getItem("email");
-    setUserRole(role);
-    setUserName(name);
-    setUserEmail(email);
 
-    const token = localStorage.getItem('jwtToken'); // Asegúrate de que el token está almacenado en localStorage
+    const encryptedToken = localStorage.getItem("jwtToken");
+    const encryptedUserData = localStorage.getItem("userData");
 
-    if (token) {
-      const payload = jwtDecode(token); // Decodifica el token
-      console.log('Contenido del token:', payload);
-    
-      // Acceder a valores específicos
-      console.log('Usuario:', payload.username);
-      console.log('Rol:', payload.rol);
+    if (!encryptedToken) {
+      console.warn("No se encontró un token en localStorage.");
+      return;
     }
 
+    if (!encryptedUserData) {
+      console.warn("No se encontraron datos de usuario en localStorage.");
+      return;
+    }
 
-    if (role === "tutor") {
-      const token = localStorage.getItem("jwtToken");
+    try {
+      const token = decryptData(encryptedToken);
+
+      if (!token) {
+        console.error("Token desencriptado inválido o vacío.");
+        return;
+      }
+
+      if (token.split(".").length !== 3) {
+        console.error("El token no tiene un formato JWT válido:", token);
+        return;
+      }
+
+    } catch (error) {
+      console.error("Error al procesar el token:", error.message);
+    }
+
+    const userData = decryptData(encryptedUserData);
+
+    if(!userData) {
+      console.error("Datos de usuario desencriptados inválidos o vacíos.");
+      return;
+    }
+
+    setUserRole(userData.rol);
+    setUserName(userData.username);
+    setUserEmail(userData.email);
+
+    if (userRole === "tutor") {
       if (token) {
         getNotifications(token)
           .then((data) => setNotifications(data))
@@ -95,10 +119,7 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("jwtToken");
-    localStorage.removeItem("rol");
-    localStorage.removeItem("username");
-    localStorage.removeItem("email");
-    localStorage.removeItem("userId");
+    localStorage.removeItem("userData"); 
     navigate("/", { replace: true });
   };
 
@@ -244,7 +265,6 @@ function Navbar() {
                         exit="closed"
                         variants={dropdownVariants}
                         className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700 z-50"
-
                       >
                         {notifications.length > 0 ? (
                           notifications.map((notification) => (
@@ -299,7 +319,7 @@ function Navbar() {
                       animate="open"
                       exit="closed"
                       variants={dropdownVariants}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow dark:bg-gray-700"
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow dark:bg-gray-700 z-50"
                     >
                       <div className="px-4 py-3">
                         <span className="block text-sm text-gray-900 dark:text-white">

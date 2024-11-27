@@ -4,12 +4,27 @@ import Swal from "sweetalert2";
 import { FaArrowDown, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
+import { decryptData } from "../utils/encryption";
 
 const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
-  const rol = localStorage.getItem("rol");
+
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [updatedContent, setUpdatedContent] = useState("");
   const [isDropdownOpenComments, setIsDropdownOpenComments] = useState(false);
+
+  const encryptedUserData = localStorage.getItem("userData");
+  let rol = null;
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = decryptData(encryptedUserData);
+
+    // Acceder al rol desde los datos desencriptados
+    rol = decryptedUserData.rol;
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   const handleEditClick = (comment) => {
     setEditingCommentId(comment.id);
@@ -84,7 +99,9 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
           {isDropdownOpenComments && (
             <div className="rounded-lg p-2 h-screen ">
               {comments.length === 0 ? (
-                <p className="text-gray-900 text-lg text-center font-bold">No hay comentarios</p>
+                <p className="text-gray-900 text-lg text-center font-bold">
+                  No hay comentarios
+                </p>
               ) : (
                 comments.map((comment, index) => (
                   <motion.div

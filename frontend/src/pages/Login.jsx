@@ -13,6 +13,7 @@ import {
   saveUserData,
   validateAuthResponse,
 } from "../utils/auth.utils";
+import { encryptData } from "../utils/encryption";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -28,18 +29,17 @@ const Login = () => {
         email: email,
         password: password,
         username: email,
-        rol: 1
+        rol: 1,
       });
 
-      // 2. Validar la respuesta
+      // Validar la respuesta
       validateAuthResponse(authResponse);
 
-      // 3. Extraer datos y guardar JWT
+      // Extraer datos y guardar JWT
       const { jwt, user } = authResponse;
 
-      localStorage.setItem("jwtToken", jwt);
 
-      // 4. Obtener rol del usuario
+      // Obtener rol del usuario
       const userWithRole = await getUserWithRole(user.id);
       const userRole = userWithRole.rol?.tipoRol;
 
@@ -47,13 +47,22 @@ const Login = () => {
         throw new Error("No se pudo obtener el rol del usuario");
       }
 
-      // 5. Guardar datos del usuario
-      saveUserData(user, userRole);
+      const userWithRoleData ={
+        ...user,
+        rol: userRole
+      }
 
-      // 6. Mostrar mensaje de éxito
+      // Encriptar los datos antes de guardarlos
+      const encryptedJwt = encryptData(jwt);
+      const encryptedUserData = encryptData(userWithRoleData);
+
+      localStorage.setItem("jwtToken", encryptedJwt);
+      localStorage.setItem("userData", encryptedUserData);
+
+      // Mostrar mensaje de éxito
       loginSuccessAlert(user.username);
 
-      // 7. Redireccionar según el rol
+      // Redireccionar según el rol
       const route = ROLE_ROUTES[userRole];
       if (route) {
         navigate(route);

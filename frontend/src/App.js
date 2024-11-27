@@ -25,6 +25,7 @@ import ProjectDetalle from "./pages/ProyectoDetalle";
 import TutorDashboard from "./pages/TutorDashboard";
 import ProjectsAsignedTutor from "./pages/ProjectsAsignedTutor";
 import DocumentoViewer from "./pages/DocumentViewer";
+import { decryptData } from "./utils/encryption";
 
 const NotFound = () => {
   return (
@@ -37,8 +38,17 @@ const NotFound = () => {
 
 /* COMPONENTE RUTAS PROTEGIDAS */
 const ProtectedRoute = () => {
+
+  const encryptedUserData = localStorage.getItem("userData");
+  if (!encryptedUserData) {
+    console.warn("No se encontraron datos de usuario en localStorage.");
+    return;
+  }
+  const userData = decryptData(encryptedUserData);
+
+
   const isAutenticated = () => {
-    const email = localStorage.getItem("email");
+    const email = userData.email;
     return email !== null;
   };
 

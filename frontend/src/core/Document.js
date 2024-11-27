@@ -8,7 +8,22 @@ export const uploadFile = async (file) => {
   const formData = new FormData();
   formData.append("files", file);
 
-  const token = localStorage.getItem("jwtToken"); // Obtener el token
+  const token = null; 
+
+
+  const encryptedToken = localStorage.getItem("jwtToken");
+
+
+  if (encryptedToken) {
+    // Desencriptar los datos
+    const decryptedToken = decryptData(encryptedToken);
+
+    // Acceder al rol desde los datos desencriptados
+    token = decryptedToken.token;
+
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
 
   if (!token) {
     throw new Error("Token JWT no encontrado");

@@ -27,13 +27,13 @@ module.exports = {
     // Obtén el rol relacionado
     const rol = await strapi.query('rol').findOne({ id: user.rol.id });
 
+
     // Create the JWT token
     const jwt = strapi.plugins['users-permissions'].services.jwt.issue({
       id: user.id,
       username: user.username,
       email: user.email,
       rol: rol.tipoRol,
-      itinerario: user.itinerario
     });
 
     // Fetch the user with roles populated
@@ -44,7 +44,10 @@ module.exports = {
 
     return ctx.send({
       jwt,   
-      user: userWithRole,
+      user:{
+        ...userWithRole,
+        rol: rol.tipoRol
+      }
     });
 
   },
