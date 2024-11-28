@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { API_URL } from "./config";
+import { decryptData } from "../utils/encryption";
 //const API_URL = "http://localhost:1337";
 
 //METODO PARA SUBIR DOCUMENTO
@@ -8,7 +9,7 @@ export const uploadFile = async (file) => {
   const formData = new FormData();
   formData.append("files", file);
 
-  const token = null; 
+  let token = null; 
 
 
   const encryptedToken = localStorage.getItem("jwtToken");
@@ -19,7 +20,7 @@ export const uploadFile = async (file) => {
     const decryptedToken = decryptData(encryptedToken);
 
     // Acceder al rol desde los datos desencriptados
-    token = decryptedToken.token;
+    token = decryptedToken;
 
   } else {
     console.log("No se encontró el userData en localStorage");
@@ -45,15 +46,31 @@ export const uploadFile = async (file) => {
 
 // MÉTODO PARA AGREGAR EL DOCUMENTO AL PROYECTO
 export const createDocument = async (title, fileId, projectId) => {
+
+  console.log("createDocument", title, fileId, projectId);
+
+  const numProjectId = parseInt(projectId, 10);
+
+
+  // Validación adicional
+  if (!projectId) {
+    throw new Error("Se requiere un ID de proyecto válido");
+  }
+
+
   const documentData = {
     data: {
       title: title,
       documentFile: [fileId],
-      project: projectId,
+      project: numProjectId,
       fechaSubida: new Date().toISOString(),
       revisado: false,
     },
   };
+
+  if (isNaN(numProjectId)) {
+    throw new Error("ID de proyecto no es válido");
+  }
 
   try {
     const response = await axios.post(
@@ -112,7 +129,9 @@ const createNotification = async (title, projectId, documentoId) => {
           document: documentoId,
           leido: false,
         },
+
       };
+      console.log("notificationData", notificationData)
 
       await axios.post(`${API_URL}/api/notificacions`, notificationData);
     }

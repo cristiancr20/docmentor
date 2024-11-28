@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { highlightPlugin, RenderHighlightsProps } from '@react-pdf-viewer/highlight';
@@ -7,7 +7,7 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { motion } from 'framer-motion';
 import { API_URL, WORKER_URL} from "../core/config";
-
+import * as Diff from 'diff';
 
 import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
 import { FaCodeCompare } from "react-icons/fa6";
@@ -19,76 +19,14 @@ GlobalWorkerOptions.workerSrc = WORKER_URL;
 
 const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentIndex }) => {
 
+  const [highlightPositions, setHighlightPositions] = useState([]);
   const [isComparing, setIsComparing] = useState(false);
-
-  const handleCompareClick = async () => {
-    await compareDocuments(); 
-  };
 
   const doc1 = documents[currentIndex];
   const doc2 = documents[currentIndex + 1];
 
-  if (!doc1 || !doc2) {
-    return (
-      <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-3/5">
-          <h2 className="text-xl font-semibold mb-4">Error</h2>
-          <p>No se pueden cargar los documentos para comparar.</p>
-          <button onClick={onClose} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
-            Cerrar
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const documento1 = `${API_URL}${doc1.attributes.documentFile.data[0].attributes.url}`;
   const documento2 = `${API_URL}${doc2.attributes.documentFile.data[0].attributes.url}`;
-
-  const comments1 = doc1.attributes.comments.data || [];
-  const comments2 = doc2.attributes.comments.data || [];
-
-  const getHighlightAreas = (comments) => {
-    return comments.flatMap(comment => {
-      try {
-        return JSON.parse(comment.attributes.highlightAreas);
-      } catch (error) {
-        console.error("Error al parsear áreas resaltadas:", error);
-        return [];
-      }
-    });
-  };
-
-  const highlightAreas1 = getHighlightAreas(comments1);
-  const highlightAreas2 = getHighlightAreas(comments2);
-
-  const renderHighlights = (props: RenderHighlightsProps, highlightAreas) => (
-    <div>
-      {highlightAreas
-        .filter(area => area.pageIndex === props.pageIndex)
-        .map((area, idx) => (
-          <div
-            key={idx}
-            style={Object.assign(
-              {},
-              {
-                background: 'red',
-                opacity: 0.4,
-              },
-              props.getCssProperties(area, props.rotation)
-            )}
-          />
-        ))}
-    </div>
-  );
-
-  const highlightPluginInstance = highlightPlugin({
-    renderHighlights: (props) => renderHighlights(props, highlightAreas1),
-  });
-
-  const highlightPluginInstance2 = highlightPlugin({
-    renderHighlights: (props) => renderHighlights(props, highlightAreas2),
-  });
 
   const extractTextFromPDF = async (url) => {
     try {
@@ -105,25 +43,130 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
 
       return text.trim();
     } catch (error) {
-      console.error(`Error al extraer texto del PDF en la URL: ${url}`, error);
-      throw error; // Re-lanzar el error para manejarlo en la función que llama
+      console.error(`Error extracting PDF text from URL: ${url}`, error);
+      throw error;
     }
   };
 
-  const compareDocuments = async () => {
+  const getPDFPageContentsWithPositions = async (pdfUrl) => {
     try {
-      const text1 = await extractTextFromPDF(documento1);
-      const text2 = await extractTextFromPDF(documento2);
+      const response = await fetch(pdfUrl);
+      const pdfArrayBuffer = await response.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument(pdfArrayBuffer);
+      const pdfDocument = await loadingTask.promise;
+  
+      const pages = [];
+      for (let i = 1; i <= pdfDocument.numPages; i++) {
+        const page = await pdfDocument.getPage(i);
+        const textContent = await page.getTextContent();
+  
+        pages.push({
+          pageNumber: i,
+          items: textContent.items.map((item) => ({
+            text: item.str,
+            transform: item.transform,
+            width: item.width,
+            height: item.height,
+          })),
+        });
+      }
+  
+      return pages;
+    } catch (error) {
+      console.error("Error extracting PDF text with positions:", error);
+      throw error;
+    }
+  };
 
-      if (text1 === text2) {
-        compareDocumentsAlert('Los documentos no tienen cambios', true);
+  const findTextPositions = useCallback((text, documentData, isRemoved = false) => {
+    const positions = [];
+    documentData.forEach(page => {
+      page.items.forEach(item => {
+        if (item.text.includes(text)) {
+          positions.push({
+            pageIndex: page.pageNumber - 1,
+            x: item.transform[4],
+            y: item.transform[5],
+            width: item.width,
+            height: item.height,
+            isRemoved,
+          });
+        }
+      });
+    });
+    return positions;
+  }, []);
 
+  const compareDocumentsWithPositions = async () => {
+    try {
+      const doc1Data = await getPDFPageContentsWithPositions(documento1);
+      const doc2Data = await getPDFPageContentsWithPositions(documento2);
+
+      const text1 = doc1Data.map(page => page.items.map(item => item.text).join(' ')).join('\n');
+      const text2 = doc2Data.map(page => page.items.map(item => item.text).join(' ')).join('\n');
+
+      const differences = Diff.diffChars(text1, text2);
+
+      const calculatedPositions = [];
+
+      differences.forEach(part => {
+        if (part.removed) {
+          calculatedPositions.push(...findTextPositions(part.value.trim(), doc1Data, true));
+        } else if (part.added) {
+          calculatedPositions.push(...findTextPositions(part.value.trim(), doc2Data, false));
+        }
+      });
+
+      // Update highlight positions state
+      setHighlightPositions(calculatedPositions);
+
+      return calculatedPositions;
+    } catch (error) {
+      console.error("Error comparing documents with positions:", error);
+      return [];
+    }
+  };
+
+  const renderHighlights = (props: RenderHighlightsProps) => (
+    <div>
+      {highlightPositions
+        .filter(area => area.pageIndex === props.pageIndex)
+        .map((area, idx) => (
+          <div
+            key={idx}
+            style={{
+              background: area.isRemoved ? 'red' : 'none',
+              opacity: 0.1,
+              position: 'absolute',
+              left: `${area.x}px`,
+              top: `${area.y}px`,
+              width: `${area.width}px`,
+              height: `${area.height}px`,
+            }}
+          />
+        ))}
+    </div>
+  );
+
+  const highlightPluginInstance = highlightPlugin({
+    renderHighlights,
+  });
+
+  const handleCompareClick = async () => {
+    setIsComparing(true);
+    try {
+      const differences = await compareDocumentsWithPositions();
+      
+      if (differences.length > 0) {
+        compareDocumentsAlert('Existen cambios', false); // Cambios detectados
       } else {
-        compareDocumentsAlert('Los documentos tienen cambios.', false);
+        compareDocumentsAlert('No existen cambios', true); // Sin cambios
       }
     } catch (error) {
-      console.error("Error al comparar documentos:", error);
-      compareDocumentsAlert('Error al comparar documentos.', false);
+      console.error("Comparison error:", error);
+      compareDocumentsAlert('Error al comparar documentos', false);
+    } finally {
+      setIsComparing(false);
     }
   };
 
@@ -179,7 +222,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             <h3 className="text-lg font-medium mb-2">{doc1.attributes.title}</h3>
             <div style={{ height: '650px', overflow: 'auto' }}>
               <Worker workerUrl={WORKER_URL}>
-                <Viewer fileUrl={documento1} plugins={[highlightPluginInstance]} />
+                <Viewer fileUrl={documento1} plugins={[highlightPluginInstance]}  />
               </Worker>
             </div>
           </motion.div>
@@ -197,7 +240,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             <h3 className="text-lg font-medium mb-2">{doc2.attributes.title}</h3>
             <div style={{ height: '650px', overflow: 'auto' }}>
               <Worker workerUrl={WORKER_URL}>
-                <Viewer fileUrl={documento2} plugins={[highlightPluginInstance2]} />
+                <Viewer fileUrl={documento2} plugins={[highlightPluginInstance]} />
               </Worker>
             </div>
           </motion.div>

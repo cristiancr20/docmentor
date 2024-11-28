@@ -16,12 +16,16 @@ const SubirDocumento = ({ projectId, onClose }) => {
 
     try {
       const uploadedFile = await uploadFile(file);
-      const documentData = await createDocument(title, uploadedFile.id, projectId); 
+      const documentData = await createDocument(
+        title,
+        uploadedFile.id,
+        projectId
+      );
       console.log("Documento creado:", documentData);
       successAlert();
       setTitle("");
       setFile(null);
-      if (onClose) onClose(); 
+      if (onClose) onClose();
     } catch (error) {
       console.error("Error uploading document:", error);
       errorAlert();
@@ -29,48 +33,50 @@ const SubirDocumento = ({ projectId, onClose }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white rounded-lg shadow-md">
-  <div>
-    <label
-      htmlFor="title"
-      className="block text-sm font-semibold text-gray-800 mb-2"
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 p-6 bg-white rounded-lg shadow-md"
     >
-      Título del Documento
-    </label>
-    <input
-      type="text"
-      id="title"
-      value={title}
-      onChange={(e) => setTitle(e.target.value)}
-      className="w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
-      required
-    />
-  </div>
+      <div>
+        <label
+          htmlFor="title"
+          className="block text-sm font-semibold text-gray-800 mb-2"
+        >
+          Título del Documento
+        </label>
+        <input
+          type="text"
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
+          required
+        />
+      </div>
 
-  <div>
-    <label
-      htmlFor="file"
-      className="block text-sm font-semibold text-gray-800 mb-2"
-    >
-      Archivo del Documento
-    </label>
-    <input
-      type="file"
-      id="file"
-      onChange={(e) => setFile(e.target.files[0])}
-      className="w-full border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
-      required
-    />
-  </div>
+      <div>
+        <label
+          htmlFor="file"
+          className="block text-sm font-semibold text-gray-800 mb-2"
+        >
+          Archivo del Documento
+        </label>
+        <input
+          type="file"
+          id="file"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="w-full border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
+          required
+        />
+      </div>
 
-  <button
-    type="submit"
-    className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-  >
-    Subir Documento
-  </button>
-</form>
-
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
+      >
+        Subir Documento
+      </button>
+    </form>
   );
 };
 

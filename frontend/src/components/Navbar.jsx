@@ -3,23 +3,20 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { getNotifications, markAsReadNotification } from "../core/Notification";
 import { motion, AnimatePresence } from "framer-motion";
-import jwtDecode from "jwt-decode";
-import { getToken } from "../utils/auth.utils";
 import { decryptData } from "../utils/encryption";
 
 function Navbar() {
-  const [userRole, setUserRole] = useState("");
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [isNavOpen, setIsNavOpen] = useState(false);
-
   const navigate = useNavigate();
-
+  const [userData, setUserData] = useState({});
+  
   useEffect(() => {
-
+    
+ 
     const encryptedToken = localStorage.getItem("jwtToken");
     const encryptedUserData = localStorage.getItem("userData");
 
@@ -33,16 +30,17 @@ function Navbar() {
       return;
     }
 
-    try {
-      const token = decryptData(encryptedToken);
+    const jwtToken = decryptData(encryptedToken);
 
-      if (!token) {
+    try {
+
+      if (!jwtToken) {
         console.error("Token desencriptado inválido o vacío.");
         return;
       }
 
-      if (token.split(".").length !== 3) {
-        console.error("El token no tiene un formato JWT válido:", token);
+      if (jwtToken.split(".").length !== 3) {
+        console.error("El token no tiene un formato JWT válido:", jwtToken);
         return;
       }
 
@@ -50,20 +48,19 @@ function Navbar() {
       console.error("Error al procesar el token:", error.message);
     }
 
-    const userData = decryptData(encryptedUserData);
+    const user = decryptData(encryptedUserData);
 
-    if(!userData) {
+
+    if(!user) {
       console.error("Datos de usuario desencriptados inválidos o vacíos.");
       return;
     }
 
-    setUserRole(userData.rol);
-    setUserName(userData.username);
-    setUserEmail(userData.email);
+    setUserData(user);
 
-    if (userRole === "tutor") {
-      if (token) {
-        getNotifications(token)
+    if (user.rol === "tutor") {
+      if (jwtToken) {
+        getNotifications(jwtToken)
           .then((data) => setNotifications(data))
           .catch((error) =>
             console.error("Error al cargar notificaciones:", error)
@@ -85,6 +82,7 @@ function Navbar() {
   const markAsRead = async (notification) => {
     const notificationId = notification.id;
     const documentData = notification.attributes.document?.data;
+
 
     try {
       await markAsReadNotification(notificationId);
@@ -181,7 +179,7 @@ function Navbar() {
           {/* Menú de escritorio */}
           <div className="hidden md:flex md:items-center ">
             <ul className="font-medium flex items-center space-x-8 ">
-              {userRole === "tutor" && (
+              {userData?.rol === "tutor" && (
                 <>
                   <motion.li whileHover={{ scale: 1.05 }}>
                     <Link
@@ -202,7 +200,7 @@ function Navbar() {
                 </>
               )}
 
-              {userRole === "estudiante" && (
+              {userData?.rol === "estudiante" && (
                 <>
                   <motion.li whileHover={{ scale: 1.05 }}>
                     <Link
@@ -237,7 +235,7 @@ function Navbar() {
 
             {/* Notificaciones y perfil */}
             <div className="flex items-center space-x-3">
-              {userRole === "tutor" && (
+              {userData?.rol === "tutor" && (
                 <div className="relative">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -303,7 +301,7 @@ function Navbar() {
                   className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
                   onClick={handleDropdownToggle}
                 >
-                  <span className="text-white">{userName}</span>
+                  <span className="text-white">{userData.username}</span>
                   <motion.div
                     animate={{ rotate: isDropdownOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
@@ -323,10 +321,10 @@ function Navbar() {
                     >
                       <div className="px-4 py-3">
                         <span className="block text-sm text-gray-900 dark:text-white">
-                          {userName}
+                          {userData.username}
                         </span>
                         <span className="block text-sm text-gray-500 dark:text-gray-400">
-                          {userEmail}
+                          {userData.email}
                         </span>
                       </div>
                       <ul className="py-2">
@@ -359,7 +357,7 @@ function Navbar() {
             className="absolute w-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-xl md:hidden z-50 rounded-b-2xl border-b border-x border-gray-500 dark:border-gray-700"
           >
             <ul className="flex flex-col p-6 space-y-2">
-              {userRole === "tutor" && (
+              {userData?.rol === "tutor" && (
                 <>
                   <motion.li
                     whileHover={{ scale: 1.02, x: 10 }}
@@ -390,7 +388,7 @@ function Navbar() {
                 </>
               )}
 
-              {userRole === "estudiante" && (
+              {userData?.rol === "estudiante" && (
                 <>
                   <motion.li
                     whileHover={{ scale: 1.02, x: 10 }}

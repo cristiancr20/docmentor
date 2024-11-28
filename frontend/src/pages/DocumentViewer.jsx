@@ -54,6 +54,7 @@ const DocumentoViewer = () => {
   const handleCommentClick = (comment) => {
     try {
       const highlightAreas = JSON.parse(comment.attributes.highlightAreas);
+      console.log(highlightAreas)
 
       // Verificar si hay áreas válidas
       const validAreas = highlightAreas.filter(
@@ -72,7 +73,6 @@ const DocumentoViewer = () => {
     try {
       const data = await getCommentsByDocument(documentId);
       setComments(data);
-      console.log(data);
 
       const notesWithHighlights = data.map((comment) => ({
         id: comment.id,

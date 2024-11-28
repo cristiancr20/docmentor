@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Documento Subido</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0056b3;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #d9534f;
+        }
+
+        header, footer {
+            background-color: #0d2e4d;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: #fff;
+        }
+        header p{
+            color: crimson;
+        }
+
+        .app h1{
+            text-align: center;
+
+        }
+        .footer {
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+<!-- Header -->
+<header>
+    <h1>UNIVERSIDAD NACIONAL DE LOJA</h1>
+    <p><strong>COMPUTACIÓN</strong></p>
+</header>
+
+<!-- Main Content -->
+<div class="content">
+    <div class="app">
+        <h1>DOCMENTOR</h1>
+    </div>
+    <h1>Hola {{tutorUsername}},</h1>
+    <p>¡Tenemos buenas noticias! Se ha subido un nuevo documento titulado 
+        <span class="highlight">{{documentTitle}}</span> 
+        al proyecto <span class="highlight">{{projectName}}</span>.
+    </p>
+    <p>Por favor, revisa el documento en tu dashboard para hacer los comentarios necesarios y seguir con el progreso del proyecto.</p>
+    <p class="footer">Este es un mensaje automático. No responda a este correo.</p>
+</div>
+
+<!-- Footer -->
+<footer>
+    <p>&copy; 2024 Universidad Nacional de Loja. Todos los derechos reservados.</p>
+</footer>
+    </div>
+</body>
+</html>
