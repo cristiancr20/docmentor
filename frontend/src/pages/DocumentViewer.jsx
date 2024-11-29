@@ -6,6 +6,7 @@ import { getDocumentById } from "../core/Document";
 import {
   getCommentsByDocument,
   addCommentToDocument,
+  updateDocumentStatusRevisado,
 } from "../core/Comments.js";
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, XCircle } from "lucide-react";
@@ -31,8 +32,7 @@ const DocumentoViewer = () => {
 
     // Acceder al rol desde los datos desencriptados
     rol = decryptedUserData.rol;
-    tutorId= decryptedUserData.id
-
+    tutorId = decryptedUserData.id;
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -54,7 +54,7 @@ const DocumentoViewer = () => {
   const handleCommentClick = (comment) => {
     try {
       const highlightAreas = JSON.parse(comment.attributes.highlightAreas);
-      console.log(highlightAreas)
+      console.log(highlightAreas);
 
       // Verificar si hay áreas válidas
       const validAreas = highlightAreas.filter(
@@ -103,6 +103,15 @@ const DocumentoViewer = () => {
     }
   };
 
+  const handleRevisadoClick = async () => {
+    try {
+      await updateDocumentStatusRevisado(documentId);
+      fetchDocument();
+    } catch (error) {
+      console.error("Error updating document status:", error);
+    }
+  };
+
   const handleAddNote = (note) => {
     handleAddComment(note.content, note.highlightAreas, note.quote);
   };
@@ -140,7 +149,7 @@ const DocumentoViewer = () => {
             {title}
           </motion.h1>
 
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 md:grid-cols-3 gap-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -190,15 +199,27 @@ const DocumentoViewer = () => {
                 </p>
               </div>
             </motion.div>
+
+            {rol === "tutor" && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-white p-4 rounded-xl flex items-center space-x-4"
+              >
+                <button
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  onClick={handleRevisadoClick}
+                >
+                  Revisado
+                </button>
+              </motion.div>
+            )}
           </div>
         </div>
 
-        <div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-2 "
-       
-        >
-          <div className="gap-2 border rounded-lg overflow-auto"
-             >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 ">
+          <div className="gap-2 border rounded-lg overflow-auto">
             <CommentsPanel
               comments={comments}
               onUpdateComments={fetchComments}

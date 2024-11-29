@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginOrRegister, getUserWithRole } from "../core/Autentication";
+import { loginOrRegister, getUserWithRole, login } from "../core/Autentication";
 import {
   loginSuccessAlert,
   loginErrorAlert,
@@ -25,11 +25,9 @@ const Login = () => {
 
     try {
       // 1. Intento de login o registro
-      const authResponse = await loginOrRegister({
-        email: email,
+      const authResponse = await login({
+        identifier: email,
         password: password,
-        username: email,
-        rol: 1,
       });
 
       // Validar la respuesta

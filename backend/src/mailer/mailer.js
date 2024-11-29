@@ -11,7 +11,8 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-  connectionTimeout: 10000,
+  connectionTimeout: 60000,  // Aumentado a 60 segundos
+  socketTimeout: 60000
 });
 
 transporter.verify(function (error, success) {

@@ -131,7 +131,6 @@ const createNotification = async (title, projectId, documentoId) => {
         },
 
       };
-      console.log("notificationData", notificationData)
 
       await axios.post(`${API_URL}/api/notificacions`, notificationData);
     }

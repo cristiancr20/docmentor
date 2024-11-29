@@ -21,7 +21,7 @@ module.exports = {
             if (params.data.project && typeof params.data.project === 'number') {
                 projectId = params.data.project;
             }
-            
+
             // Caso 2: Strapi dashboard (connect structure)
             else if (params.data.project && params.data.project.connect && params.data.project.connect.length > 0) {
                 projectId = params.data.project.connect[0].id;
@@ -57,7 +57,7 @@ module.exports = {
                 return;
             }
 
-            const templatePath = path.resolve(__dirname, './email-template.html');
+            const templatePath = path.resolve(__dirname, './email-template-document.html');
             let htmlContent = fs.readFileSync(templatePath, 'utf8');
 
             // Reemplazar los placeholders con los valores dinámicos
@@ -80,6 +80,73 @@ module.exports = {
 
         } catch (error) {
             strapi.log.error('Error al enviar correo en afterCreate lifecycle:', error);
+        }
+    },
+
+
+    async afterUpdate(event) {
+        const { result, params } = event;
+
+        try {
+            console.log("Evento completo:", {
+                result: result,
+                params: params
+            });
+
+            if (result.revisado === true) {
+                console.log("Documento marcado como revisado. Iniciando proceso de envío de correo.");
+
+                const documentWithPopulate = await strapi.entityService.findOne('api::document.document', result.id, {
+                    populate: ['project', 'project.estudiante', 'comments']
+                });
+
+                console.log("Documento con relaciones:", documentWithPopulate);
+
+                const project = documentWithPopulate.project;
+                const estudiante = project.estudiante;
+
+                if (!estudiante || !estudiante.email) {
+                    console.warn(`No se encontró correo electrónico para el estudiante en el proyecto: ${project.Title}`);
+                    return;
+                }
+
+                console.log(`Preparando correo para el estudiante: ${estudiante.email}`);
+
+                const comentarios = documentWithPopulate.comments || [];
+
+                // Leer la plantilla HTML
+                const templatePath = path.resolve(__dirname, './email-template-comment.html');
+                let htmlContent = fs.readFileSync(templatePath, 'utf8');
+
+                // Reemplazar los placeholders con los valores dinámicos
+                htmlContent = htmlContent
+                    .replace('{{username}}', estudiante.username || 'Estudiante')
+                    .replace('{{documentTitle}}', result.title)
+                    .replace('{{projectTitle}}', project.Title)
+                    .replace('{{commentsList}}', comentarios.length > 0
+                        ? `<h2>Comentarios de la revisión:</h2>
+               <ul>
+                 ${comentarios.map(comment => `<li>${comment.content}</li>`).join('')}
+               </ul>`
+                        : ''
+                    );
+
+                const subject = `Documento Revisado: ${result.title}`;
+
+                // Enviar el correo al estudiante
+                await transporter.sendMail({
+                    from: process.env.SMTP_USER,  // Usamos la variable de entorno para el remitente
+                    to: estudiante.email,
+                    subject,
+                    html: htmlContent,
+                });
+
+                strapi.log.info(`Correo enviado al estudiante (${estudiante.email}) para el documento: ${result.title}`);
+            } else {
+                console.log("El documento no está marcado como revisado. No se enviará correo.");
+            }
+        } catch (error) {
+            console.error('Error en afterUpdate lifecycle de documentos:', error);
         }
     },
 };

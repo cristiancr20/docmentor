@@ -19,7 +19,8 @@ export const addCommentToDocument = async (
       quote
     );
 
-    const updateResponse = await updateDocumentStatus(documentId);
+    // Actualiza el estado del documento a revisado
+    const updateResponse = await updateDocumentStatusNoRevisado(documentId);
 
     return { commentResponse, updateResponse };
   } catch (error) {
@@ -61,7 +62,7 @@ const postComment = async (
 };
 
 // MÉTODO PARA ACTUALIZAR EL ESTADO DEL DOCUMENTO
-const updateDocumentStatus = async (documentId) => {
+export const updateDocumentStatusRevisado = async (documentId) => {
   const response = await fetch(`${API_URL}/api/documents/${documentId}`, {
     method: "PUT",
     headers: {
@@ -80,6 +81,27 @@ const updateDocumentStatus = async (documentId) => {
 
   return await response.json();
 };
+
+const updateDocumentStatusNoRevisado = async (documentId) => {
+  const response = await fetch(`${API_URL}/api/documents/${documentId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      data: {
+        revisado: false, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("HTTP error during document update! status: ${response.status}");
+  }
+
+  return await response.json();
+}
+
 
 // MÉTODO PARA MANEJAR ERRORES
 const handleError = (error) => {
