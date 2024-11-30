@@ -41,18 +41,41 @@
         color: white;
         padding: 20px;
         text-align: center;
+        display: flex;
+        justify-content: space-around;
       }
       header h1 {
         margin: 0;
         font-size: 2rem;
         color: #fff;
+        display: flex;
+        align-items: center;
+        align-content: center;
       }
-      header p {
-        color: crimson;
+
+      header img{
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-right: 10px;
       }
 
       .app h1 {
         text-align: center;
+      }
+
+      ul li{
+        list-style: none;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #f4f4f4;
+
+      }
+
+      .highlight {
+        font-weight: bold;
+        color: #d9534f;
       }
       .footer {
         font-size: 0.9rem;
@@ -64,32 +87,35 @@
     <div class="container">
       <!-- Header -->
       <header>
-        <h1>UNIVERSIDAD NACIONAL DE LOJA</h1>
-        <p><strong>COMPUTACIÓN</strong></p>
+        <img src="logo computacion.jpg" alt="Logo de la carrera">
+        <h1><strong>CARRERA DE COMPUTACIÓN</strong></h1>
       </header>
 
       <!-- Main Content -->
       <div class="content">
         <div class="app">
-          <h1>DOCMENTOR</h1>
+          <h1>Revisión del PIC</h1>
         </div>
         <!-- src/templates/email-template.html -->
         <h1>Hola {{username}},</h1>
         <p>
-          Tu documento <strong>{{documentTitle}}</strong> del proyecto
-          <strong>{{projectTitle}}</strong> ha sido revisado.
+          Tu documento <strong class="highlight">{{documentTitle}}</strong> del proyecto
+          <strong class="highlight">{{projectTitle}}</strong> ha sido revisado.
         </p>
 
         {{#if hasComments}}
         <h2>Comentarios de la revisión:</h2>
         <ul>
           {{#each comments}}
-          <li>{{this}}</li>
+          <li>
+            <strong>Corrección:</strong> {{correccion}}<br />
+            <strong>Cita:</strong> "{{quote}}"
+          </li>
           {{/each}}
         </ul>
         {{/if}}
 
-        <p>Por favor, revisa los comentarios en tu dashboard.</p>
+        <p>Por favor, revisa los comentarios dentro de tu documento <strong class="highlight">{{documentTitle}}</strong>.</p>
 
         <p class="footer">
           Este es un mensaje automático. No responda a este correo.

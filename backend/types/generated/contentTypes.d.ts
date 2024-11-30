@@ -482,13 +482,15 @@ export interface ApiNewProjectNewProject extends Schema.CollectionType {
       'oneToMany',
       'api::document.document'
     >;
-    estudiante: Attribute.Relation<
+    estudiantes: Attribute.Relation<
       'api::new-project.new-project',
-      'manyToOne',
+      'manyToMany',
       'plugin::users-permissions.user'
     >;
     FechaCreacion: Attribute.Date;
+    itinerario: Attribute.String;
     publishedAt: Attribute.DateTime;
+    tipoProyecto: Attribute.String;
     Title: Attribute.String;
     tutor: Attribute.Relation<
       'api::new-project.new-project',
@@ -957,7 +959,6 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
   };
   attributes: {
     blocked: Attribute.Boolean & Attribute.DefaultTo<false>;
-    carrera: Attribute.String;
     comments: Attribute.Relation<
       'plugin::users-permissions.user',
       'oneToMany',
@@ -977,13 +978,6 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
-    itinerario: Attribute.Enumeration<
-      [
-        'Ingenieria de Software',
-        'Sistemas Inteligentes',
-        'Compuaci\u00F3n Aplicada'
-      ]
-    >;
     notificacions: Attribute.Relation<
       'plugin::users-permissions.user',
       'oneToMany',
@@ -996,7 +990,7 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       }>;
     project_es: Attribute.Relation<
       'plugin::users-permissions.user',
-      'oneToMany',
+      'manyToMany',
       'api::new-project.new-project'
     >;
     project_ts: Attribute.Relation<

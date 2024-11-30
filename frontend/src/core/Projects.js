@@ -59,7 +59,7 @@ export const deleteProject = async (projectId) => {
 export const getProjectsByStudents = async (userId) => {
   try {
     const response = await axios.get(
-      `${API_URL}/api/users/${userId}?populate=project_es.tutor,project_es.estudiante`
+      `${API_URL}/api/users/${userId}?populate=project_es.tutor,project_es.estudiantes`
     );
     return response.data.project_es;
   } catch (error) {
@@ -85,7 +85,7 @@ export const getProjectById = async (projectId) => {
 export const getProjectsByTutor = async (userId) => {
   try {
     const response = await axios.get(
-      `${API_URL}/api/users/${userId}?populate=project_ts.tutor,project_ts.estudiante`
+      `${API_URL}/api/users/${userId}?populate=project_ts.tutor,project_ts.estudiantes`
     );
     return response.data.project_ts;
   } catch (error) {
@@ -103,6 +103,29 @@ export const getTutors = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching tutors:', error);
+    throw error;
+  }
+};
+
+// Función para obtener un usuario por correo
+export const getUserByEmail = async (email) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/users?filters[email][$eq]=${email}`);
+    return response.data; // Asegúrate de que `response.data` contenga el arreglo de usuarios
+  } catch (error) {
+    console.error('Error al obtener el usuario por email:', error);
+    throw error;
+  }
+};
+
+
+// Función para obtener el usuario por su ID
+export const getUserById = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/users/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener el usuario por ID:', error);
     throw error;
   }
 };

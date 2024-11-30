@@ -77,12 +77,6 @@
       "target": "api::new-project.new-project",
       "mappedBy": "tutor"
     },
-    "project_es": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::new-project.new-project",
-      "mappedBy": "estudiante"
-    },
     "comments": {
       "type": "relation",
       "relation": "oneToMany",
@@ -95,16 +89,11 @@
       "target": "api::notificacion.notificacion",
       "mappedBy": "tutor"
     },
-    "carrera": {
-      "type": "string"
-    },
-    "itinerario": {
-      "type": "enumeration",
-      "enum": [
-        "Ingenieria de Software",
-        "Sistemas Inteligentes",
-        "Compuación Aplicada"
-      ]
+    "project_es": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::new-project.new-project",
+      "inversedBy": "estudiantes"
     }
   }
 }

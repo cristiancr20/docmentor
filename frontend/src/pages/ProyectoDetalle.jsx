@@ -5,8 +5,9 @@ import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserCircle } from "lucide-react";
-import { errorAlert } from "../components/Alerts/Alerts";
+import { User, Users } from "lucide-react";
+import { warningAlert } from "../components/Alerts/Alerts";
+import GeneratePdfButton from "../components/GeneratePdfButton";
 
 import DocumentComparePopup from "../components/DocumentComparePopup";
 import { decryptData } from "../utils/encryption";
@@ -30,8 +31,6 @@ const ProyectoDetalle = () => {
 
     // Acceder al rol desde los datos desencriptados
     rol = decryptedUserData.rol;
-
-
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -65,7 +64,7 @@ const ProyectoDetalle = () => {
       setShowIsComparePopupOpen(true);
       setCurrentIndex(documents.length - 2);
     } else {
-      errorAlert("No existen los documentos suficientes para comparar");
+      warningAlert("No existen los documentos suficientes para comparar");
     }
   };
 
@@ -79,7 +78,14 @@ const ProyectoDetalle = () => {
 
   const { attributes } = project;
   const tutor = attributes.tutor?.data?.attributes || {};
-  const estudiante = attributes.estudiante?.data?.attributes || {};
+  // Acceder a los estudiantes (iterar sobre el array)
+  const estudiantes =
+    attributes.estudiantes?.data?.map((estudiante) => {
+      return estudiante.attributes;
+    }) || [];
+
+  const itinerario = attributes.itinerario || {};
+  const tipoProyecto = attributes.tipoProyecto || {};
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -129,12 +135,14 @@ const ProyectoDetalle = () => {
                 transition={{ duration: 0.5 }}
                 className="inline-flex items-center p-2 rounded-full bg-blue-50 text-blue-700"
               >
-                <span className="text-xs md:text-base">{attributes.FechaCreacion}</span>
+                <span className="text-xs md:text-base">
+                  {attributes.FechaCreacion}
+                </span>
               </motion.div>
             </div>
           </motion.div>
 
-          <div >
+          <div>
             {/* Sección del tutor o estudiante */}
             {rol === "estudiante" && (
               <>
@@ -145,8 +153,8 @@ const ProyectoDetalle = () => {
                   className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                      <UserCircle className="w-12 h-12" />
+                    <div className="bg-gray-900 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                      <User className="w-12 h-12" />
                     </div>
 
                     <div className="space-y-2">
@@ -158,9 +166,6 @@ const ProyectoDetalle = () => {
                       </p>
                       <div className="flex flex-col items-center text-center">
                         <div className="flex items-center m-1">
-                          <h3 className="text-sm font-semibold text-gray-800">
-                            Correo:
-                          </h3>
                           <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
                             {tutor.email}
                           </p>
@@ -189,45 +194,51 @@ const ProyectoDetalle = () => {
                   className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                      <UserCircle className="w-12 h-12" />
+                    {/* Icono condicional según el tipo de proyecto */}
+                    <div className="bg-gray-900 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
+                      {tipoProyecto === "Grupal" ? (
+                        <Users className="w-12 h-12" /> // Ícono para grupo
+                      ) : (
+                        <User className="w-12 h-12" /> // Ícono para individual
+                      )}
                     </div>
 
-                    <div className="space-y-2">
-                      <h2 className="text-xl font-bold text-gray-800">
-                        Estudiante
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-bold text-gray-800">
+                        Estudiantes
                       </h2>
-                      <p className="text-lg font-semibold text-blue-600">
-                        {estudiante.username}
-                      </p>
 
-                      <div className="flex flex-col items-center text-end">
-                        <div className="flex items-center m-1">
-                          <h3 className="text-sm font-semibold text-gray-800">
-                            Correo:
-                          </h3>
-                          <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                            {estudiante.email}
-                          </p>
-                        </div>
+                      <div className="grid gap-4">
+                        {estudiantes.map((estudiante, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                          >
+                            <div className="flex items-center space-x-4 p-3 bg-white shadow-sm rounded-lg border border-gray-100 hover:border-blue-200 transition-colors duration-200">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {estudiante.username ||
+                                    "Nombre no disponible"}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {estudiante.email || "Correo no disponible"}
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
 
-                        <div className="flex items-center m-1">
-                          <h3 className="text-sm font-semibold text-gray-800">
-                            Itineario:
-                          </h3>
-                          <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                            {estudiante.itinerario}
-                          </p>
-                        </div>
-
-                        {/* <div className="flex items-center m-1">
-                        <h3 className="text-sm font-semibold text-gray-800">
-                          Carrera:
+                      {/* Itinerario */}
+                      <div className="flex items-center space-x-2 text-sm">
+                        <h3 className="font-semibold text-gray-800">
+                          Itinerario:
                         </h3>
-                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                          {estudiante.carrera}
+                        <p className="px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                          {itinerario || "Itinerario no especificado"}
                         </p>
-                      </div> */}
                       </div>
                     </div>
                   </div>
@@ -248,15 +259,17 @@ const ProyectoDetalle = () => {
           </motion.h2>
 
           {rol === "estudiante" && (
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              onClick={() => setIsModalOpen(true)}
-              className="font-bold mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Subir Nuevo Documento
-            </motion.button>
+            <>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                onClick={() => setIsModalOpen(true)}
+                className="font-bold mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Subir Nuevo Documento
+              </motion.button>
+            </>
           )}
 
           <motion.button
@@ -268,6 +281,8 @@ const ProyectoDetalle = () => {
           >
             Comparar Versiones
           </motion.button>
+
+          <GeneratePdfButton userInfo={attributes} />
 
           <AnimatePresence>
             {isShowComparePopupOpen && (

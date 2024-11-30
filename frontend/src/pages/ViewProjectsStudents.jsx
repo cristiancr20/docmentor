@@ -15,7 +15,6 @@ const ViewProjectsStudents = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   let userId = null;
 
-
   const encryptedUserData = localStorage.getItem("userData");
 
   if (encryptedUserData) {
@@ -24,8 +23,7 @@ const ViewProjectsStudents = () => {
 
     // Acceder al rol desde los datos desencriptados
 
-    userId= decryptedUserData.id
-
+    userId = decryptedUserData.id;
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -48,6 +46,7 @@ const ViewProjectsStudents = () => {
     }
   };
 
+
   const handleEdit = (projectId) => {
     const project = projects.find((project) => project.id === projectId);
     setCurrentProject(project);
@@ -62,8 +61,31 @@ const ViewProjectsStudents = () => {
   const columns = [
     { key: "Title", label: "Título" },
     { key: "Descripcion", label: "Descripción" },
+    {
+      key: "tutor",
+      label: "Tutor",
+      render: (project) => project.tutor.username,
+    },
+    {
+      key: "estudiante",
+      label: "Estudiante",
+      render: (project) => (
+        <ul>
+          {project.estudiantes.map((estudiante) => (
+            <li key={estudiante.id}>
+              {estudiante.username}
+              <span className="text-blue-600 ml-2">({estudiante.email})</span>
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    {
+      key: "Proyecto",
+      label: "Tipo de Proyecto",
+      render: (project) => project.tipoProyecto,
+    },
     { key: "FechaCreacion", label: "Fecha de Creación" },
-    { key: "tutor", label: "Tutor", render: (project) => project.tutor.email },
   ];
 
   return (

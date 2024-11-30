@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { createProject } from "../core/Projects";
-import { getTutors } from "../core/Projects";
+import {
+  createProject,
+  getProjectsByStudents,
+  getTutors,
+  getUserByEmail,
+  getUserById,
+} from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";
 import { decryptData } from "../utils/encryption";
+import { UserCircle } from "lucide-react";
 
 const NewProject = ({ onClose, fetchProjects }) => {
   const [title, setTitle] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [tutores, setTutores] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState("");
+  const [projectType, setProjectType] = useState("Individual");
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerId, setPartnerId] = useState(null); // Guardar el ID del compañero
+  const [partnerData, setPartnerData] = useState(null);
+  const [selectedItinerary, setSelectedItinerary] = useState("");
 
   const encryptedUserData = localStorage.getItem("userData");
   let userId = null;
@@ -20,7 +31,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
 
     // Acceder al rol desde los datos desencriptados
     userId = decryptedUserData.id;
-
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -37,17 +47,68 @@ const NewProject = ({ onClose, fetchProjects }) => {
     obtenerTutors();
   }, []);
 
+  // Función para obtener el id del compañero por correo electrónico
+  const getPartnerIdByEmail = async (email) => {
+    try {
+      const response = await getUserByEmail(email);
 
+      // Verificar si la respuesta es válida y contiene los datos necesarios
+      if (response && Array.isArray(response) && response.length > 0) {
+        return response[0].id; // Acceder al ID del primer usuario
+      } else {
+        return null; // Si no se encuentra el usuario
+      }
+    } catch (error) {
+      console.error("Error al obtener el usuario por email:", error);
+      return null; // Si ocurre un error, devolver null
+    }
+  };
+
+  // Manejar el cambio en el correo del compañero
+  const handlePartnerEmailChange = async (e) => {
+    const email = e.target.value;
+    setPartnerEmail(email);
+
+    // Buscar el compañero por el correo ingresado
+    const getPartnerId = await getPartnerIdByEmail(email);
+    setPartnerId(getPartnerId);
+
+    if (getPartnerId) {
+      try {
+        const response = await getUserById(getPartnerId);
+        if (response) {
+          const partner = response;
+          setPartnerData(partner);
+        } else {
+          console.error("No se encontró la información del compañero.");
+          setPartnerData(null);
+        }
+      } catch (error) {
+        console.error("Error al obtener los datos del compañero:", error);
+        setPartnerData(null);
+      }
+    } else {
+      setPartnerData(null);
+    }
+  };
+
+  console.log("selectedItinerary:", selectedItinerary); 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const validEstudiantes = [userId, partnerId].filter((id) => id != null); // Filtra los valores null o undefined
 
     const projectData = {
       Title: title,
       Descripcion: descripcion,
       tutor: parseInt(selectedTutor, 10),
-      estudiante: userId,
+      estudiantes: validEstudiantes,
       FechaCreacion: new Date().toISOString(),
+      tipoProyecto: projectType,
+      itinerario: selectedItinerary,
     };
+
+    console.log("projectData:", projectData);
 
     try {
       await createProject(projectData);
@@ -56,6 +117,8 @@ const NewProject = ({ onClose, fetchProjects }) => {
       onClose();
       setTitle("");
       setDescripcion("");
+      setPartnerEmail("");
+      setPartnerId(null);
       setSelectedTutor("");
     } catch (error) {
       console.error(
@@ -122,6 +185,137 @@ const NewProject = ({ onClose, fetchProjects }) => {
               required
             />
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <label
+              htmlFor="projectType"
+              className="block text-gray-700 font-semibold mb-2 text-lg"
+            >
+              Tipo de Proyecto
+            </label>
+            <div className="flex space-x-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="form-radio text-indigo-600"
+                  name="projectType"
+                  value="Individual"
+                  checked={projectType === "Individual"}
+                  onChange={(e) => setProjectType(e.target.value)}
+                />
+                <span className="ml-2">Individual</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="form-radio text-indigo-600"
+                  name="projectType"
+                  value="Grupal"
+                  checked={projectType === "Grupal"}
+                  onChange={(e) => setProjectType(e.target.value)}
+                />
+                <span className="ml-2">En Pareja</span>
+              </label>
+            </div>
+          </motion.div>
+
+          {projectType === "Grupal" && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <label
+                htmlFor="partnerEmail"
+                className="block text-gray-700 font-semibold mb-2 text-lg"
+              >
+                Correo del Compañero
+              </label>
+              <input
+                type="email"
+                id="partnerEmail"
+                value={partnerEmail}
+                onChange={handlePartnerEmailChange}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                placeholder="Ingrese el correo de su compañero"
+                required={projectType === "Grupal"}
+              />
+
+              {partnerData ? (
+                <motion.div
+                  className="mt-4 p-4 border rounded-lg bg-green-50 shadow-lg flex items-center space-x-4"
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <motion.div
+                    className="bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center mb-4 shadow-xl"
+                    initial={{ scale: 0.5 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <UserCircle className="w-12 h-12" />
+                  </motion.div>
+
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                  >
+                    <p className="text-lg font-semibold text-gray-700">
+                      <strong>Nombre:</strong> {partnerData.username}
+                    </p>
+                    <p className="text-lg font-semibold text-gray-700">
+                      <strong>Correo:</strong> {partnerData.email}
+                    </p>
+                  </motion.div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  className="mt-4 p-4 border rounded-lg bg-red-50 shadow-lg flex items-center justify-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className="text-lg text-red-500 font-semibold">
+                    Usuario no encontrado
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          <label
+            htmlFor="tutor"
+            className="block text-gray-700 font-semibold mb-2 text-lg"
+          >
+            Seleccionar Itinerario
+          </label>
+
+          <select
+            id="itinerario"
+            value={selectedItinerary}
+            onChange={(e) => setSelectedItinerary(e.target.value)} // Asegúrate de que el valor se actualice aquí
+            className="p-2 border border-gray-300 rounded bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
+          >
+            <option value="" className="bg-white">
+              Seleccionar Itinerario
+            </option>
+            <option value="Ingeniería de Software" className="bg-white">
+              Ingeniería de Software
+            </option>
+            <option value="Sistemas Inteligentes" className="bg-white">
+              Sistemas Inteligentes
+            </option>
+            <option value="Computación Aplicada" className="bg-white">
+              Computación Aplicada
+            </option>
+          </select>
 
           <motion.div
             initial={{ opacity: 0, x: -20 }}

@@ -3,6 +3,7 @@
 const { transporter } = require('../../../../mailer/mailer');
 const fs = require('fs');
 const path = require('path');
+const Handlebars = require('handlebars');
 
 module.exports = {
     async afterCreate(event) {
@@ -114,22 +115,28 @@ module.exports = {
 
                 const comentarios = documentWithPopulate.comments || [];
 
+                console.log("Comentarios:", comentarios);
+
                 // Leer la plantilla HTML
                 const templatePath = path.resolve(__dirname, './email-template-comment.html');
-                let htmlContent = fs.readFileSync(templatePath, 'utf8');
+                // Leer la plantilla
+                const templateSource = fs.readFileSync(templatePath, 'utf8');
 
-                // Reemplazar los placeholders con los valores dinámicos
-                htmlContent = htmlContent
-                    .replace('{{username}}', estudiante.username || 'Estudiante')
-                    .replace('{{documentTitle}}', result.title)
-                    .replace('{{projectTitle}}', project.Title)
-                    .replace('{{commentsList}}', comentarios.length > 0
-                        ? `<h2>Comentarios de la revisión:</h2>
-               <ul>
-                 ${comentarios.map(comment => `<li>${comment.content}</li>`).join('')}
-               </ul>`
-                        : ''
-                    );
+                // Compilar la plantilla con Handlebars
+                const template = Handlebars.compile(templateSource);
+                const context = {
+                    username: estudiante.username || 'Estudiante',
+                    documentTitle: result.title,
+                    projectTitle: project.Title,
+                    hasComments: comentarios.length > 0,
+                    comments: comentarios.map(comment => ({
+                        correccion: comment.correccion,
+                        quote: comment.quote
+                    }))
+                };
+
+                // Generar el HTML dinámico
+                const htmlContent = template(context);
 
                 const subject = `Documento Revisado: ${result.title}`;
 

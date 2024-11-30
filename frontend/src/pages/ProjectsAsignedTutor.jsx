@@ -21,8 +21,7 @@ const ProjectsAsignedTutor = () => {
 
     // Acceder al rol desde los datos desencriptados
 
-    userId= decryptedUserData.id
-
+    userId = decryptedUserData.id;
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -33,7 +32,7 @@ const ProjectsAsignedTutor = () => {
         if (userId) {
           const userProjects = await getProjectsByTutor(userId);
           setProjects(userProjects);
-          setFilteredProjects(userProjects); // Set initial filtered projects
+          setFilteredProjects(userProjects);
         } else {
           setError("User ID is not available");
         }
@@ -46,34 +45,34 @@ const ProjectsAsignedTutor = () => {
     fetchProjects();
   }, [userId]);
 
-  // Filter projects whenever any filter value changes
   useEffect(() => {
     handleFilterChange();
   }, [authorFilter, itineraryFilter, dateSortOrder]);
 
   const handleFilterChange = () => {
-    let filtered = projects;
+    let filtered = [...projects];
 
     if (authorFilter) {
       filtered = filtered.filter((project) =>
-        project.estudiante.email
-          .toLowerCase()
-          .includes(authorFilter.toLowerCase())
+        project.estudiantes.some((estudiante) =>
+          estudiante.email.toLowerCase().includes(authorFilter.toLowerCase())
+        )
       );
     }
 
-    if (itineraryFilter) {
+    if (itineraryFilter.trim()) {
       filtered = filtered.filter(
         (project) =>
           project.itinerario &&
-          project.itinerario.toLowerCase() === itineraryFilter.toLowerCase()
+          project.itinerario.toLowerCase().trim() ===
+            itineraryFilter.toLowerCase().trim()
       );
     }
 
     if (dateSortOrder) {
       filtered.sort((a, b) => {
-        const dateA = new Date(a.FechaCreacion);
-        const dateB = new Date(b.FechaCreacion);
+        const dateA = new Date(a.FechaCreacion).getTime();
+        const dateB = new Date(b.FechaCreacion).getTime();
         return dateSortOrder === "recent" ? dateB - dateA : dateA - dateB;
       });
     }
@@ -85,11 +84,25 @@ const ProjectsAsignedTutor = () => {
     {
       key: "estudiante",
       label: "Estudiante",
-      render: (project) => project.estudiante.email,
+      render: (project) => (
+        <ul>
+          {project.estudiantes.map((estudiante) => (
+            <li key={estudiante.id}>
+              {estudiante.username}
+              <span className="text-blue-600 ml-2">({estudiante.email})</span>
+            </li>
+          ))}
+        </ul>
+      ),
     },
     { key: "Title", label: "Título" },
     { key: "Descripcion", label: "Descripción" },
     { key: "itinerario", label: "Itinerario" },
+    {
+      key: "Proyecto",
+      label: "Tipo de Proyecto",
+      render: (project) => project.tipoProyecto,
+    },
     { key: "FechaCreacion", label: "Fecha de Creación" },
   ];
 
@@ -118,7 +131,7 @@ const ProjectsAsignedTutor = () => {
             <option value="" className="bg-white">
               Seleccionar Itinerario
             </option>
-            <option value="Ingenieria de Software" className="bg-white">
+            <option value="Ingeniería de Software" className="bg-white">
               Ingeniería de Software
             </option>
             <option value="Sistemas Inteligentes" className="bg-white">
@@ -127,12 +140,14 @@ const ProjectsAsignedTutor = () => {
             <option value="Computación Aplicada" className="bg-white">
               Computación Aplicada
             </option>
-            {/* Asegúrate de que estos valores coincidan con los de los proyectos */}
           </select>
 
           <select
             value={dateSortOrder}
-            onChange={(e) => setDateSortOrder(e.target.value)}
+            onChange={(e) => {
+              setDateSortOrder(e.target.value); // Actualiza el estado del ordenamiento
+              handleFilterChange(); // Llama a la función para aplicar el nuevo orden
+            }}
             className="p-2 border border-gray-300 rounded bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
           >
             <option value="recent" className="bg-white">

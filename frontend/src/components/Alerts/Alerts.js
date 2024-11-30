@@ -20,6 +20,14 @@ export const errorAlert = (mensaje) => {
   });
 }
 
+export const warningAlert = (mensaje) => {
+  Swal.fire({
+    icon: 'warning',
+    title: '¡Atención!',
+    text: mensaje,
+  });
+}
+
 //ALERTA DE INICIAR SESION CORRECTAMENTE
 export const loginSuccessAlert = (username) => {
   Swal.fire({

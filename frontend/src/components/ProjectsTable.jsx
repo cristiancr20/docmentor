@@ -16,6 +16,7 @@ const ProjectsTable = ({
   onDelete: fetchProjects,
   onEdit,
 }) => {
+  const formattedProjects = Array.isArray(projects) ? projects : [projects];
 
   const encryptedUserData = localStorage.getItem("userData");
   let rol = null;
@@ -26,12 +27,9 @@ const ProjectsTable = ({
 
     // Acceder al rol desde los datos desencriptados
     rol = decryptedUserData.rol;
-
   } else {
     console.log("No se encontró el userData en localStorage");
   }
-
-  
 
   const handleDelete = async (projectId) => {
     // Muestra la alerta de confirmación antes de eliminar
@@ -48,7 +46,7 @@ const ProjectsTable = ({
       if (result.isConfirmed) {
         try {
           await deleteProject(projectId);
-          fetchProjects // Recarga los proyectos después de la eliminación
+          fetchProjects; // Recarga los proyectos después de la eliminación
           Swal.fire("Eliminado!", "El proyecto ha sido eliminado.", "success");
         } catch (error) {
           console.error("Error al eliminar el proyecto:", error);
@@ -94,7 +92,7 @@ const ProjectsTable = ({
           </tr>
         </thead>
         <tbody>
-          {projects.length === 0 ? (
+          {Array.isArray(formattedProjects) && projects.length === 0 ? (
             <tr className="bg-gray-800 text-white">
               <td
                 colSpan={columns.length + (linkBase ? 1 : 0)}

@@ -33,11 +33,17 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "project_ts"
     },
-    "estudiante": {
+    "estudiantes": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "project_es"
+      "mappedBy": "project_es"
+    },
+    "tipoProyecto": {
+      "type": "string"
+    },
+    "itinerario": {
+      "type": "string"
     }
   }
 }
