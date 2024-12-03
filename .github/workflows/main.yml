@@ -23,3 +23,9 @@ jobs:
     name: build
     uses: ./.github/workflows/build.yml
     secrets: inherit
+
+  build_backend:
+    needs: build
+    name: build_backend
+    uses: ./.github/workflows/backend.yml
+    secrets: inherit

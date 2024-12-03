@@ -1,0 +1,56 @@
+# .github/workflows/backend.yml
+name: 04 - Backend Build Pipeline
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build_backend:
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js 18.20.4
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.20.4
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: backend
+      run: npm ci
+
+    - name: Run backend tests
+      working-directory: backend
+      run: npm test -- --coverage
+
+    - name: Build backend application
+      working-directory: backend
+      run: npm run build
+
+    - name: Upload backend coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: Backend-Coverage-Report
+        path: backend/coverage
+
+    - name: Upload backend application artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Backend-Application-Binary
+        path: backend/dist  # O la carpeta donde esté la build del backend
+
+    - name: Publish backend test results
+      uses: EnricoMi/publish-unit-test-result-action@v2.0.0
+      if: always()
+      with:
+        junit_files: "backend/coverage/junit.xml"
