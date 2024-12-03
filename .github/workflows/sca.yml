@@ -5,48 +5,13 @@ on:
   workflow_call:
 
 jobs:
-  sca:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["ubuntu-20.04"]  # Puedes agregar más sistemas operativos si lo necesitas
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    name: SCA Node.js project
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-    
-      - name: Set up Node.js 18.20.4
-        uses: actions/setup-node@v4
-        with:
-            node-version: 18.20.4
-            cache: 'npm'
-            cache-dependency-path: frontend/package-lock.json
-    
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-      # Step 3: Install SCA tool (e.g., Snyk, OWASP Dependency-Check)
-      - name: Install SCA tool
-        run: |
-          npm install -g snyk
-          snyk auth ${{ secrets.SNYK_TOKEN }} # Asegúrate de tener configurado este secreto
-
-      # Step 4: Run SCA analysis
-      - name: Run SCA analysis
-        run: snyk test --json-file-output=snyk-report.json
-
-      # Step 5: Upload JSON analysis report as artifact
-      - name: Upload JSON analysis report
-        uses: actions/upload-artifact@v3
-        with:
-          name: Snyk-Report
-          path: snyk-report.json
-
-      # Step 6: Optional - Print analysis report
-      - name: Print JSON analysis report
-        if: ${{ always() }}
-        run: cat snyk-report.json
+    security:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@master
+          - name: Run Snyk to check for vulnerabilities
+            uses: snyk/actions/node@master
+            env:
+              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+            with:
+              args: --severity-threshold=high
