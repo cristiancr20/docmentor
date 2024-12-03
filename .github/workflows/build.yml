@@ -5,62 +5,51 @@ on:
   workflow_call:
 
 jobs:
-  #name of job, free choice, could also give a name
   build:
-    # required to fix an issue we had when test results failed because
-    # checks: write and pull-requests: write were needed
     permissions:
       contents: read
       issues: read
       checks: write
       pull-requests: write
-    # runner
     runs-on: ubuntu-latest
     
     steps:
-    # Checkout repository
     - name: Checkout repository
       uses: actions/checkout@v4
-    # Set up Node.js 18.20.4
+
     - name: Set up Node.js 18.20.4
       uses: actions/setup-node@v4
       with:
         node-version: 18.20.4
         cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json  # Especifica la ruta del package-lock.json
+        cache-dependency-path: frontend/package-lock.json
 
-    #Install dependencies
     - name: Install dependencies
       working-directory: frontend
-      run: npm install
-    
-    # Build Aplication
-    - name: Build Aplication
+      run: npm ci
+
+    - name: Run tests
+      working-directory: frontend
+      run: npm test -- --coverage
+
+    - name: Build Application
       working-directory: frontend
       run: npm run build
 
-   # Collect test results (if using a results folder like 'test-results')
-    - name: Collect test results
-      working-directory: frontend
-      run: mkdir -p test-results && cp -r reports/test-results/* test-results
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: Coverage-Report
+        path: frontend/coverage
 
-   # Upload application artifact (if applicable)
     - name: Upload application artifact
       uses: actions/upload-artifact@v3
       with:
         name: Application-Binary
-        path: frontend/dist/
+        path: frontend/build
 
-    # Upload test results
-    - name: Upload test results
-      uses: actions/upload-artifact@v3
-      with:
-        name: Test-Results
-        path: frontend/test-results
-
-    # Publish Test Results (for JUnit-style reports)
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2.0.0
       if: always()
       with:
-        junit_files: "frontend/test-results/**/*.xml"
+        junit_files: "frontend/coverage/junit.xml"
