@@ -29,3 +29,9 @@ jobs:
     name: build_backend
     uses: ./.github/workflows/backend.yml
     secrets: inherit
+
+  sca:
+    needs: build
+    name: SCA
+    uses: ./.github/workflows/sca.yml
+    secrets: inherit 
