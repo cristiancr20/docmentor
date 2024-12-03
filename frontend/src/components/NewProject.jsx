@@ -4,7 +4,6 @@ import {
   getTutors,
   getUserByEmail,
   getUserById,
-  getCorreo
 } from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";
@@ -47,8 +46,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
     };
     obtenerTutors();
   }, []);
-
-
 
   // Función para obtener el id del compañero por correo electrónico
   const getPartnerIdByEmail = async (email) => {
@@ -436,7 +433,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
             >
               Crear Proyecto
             </button>
-
           </motion.div>
         </div>
       </motion.form>
