@@ -27,17 +27,21 @@ jobs:
       with:
         node-version: 18.20.4
         cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json  # Especifica la ruta del package-lock.json
 
     #Install dependencies
     - name: Install dependencies
+      working-directory: frontend
       run: npm install
     
     # Build Aplication
     - name: Build Aplication
+      working-directory: frontend
       run: npm run build
 
    # Collect test results (if using a results folder like 'test-results')
     - name: Collect test results
+      working-directory: frontend
       run: mkdir -p test-results && cp -r reports/test-results/* test-results
 
    # Upload application artifact (if applicable)
@@ -45,17 +49,18 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Application-Binary
-        path: dist/
+        path: frontend/dist/
 
     # Upload test results
-    - uses: actions/upload-artifact@v3
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
       with:
         name: Test-Results
-        path: test-results
+        path: frontend/test-results
 
     # Publish Test Results (for JUnit-style reports)
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2.0.0
       if: always()
       with:
-        junit_files: "test-results/**/*.xml"
+        junit_files: "frontend/test-results/**/*.xml"
