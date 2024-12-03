@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18.20.4'
+
+    # Frontend steps
+    - name: Install frontend dependencies
+      run: npm install
+      working-directory: ./frontend
+
+    - name: Run frontend tests
+      run: npm test
+      working-directory: ./frontend
+
+    # Backend steps
+    - name: Install backend dependencies
+      run: npm install
+      working-directory: ./backend
+
+    - name: Setup SQLite
+      run: |
+        sudo apt-get install sqlite3
+        sqlite3 --version
+
+    - name: Run backend tests
+      run: npm test
+      working-directory: ./backend
