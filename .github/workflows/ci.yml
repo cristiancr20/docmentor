@@ -10,11 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-      sqlite:
-        image: nouchka/sqlite3
-        options: '--name sqlite'
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -24,8 +19,25 @@ jobs:
       with:
         node-version: '18.20.4'
 
-    - name: Install dependencies
+    # Frontend steps
+    - name: Install frontend dependencies
       run: npm install
+      working-directory: ./frontend
 
-    - name: Run tests
+    - name: Run frontend tests
       run: npm test
+      working-directory: ./frontend
+
+    # Backend steps
+    - name: Install backend dependencies
+      run: npm install
+      working-directory: ./backend
+
+    - name: Setup SQLite
+      run: |
+        sudo apt-get install sqlite3
+        sqlite3 --version
+
+    - name: Run backend tests
+      run: npm test
+      working-directory: ./backend
