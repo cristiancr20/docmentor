@@ -107,16 +107,21 @@ export const getTutors = async () => {
   }
 };
 
-// Función para obtener un usuario por correo
+// Función para obtener un usuario por correo y rol de estudiante
 export const getUserByEmail = async (email) => {
   try {
-    const response = await axios.get(`${API_URL}/api/users?filters[email][$eq]=${email}`);
+    const response = await axios.get(
+      `${API_URL}/api/users?filters[email][$eq]=${email}&filters[rol][tipoRol][$eq]=estudiante&populate=rol`
+    );
+
     return response.data; // Asegúrate de que `response.data` contenga el arreglo de usuarios
   } catch (error) {
-    console.error('Error al obtener el usuario por email:', error);
+    console.error("Error al obtener el usuario por email:", error);
     throw error;
   }
 };
+
+
 
 
 // Función para obtener el usuario por su ID

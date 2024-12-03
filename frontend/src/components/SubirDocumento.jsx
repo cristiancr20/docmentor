@@ -21,7 +21,6 @@ const SubirDocumento = ({ projectId, onClose }) => {
         uploadedFile.id,
         projectId
       );
-      console.log("Documento creado:", documentData);
       successAlert();
       setTitle("");
       setFile(null);
@@ -64,7 +63,16 @@ const SubirDocumento = ({ projectId, onClose }) => {
         <input
           type="file"
           id="file"
-          onChange={(e) => setFile(e.target.files[0])}
+          accept=".pdf" // Solo permite archivos con extensión .pdf
+          onChange={(e) => {
+            const selectedFile = e.target.files[0];
+            if (selectedFile && selectedFile.type === "application/pdf") {
+              setFile(selectedFile); // Solo se establece si es un archivo PDF válido
+            } else {
+              alert("Por favor, selecciona un archivo PDF válido.");
+              e.target.value = null; // Limpia el input si no es válido
+            }
+          }}
           className="w-full border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
           required
         />

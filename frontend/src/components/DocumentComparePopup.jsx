@@ -22,13 +22,15 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
   const [highlightPositions, setHighlightPositions] = useState([]);
   const [isComparing, setIsComparing] = useState(false);
 
-  const doc1 = documents[currentIndex];
-  const doc2 = documents[currentIndex + 1];
+  const sortedDocuments = [...documents].sort((a, b) => a.id- b.id);
+
+  const doc1 = sortedDocuments[currentIndex];
+  const doc2 = sortedDocuments[currentIndex + 1];
 
   const documento1 = `${API_URL}${doc1.attributes.documentFile.data[0].attributes.url}`;
   const documento2 = `${API_URL}${doc2.attributes.documentFile.data[0].attributes.url}`;
 
-  const extractTextFromPDF = async (url) => {
+/*   const extractTextFromPDF = async (url) => {
     try {
       const loadingTask = pdfjsLib.getDocument(url);
       const pdf = await loadingTask.promise;
@@ -46,7 +48,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       console.error(`Error extracting PDF text from URL: ${url}`, error);
       throw error;
     }
-  };
+  }; */
 
   const getPDFPageContentsWithPositions = async (pdfUrl) => {
     try {
@@ -80,9 +82,15 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
 
   const findTextPositions = useCallback((text, documentData, isRemoved = false) => {
     const positions = [];
+    const normalizedText = text.trim().toLowerCase(); // Normaliza el texto para que la búsqueda sea insensible a mayúsculas/minúsculas
+  
     documentData.forEach(page => {
       page.items.forEach(item => {
-        if (item.text.includes(text)) {
+        // Normalizamos el texto del item para una comparación más exacta
+        const normalizedItemText = item.text.trim().toLowerCase();
+  
+        // Comprobamos si el texto está incluido en el fragmento de texto actual (considerando que puede haber variaciones)
+        if (normalizedItemText.includes(normalizedText)) {
           positions.push({
             pageIndex: page.pageNumber - 1,
             x: item.transform[4],
@@ -94,8 +102,11 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
         }
       });
     });
+
+  
     return positions;
   }, []);
+  
 
   const compareDocumentsWithPositions = async () => {
     try {
@@ -106,14 +117,30 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       const text2 = doc2Data.map(page => page.items.map(item => item.text).join(' ')).join('\n');
 
       const differences = Diff.diffChars(text1, text2);
-
+  
       const calculatedPositions = [];
 
       differences.forEach(part => {
-        if (part.removed) {
+        // Ignorar diferencias con texto corto
+        if (part.value.trim().length <= 2) return;
+
+        console.log("part", part);
+
+        if (part.removed && !part.added) {
+          // El texto fue eliminado y no añadido nuevamente
           calculatedPositions.push(...findTextPositions(part.value.trim(), doc1Data, true));
-        } else if (part.added) {
+          console.log("calculatedPositions", calculatedPositions);
+        } else if (part.added && !part.removed) {
+          // El texto fue añadido y no eliminado previamente
           calculatedPositions.push(...findTextPositions(part.value.trim(), doc2Data, false));
+          console.log("calculatedPositions", calculatedPositions);
+
+        } else if (part.added && part.removed) {
+          // Si el texto fue cambiado, puede marcarse como diferencia mutua
+          calculatedPositions.push(...findTextPositions(part.value.trim(), doc1Data, true)); // Desde doc1
+          calculatedPositions.push(...findTextPositions(part.value.trim(), doc2Data, false)); // Desde doc2
+          console.log("calculatedPositions", calculatedPositions);
+
         }
       });
 
@@ -169,6 +196,16 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       setIsComparing(false);
     }
   };
+
+  const handlePrevious = () => {
+  setHighlightPositions([]); // Limpiar resaltados
+  setCurrentIndex(currentIndex - 1);
+};
+
+const handleNext = () => {
+  setHighlightPositions([]); // Limpiar resaltados
+  setCurrentIndex(currentIndex + 1);
+};
 
   return (
     <motion.div
@@ -246,14 +283,14 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
           </motion.div>
         </div>
         <div className="mt-4 flex justify-between">
-          <button
-            onClick={() => setCurrentIndex(currentIndex - 1)}
-            disabled={currentIndex === 0}
-            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-          >
-            <MdOutlineNavigateBefore className='ml-2' />
-            Anterior
-          </button>
+        <button
+  onClick={handlePrevious}
+  disabled={currentIndex === 0}
+  className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+>
+  <MdOutlineNavigateBefore className='ml-2' />
+  Anterior
+</button>
 
           <button
             onClick={handleCompareClick}
@@ -271,13 +308,13 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
           </button>
 
           <button
-            onClick={() => setCurrentIndex(currentIndex + 1)}
-            disabled={currentIndex >= documents.length - 2}
-            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-          >
-            Siguiente
-            <MdOutlineNavigateNext className="ml-2" />
-          </button>
+  onClick={handleNext}
+  disabled={currentIndex >= documents.length - 2}
+  className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+>
+  Siguiente
+  <MdOutlineNavigateNext className="ml-2" />
+</button>
 
 
         </div>

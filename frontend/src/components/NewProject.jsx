@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   createProject,
-  getProjectsByStudents,
   getTutors,
   getUserByEmail,
   getUserById,
@@ -9,7 +8,7 @@ import {
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";
 import { decryptData } from "../utils/encryption";
-import { UserCircle } from "lucide-react";
+import { User } from "lucide-react";
 
 const NewProject = ({ onClose, fetchProjects }) => {
   const [title, setTitle] = useState("");
@@ -21,6 +20,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const [partnerId, setPartnerId] = useState(null); // Guardar el ID del compañero
   const [partnerData, setPartnerData] = useState(null);
   const [selectedItinerary, setSelectedItinerary] = useState("");
+  const [selectedPartners, setSelectedPartners] = useState([]);
 
   const encryptedUserData = localStorage.getItem("userData");
   let userId = null;
@@ -52,15 +52,14 @@ const NewProject = ({ onClose, fetchProjects }) => {
     try {
       const response = await getUserByEmail(email);
 
-      // Verificar si la respuesta es válida y contiene los datos necesarios
       if (response && Array.isArray(response) && response.length > 0) {
-        return response[0].id; // Acceder al ID del primer usuario
+        return response[0].id;
       } else {
-        return null; // Si no se encuentra el usuario
+        return null;
       }
     } catch (error) {
-      console.error("Error al obtener el usuario por email:", error);
-      return null; // Si ocurre un error, devolver null
+      console.error("Error al obtener el ID del usuario:", error);
+      return null;
     }
   };
 
@@ -71,6 +70,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
 
     // Buscar el compañero por el correo ingresado
     const getPartnerId = await getPartnerIdByEmail(email);
+
     setPartnerId(getPartnerId);
 
     if (getPartnerId) {
@@ -92,11 +92,24 @@ const NewProject = ({ onClose, fetchProjects }) => {
     }
   };
 
-  console.log("selectedItinerary:", selectedItinerary); 
+  const handleAddPartner = () => {
+    if (
+      partnerData &&
+      !selectedPartners.some((partner) => partner.id === partnerData.id)
+    ) {
+      setSelectedPartners((prev) => [...prev, partnerData]);
+      setPartnerEmail(""); // Limpia el campo de entrada
+      setPartnerData(null); // Reinicia los datos del compañero
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validEstudiantes = [userId, partnerId].filter((id) => id != null); // Filtra los valores null o undefined
+    const validEstudiantes = [
+      userId,
+      ...selectedPartners.map((partner) => partner.id),
+    ].filter((id) => id != null);
 
     const projectData = {
       Title: title,
@@ -107,8 +120,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
       tipoProyecto: projectType,
       itinerario: selectedItinerary,
     };
-
-    console.log("projectData:", projectData);
 
     try {
       await createProject(projectData);
@@ -242,37 +253,57 @@ const NewProject = ({ onClose, fetchProjects }) => {
                 onChange={handlePartnerEmailChange}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 placeholder="Ingrese el correo de su compañero"
-                required={projectType === "Grupal"}
               />
 
               {partnerData ? (
                 <motion.div
-                  className="mt-4 p-4 border rounded-lg bg-green-50 shadow-lg flex items-center space-x-4"
+                  className=" flex items-center justify-between mt-4 p-4 border rounded-lg bg-green-50 shadow-lg flex items-center space-x-4"
                   initial={{ opacity: 0, x: -50 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
                   <motion.div
-                    className="bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center mb-4 shadow-xl"
-                    initial={{ scale: 0.5 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <UserCircle className="w-12 h-12" />
-                  </motion.div>
-
-                  <motion.div
-                    className="space-y-2"
+                    className="space-y-2 flex items-center justify-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.3 }}
                   >
-                    <p className="text-lg font-semibold text-gray-700">
-                      <strong>Nombre:</strong> {partnerData.username}
-                    </p>
-                    <p className="text-lg font-semibold text-gray-700">
-                      <strong>Correo:</strong> {partnerData.email}
-                    </p>
+                    <motion.div
+                      className="bg-gray-900 text-white rounded-full w-16 h-16 mb-4 shadow-xl flex items-center justify-center"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <User className="w-12 h-12" />
+                    </motion.div>
+
+                    <motion.div
+                      className="ml-2"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <p className="text-sm font-semibold text-gray-700">
+                        <strong>Nombre:</strong> {partnerData.username}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        <strong>Correo:</strong> {partnerData.email}
+                      </p>
+                    </motion.div>
+                  </motion.div>
+
+                  <motion.div
+                    className="mt-4 flex justify-end"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <button
+                      onClick={handleAddPartner}
+                      className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-all duration-200"
+                    >
+                      Agregar Compañero
+                    </button>
                   </motion.div>
                 </motion.div>
               ) : (
@@ -282,45 +313,87 @@ const NewProject = ({ onClose, fetchProjects }) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <p className="text-lg text-red-500 font-semibold">
+                  <p className="text-sm text-red-500 font-semibold">
                     Usuario no encontrado
                   </p>
                 </motion.div>
               )}
+
+              <motion.div
+                className="mt-6 space-y-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                {selectedPartners.map((partner) => (
+                  <motion.div
+                    key={partner.id}
+                    className="flex items-center justify-between p-4 border rounded-lg bg-gray-100 shadow-md"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">
+                        <strong>Nombre:</strong> {partner.username}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        <strong>Correo:</strong> {partner.email}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setSelectedPartners((prev) =>
+                          prev.filter((p) => p.id !== partner.id)
+                        )
+                      }
+                      className="text-red-500 font-bold hover:underline"
+                    >
+                      Eliminar
+                    </button>
+                  </motion.div>
+                ))}
+              </motion.div>
             </motion.div>
           )}
-
-          <label
-            htmlFor="tutor"
-            className="block text-gray-700 font-semibold mb-2 text-lg"
-          >
-            Seleccionar Itinerario
-          </label>
-
-          <select
-            id="itinerario"
-            value={selectedItinerary}
-            onChange={(e) => setSelectedItinerary(e.target.value)} // Asegúrate de que el valor se actualice aquí
-            className="p-2 border border-gray-300 rounded bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
-          >
-            <option value="" className="bg-white">
-              Seleccionar Itinerario
-            </option>
-            <option value="Ingeniería de Software" className="bg-white">
-              Ingeniería de Software
-            </option>
-            <option value="Sistemas Inteligentes" className="bg-white">
-              Sistemas Inteligentes
-            </option>
-            <option value="Computación Aplicada" className="bg-white">
-              Computación Aplicada
-            </option>
-          </select>
 
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
+          >
+            <label
+              htmlFor="tutor"
+              className="block text-gray-700 font-semibold mb-2 text-lg"
+            >
+              Seleccionar Itinerario
+            </label>
+
+            <select
+              id="itinerario"
+              value={selectedItinerary}
+              onChange={(e) => setSelectedItinerary(e.target.value)} // Asegúrate de que el valor se actualice aquí
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white"
+            >
+              <option value="" className="bg-white">
+                Seleccionar Itinerario
+              </option>
+              <option value="Ingeniería de Software" className="bg-white">
+                Ingeniería de Software
+              </option>
+              <option value="Sistemas Inteligentes" className="bg-white">
+                Sistemas Inteligentes
+              </option>
+              <option value="Computación Aplicada" className="bg-white">
+                Computación Aplicada
+              </option>
+            </select>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
           >
             <label
               htmlFor="tutor"
@@ -351,7 +424,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.7 }}
             className="pt-4"
           >
             <button

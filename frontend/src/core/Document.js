@@ -1,7 +1,8 @@
-import axios from "axios";
+import axios from 'axios';
+import { API_URL } from './config';
+import { decryptData } from '../utils/encryption';
 
-import { API_URL } from "./config";
-import { decryptData } from "../utils/encryption";
+// Resto de tu código
 //const API_URL = "http://localhost:1337";
 
 //METODO PARA SUBIR DOCUMENTO
@@ -46,11 +47,7 @@ export const uploadFile = async (file) => {
 
 // MÉTODO PARA AGREGAR EL DOCUMENTO AL PROYECTO
 export const createDocument = async (title, fileId, projectId) => {
-
-  console.log("createDocument", title, fileId, projectId);
-
   const numProjectId = parseInt(projectId, 10);
-
 
   // Validación adicional
   if (!projectId) {
@@ -104,8 +101,9 @@ export const createDocument = async (title, fileId, projectId) => {
 const createNotification = async (title, projectId, documentoId) => {
   try {
     const projectResponse = await axios.get(
-      `${API_URL}/api/new-projects/${projectId}?populate=tutor,estudiante`
+      `${API_URL}/api/new-projects/${projectId}?populate=tutor`
     );
+
 
     if (
       !projectResponse ||
@@ -119,17 +117,16 @@ const createNotification = async (title, projectId, documentoId) => {
 
     const projectAttributes = projectResponse.data.data.attributes;
     const tutor = projectAttributes.tutor.data;
-    const student = projectAttributes.estudiante.data;
+    const proyecto = projectAttributes.Title
 
-    if (tutor && student) {
+    if (tutor) {
       const notificationData = {
         data: {
-          mensaje: `El estudiante ${student.attributes.username} ha subido un nuevo documento: ${title}`,
+          mensaje: `En el proyecto ${proyecto} se ha subido un nuevo documento: ${title}`,
           tutor: tutor.id,
           document: documentoId,
           leido: false,
         },
-
       };
 
       await axios.post(`${API_URL}/api/notificacions`, notificationData);

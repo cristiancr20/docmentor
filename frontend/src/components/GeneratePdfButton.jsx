@@ -117,7 +117,7 @@ const GeneratePdfButton = ({ userInfo }) => {
       className="font-bold mb-4 ml-4 bg-blue-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
       onClick={generatePDF}
     >
-      Generar PDF
+      Generar Informe de revisión
     </motion.button>
   );
 };

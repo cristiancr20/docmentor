@@ -140,6 +140,18 @@ const ProyectoDetalle = () => {
                 </span>
               </motion.div>
             </div>
+            {/* Itinerario */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex items-center space-x-2 text-1xl mt-2"
+            >
+              <h3 className="font-bold text-gray-800">Itinerario:</h3>
+              <p className="px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                {itinerario || "Itinerario no especificado"}
+              </p>
+            </motion.div>
           </motion.div>
 
           <div>
@@ -216,9 +228,9 @@ const ProyectoDetalle = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                           >
-                            <div className="flex items-center space-x-4 p-3 bg-white shadow-sm rounded-lg border border-gray-100 hover:border-blue-200 transition-colors duration-200">
+                            <div className="flex items-center space-x-4 p-3 bg-white shadow-sm rounded-lg border border-gray-100 hover:border-blue-200 transition-colors duration-200 cursor-pointer">
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">
+                                <p className="text-sm font-medium text-blue-700 truncate">
                                   {estudiante.username ||
                                     "Nombre no disponible"}
                                 </p>
@@ -229,16 +241,6 @@ const ProyectoDetalle = () => {
                             </div>
                           </motion.div>
                         ))}
-                      </div>
-
-                      {/* Itinerario */}
-                      <div className="flex items-center space-x-2 text-sm">
-                        <h3 className="font-semibold text-gray-800">
-                          Itinerario:
-                        </h3>
-                        <p className="px-3 py-1 rounded-full bg-blue-50 text-blue-700">
-                          {itinerario || "Itinerario no especificado"}
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -282,7 +284,7 @@ const ProyectoDetalle = () => {
             Comparar Versiones
           </motion.button>
 
-          <GeneratePdfButton userInfo={attributes} />
+          {rol === "tutor" && <GeneratePdfButton userInfo={attributes} />}
 
           <AnimatePresence>
             {isShowComparePopupOpen && (
