@@ -17,39 +17,78 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Node.js 18.20.4
+    # Frontend steps
+    - name: Set up Node.js 18.20.4 (Frontend)
       uses: actions/setup-node@v4
       with:
         node-version: 18.20.4
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
-    - name: Install dependencies
+    - name: Install frontend dependencies
       working-directory: frontend
       run: npm ci
 
-    - name: Run tests
+    - name: Run frontend tests
       working-directory: frontend
       run: npm test -- --coverage
 
-    - name: Build Application
+    - name: Build frontend application
       working-directory: frontend
       run: npm run build
 
-    - name: Upload coverage report
+    - name: Upload frontend coverage report
       uses: actions/upload-artifact@v3
       with:
         name: Coverage-Report
         path: frontend/coverage
 
-    - name: Upload application artifact
+    - name: Upload frontend application artifact
       uses: actions/upload-artifact@v3
       with:
         name: Application-Binary
         path: frontend/build
 
-    - name: Publish Test Results
+    - name: Publish frontend test results
       uses: EnricoMi/publish-unit-test-result-action@v2.0.0
       if: always()
       with:
         junit_files: "frontend/coverage/junit.xml"
+        
+    # Backend steps
+    - name: Set up Node.js 18.20.4 (Backend)
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.20.4
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      working-directory: backend
+      run: npm ci
+
+    - name: Run backend tests
+      working-directory: backend
+      run: npm test -- --coverage
+
+    - name: Build backend application
+      working-directory: backend
+      run: npm run build
+
+    - name: Upload backend coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: Backend-Coverage-Report
+        path: backend/coverage
+
+    - name: Upload backend application artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Backend-Application-Binary
+        path: backend/dist
+
+    - name: Publish backend test results
+      uses: EnricoMi/publish-unit-test-result-action@v2.0.0
+      if: always()
+      with:
+        junit_files: "backend/coverage/junit.xml"
