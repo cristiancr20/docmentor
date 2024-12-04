@@ -1,15 +1,19 @@
 {
   "name": "doc-version",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "description": "A Strapi application",
+  "license": "MIT",
+  "author": {
+    "name": "A Strapi developer"
+  },
   "scripts": {
+    "build": "strapi build",
+    "deploy": "strapi deploy",
     "develop": "strapi develop",
     "start": "strapi start",
-    "build": "strapi build",
     "strapi": "strapi",
-    "deploy": "strapi deploy",
-    "test": "jest --coverage"
+    "test": "jest --forceExit --detectOpenHandles"
   },
   "dependencies": {
     "@strapi/plugin-cloud": "^4.12.0",
@@ -25,18 +29,24 @@
     "react-router-dom": "^5.3.4",
     "styled-components": "^5.3.3"
   },
-  "author": {
-    "name": "A Strapi developer"
-  },
-  "strapi": {
-    "uuid": "ecc98c67-21cf-4b6f-96c2-bbdabd9e56b1"
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "sqlite3": "^5.1.7",
+    "supertest": "^7.0.0"
   },
   "engines": {
     "node": ">=18.0.0 <=20.x.x",
     "npm": ">=6.0.0"
   },
-  "license": "MIT",
-  "devDependencies": {
-    "jest": "^29.7.0"
+  "strapi": {
+    "uuid": "ecc98c67-21cf-4b6f-96c2-bbdabd9e56b1"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      ".tmp",
+      ".cache"
+    ],
+    "testEnvironment": "node"
   }
 }
