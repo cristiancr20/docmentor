@@ -9,9 +9,27 @@ jobs:
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@master
+
+          # Navega al subdirectorio del frontend si aplica
+          - name: Set up Node.js dependencies
+            working-directory: frontend # Cambia a la carpeta correcta
+            run: npm install
+
           - name: Run Snyk to check for vulnerabilities
             uses: snyk/actions/node@master
             env:
               SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
             with:
-              args: --severity-threshold=high
+              args: --severity-threshold=high --file=frontend/package.json
+
+           # Escanear el backend
+          - name: Set up Node.js dependencies for backend
+            working-directory: backend
+            run: npm install
+           
+          - name: Run Snyk on backend
+            uses: snyk/actions/node@master
+            env:
+              SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+            with:
+              args: --severity-threshold=high --file=backend/package.json

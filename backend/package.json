@@ -13,7 +13,9 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "strapi": "strapi",
-    "test": "jest --forceExit --detectOpenHandles"
+    "test": "jest" 
+
+
   },
   "dependencies": {
     "@strapi/plugin-cloud": "^4.12.0",
