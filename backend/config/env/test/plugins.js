@@ -1,8 +1,8 @@
-module.exports = ({ env }) => ({
+module.exports = {
     'users-permissions': {
       config: {
-        jwtSecret: env('JWT_SECRET'),
+        jwtSecret: process.env.JWT_SECRET || 'your-test-secret-key',
       },
     },
-  });
+  };
   

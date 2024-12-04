@@ -5,24 +5,22 @@ let instance;
 
 async function setupStrapi() {
   if (!instance) {
-    await Strapi().load();
-    instance = strapi;
-    
+    instance = await Strapi().load(); // Aquí aseguramos que la instancia sea correcta.
     await instance.server.mount();
   }
   return instance;
 }
 
 async function cleanupStrapi() {
-  const dbSettings = strapi.config.get("database.connection");
+  const dbSettings = instance.config.get("database.connection"); // Usa instance en lugar de strapi
 
-  //close server to release the db-file
-  await strapi.server.httpServer.close();
+  // Cierra el servidor para liberar el archivo de la base de datos
+  await instance.server.httpServer.close();
 
-  // close the connection to the database before deletion
-  await strapi.db.connection.destroy();
+  // Cierra la conexión a la base de datos antes de eliminarla
+  await instance.db.connection.destroy();
 
-  //delete test database after all tests have completed
+  // Elimina la base de datos de prueba después de completar las pruebas
   if (dbSettings && dbSettings.connection && dbSettings.connection.filename) {
     const tmpDbFile = dbSettings.connection.filename;
     if (fs.existsSync(tmpDbFile)) {
@@ -32,3 +30,4 @@ async function cleanupStrapi() {
 }
 
 module.exports = { setupStrapi, cleanupStrapi };
+

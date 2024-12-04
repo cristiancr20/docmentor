@@ -49,10 +49,10 @@ jobs:
         name: Application-Binary
         path: frontend/build
 
-    - name: Publish frontend test results
-      uses: EnricoMi/publish-unit-test-result-action@v2.0.0
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
       with:
-        junit_files: "frontend/coverage/junit.xml"
+        files: test-results/**/*.xml
         
     

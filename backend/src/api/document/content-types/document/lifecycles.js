@@ -1,4 +1,4 @@
-'use strict';
+/* 'use strict';
 
 const { transporter } = require('../../../../mailer/mailer');
 const fs = require('fs');
@@ -156,4 +156,4 @@ module.exports = {
             console.error('Error en afterUpdate lifecycle de documentos:', error);
         }
     },
-};
+}; */
