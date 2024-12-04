@@ -19,13 +19,18 @@ permissions:
   packages: write
 
 jobs:
-  build:
-    name: build
-    uses: ./.github/workflows/build.yml
+  build_frontend:
+    name: build_frontend
+    uses: ./.github/workflows/build_frontend.yml
+    secrets: inherit
+
+  build_backend:
+    name: build_backend
+    uses: ./.github/workflows/build_backend.yml
     secrets: inherit
 
   sca:
-    needs: build
+    needs: build_frontend
     name: SCA
     uses: ./.github/workflows/sca.yml
     secrets: inherit 
