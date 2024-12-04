@@ -23,11 +23,6 @@ jobs:
     name: build_frontend
     uses: ./.github/workflows/build_frontend.yml
     secrets: inherit
-
-  build_backend:
-    name: build_backend
-    uses: ./.github/workflows/build_backend.yml
-    secrets: inherit
     
   sca:
     needs: build_frontend
