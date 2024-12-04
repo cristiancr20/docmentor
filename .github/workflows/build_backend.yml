@@ -38,13 +38,13 @@ jobs:
       run: npm run build
 
     - name: Upload backend coverage report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Backend-Coverage-Report
         path: backend/coverage
 
     - name: Upload backend application artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Backend-Application-Binary
         path: backend/dist
