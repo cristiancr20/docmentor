@@ -2,6 +2,7 @@ const fs = require('fs');
 const { setupStrapi, cleanupStrapi } = require("./helpers/strapi");
 require("./user")
 
+
 beforeAll(async () => {
   await setupStrapi();
 });

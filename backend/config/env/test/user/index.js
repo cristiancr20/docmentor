@@ -1,5 +1,7 @@
 const request = require('supertest');
 
+
+
 // user mock data
 const mockUserData = {
     username: "tester",
@@ -77,20 +79,24 @@ it("debe devolver los usuarios de la base de datos", async () => {
         id: userWithReadPermission.id,
     });
 
-    console.log('Generated JWT:', jwt); // Log the JWT
-
     await request(strapi.server.httpServer)
-        .get("/api/users")
-        .set('Authorization', `Bearer ${jwt}`)
-        .then((response) => {
-            console.log('Response Status:', response.status); // Log the response status
-            console.log('Response Body:', response.body); // Log the response body
-            expect(response.status).toBe(200);
-            expect(response.body).toBeDefined();
-            expect(response.body.length).toBeGreaterThan(0);
-        })
-        .catch((err) => {
-            console.error('Error:', err.response ? err.response.body : err); // Log the error
-        });
+    .get("/api/users")
+    .set('Authorization', `Bearer ${jwt}`)
+    .expect(200)
+    .then((response) => {
+        console.log('Response Status:', response.status); // Log the response status
+        console.log('Response Body:', response.body); // Log the response body
+        expect(response.body).toBeDefined();
+        expect(response.body.length).toBeGreaterThan(0);
+    })
+    .catch((err) => {
+        console.error('Error:', err.response ? err.response.body : err); // Log the error
+        if (err.response) {
+            console.error('Response Status:', err.response.status); // Log the response status
+            console.error('Response Headers:', err.response.headers); // Log the response headers
+            console.error('Response Body:', err.response.body); // Log the response body
+        }
+    });
 
 });
+
