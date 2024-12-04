@@ -79,8 +79,8 @@
       "^.+\\.(js|jsx)$": "babel-jest"
     },
     "testMatch": [
-      "**/__tests__/**/*.+(js|jsx|ts|tsx)",
-      "**/?(*.)+(spec|test).+(js|jsx|ts|tsx)"
+      "*/_tests_//.+(js|jsx|ts|tsx)",
+      "*/?(.)+(spec|test).+(js|jsx|ts|tsx)"
     ]
   }
 }

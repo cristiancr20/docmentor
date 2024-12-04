@@ -13,7 +13,7 @@ jobs:
           # Navega al subdirectorio del frontend si aplica
           - name: Set up Node.js dependencies
             working-directory: frontend # Cambia a la carpeta correcta
-            run: npm install
+            run: npm install --legacy-peer-deps
 
           - name: Run Snyk to check for vulnerabilities
             uses: snyk/actions/node@master
@@ -25,7 +25,7 @@ jobs:
            # Escanear el backend
           - name: Set up Node.js dependencies for backend
             working-directory: backend
-            run: npm install
+            run: npm install --legacy-peer-deps
            
           - name: Run Snyk on backend
             uses: snyk/actions/node@master
