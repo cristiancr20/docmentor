@@ -30,7 +30,7 @@ jobs:
     secrets: inherit
     
   sca:
-    needs: build_frontend
+    needs: [build_frontend, build_backend]
     name: SCA
     uses: ./.github/workflows/sca.yml
     secrets: inherit 
