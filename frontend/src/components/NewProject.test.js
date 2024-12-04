@@ -28,9 +28,11 @@ describe('NewProject Component', () => {
   const mockFetchProjects = jest.fn();
 
   beforeEach(() => {
+    // Simula datos en el localStorage
     const userData = { id: '123', username: 'TestUser', email: 'test@example.com' };
     localStorage.setItem('userData', encryptData(userData));
 
+    // Mock para obtener tutores
     getTutors.mockResolvedValue([
       { id: 1, username: 'Tutor 1' },
       { id: 2, username: 'Tutor 2' },
@@ -49,16 +51,12 @@ describe('NewProject Component', () => {
     });
 
     // Aseguramos que los elementos principales del formulario se renderizan
-    await waitFor(() => {
-      expect(screen.getByLabelText(/título del proyecto/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/descripción del proyecto/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/seleccionar tutor/i)).toBeInTheDocument();
-    });
+    expect(screen.getByLabelText(/título del proyecto/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/descripción del proyecto/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/seleccionar tutor/i)).toBeInTheDocument();
 
     // Verificamos que los tutores se renderizan correctamente
-    await waitFor(() => {
-      expect(screen.getByText('Tutor 1')).toBeInTheDocument();
-      expect(screen.getByText('Tutor 2')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Tutor 1')).toBeInTheDocument();
+    expect(screen.getByText('Tutor 2')).toBeInTheDocument();
   });
 });
