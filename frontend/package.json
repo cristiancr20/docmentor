@@ -83,7 +83,7 @@
       "**/?(*.)+(spec|test).+(js|jsx|ts|tsx)"
     ],
     "coverageDirectory": "frontend/coverage",
-    "coverageReporters": ["text", "lcov", "json", "html", "junit"],  // Añade "junit"
+    "coverageReporters": ["text", "lcov", "json", "html", "junit"],  
     "reporters": [
       "default",
       ["jest-junit", {
