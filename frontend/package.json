@@ -81,6 +81,16 @@
     "testMatch": [
       "**/__tests__/**/*.+(js|jsx|ts|tsx)",
       "**/?(*.)+(spec|test).+(js|jsx|ts|tsx)"
+    ],
+    "coverageDirectory": "frontend/coverage",
+    "coverageReporters": ["text", "lcov", "json", "html", "junit"],  // Añade "junit"
+    "reporters": [
+      "default",
+      ["jest-junit", {
+        "outputDirectory": "frontend/coverage",
+        "outputName": "junit.xml"
+      }]
     ]
   }
+
 }
