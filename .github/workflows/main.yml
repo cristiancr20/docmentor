@@ -31,7 +31,6 @@ jobs:
     secrets: inherit
   
   k6:
-    needs: build_frontend
     name: k6
     uses: ./.github/workflows/k6.yml
     secrets: inherit
