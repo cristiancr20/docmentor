@@ -38,9 +38,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "test:coverage": "react-scripts test --coverage"
+    "test": "react-scripts test --coverage",
+    "test:coverage": "react-scripts test --coverage --coverageReporters=json"
   },
   "browserslist": {
     "production": [
@@ -65,6 +65,7 @@
     "babel-jest": "^29.7.0",
     "dotenv": "^16.4.7",
     "eslint-config-prettier": "^9.1.0",
+    "github-actions-ctrf": "^0.0.50",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-junit": "^16.0.0",
@@ -85,15 +86,14 @@
       "**/__tests__/**/*.+(js|jsx|ts|tsx)",
       "**/?(*.)+(spec|test).+(js|jsx|ts|tsx)"
     ],
-    "reporters": [
-      "default",
-      [
-        "jest-junit",
-        {
-          "outputDirectory": "coverage",
-          "outputName": "junit.xml"
-        }
-      ]
+    "coverageReporters": [
+      "json",
+      "lcov",
+      "text",
+      "clover"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
     ]
   }
 }
