@@ -58,7 +58,6 @@ const ProtectedRoute = () => {
 function App() {
   return (
     <>
-      <Router>
         <Routes>
           {/* Rutas públicas */}
           <Route path="/" element={<Dashboard />} />
@@ -82,7 +81,6 @@ function App() {
           {/* Ruta 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
     </>
   );
 }

@@ -1,7 +1,8 @@
 import CryptoJS from "crypto-js";
 
 // Clave secreta desde variables de entorno
-const SECRET_KEY = process.env.REACT_APP_SECRET_KEY;
+import {SECRET_KEY} from "../core/config";
+
 
 // Función para encriptar
 export const encryptData = (data) => {
