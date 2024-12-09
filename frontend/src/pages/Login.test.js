@@ -13,6 +13,17 @@ jest.mock("react-router-dom", () => ({
     useNavigate: jest.fn(),
 }));
 
+beforeAll(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {}); // Silencia los warnings
+    jest.spyOn(console, 'error').mockImplementation(() => {}); // Silencia los errores
+  });
+  
+  afterAll(() => {
+    console.warn.mockRestore(); // Restaura el comportamiento normal
+    console.error.mockRestore();
+  });
+  
+
 describe("Login Component", () => {
     let mockNavigate;
 
@@ -21,7 +32,7 @@ describe("Login Component", () => {
         useNavigate.mockReturnValue(mockNavigate);
     });
 
-    test("should render login form", () => {
+    test("debe mostrar el formulario de Login", () => {
 
         render(
             <Router>
@@ -36,8 +47,7 @@ describe("Login Component", () => {
         expect(true).toBe(true);
     });
 
-    test("should show error alert if login fails", async () => {
-        // Simulamos el login fallido
+    test("debería mostrar una alerta de error si falla el inicio de sesión", async () => {
         Auth.login.mockRejectedValueOnce(new Error("Error en las credenciales"));
 
         render(
@@ -47,21 +57,22 @@ describe("Login Component", () => {
         );
 
         fireEvent.change(screen.getByLabelText(/email/i), {
-            target: { value: "test@example.com" },
+            target: { value: "test" },
         });
+
         fireEvent.change(screen.getByLabelText(/contraseña/i), {
             target: { value: "wrongpassword" },
         });
 
         fireEvent.click(screen.getByRole("button", { name: /iniciar sesión/i }));
 
-        // Esperar a que el mensaje de error aparezca
-        await waitFor(() => expect(screen.getByText(/Credenciales incorrectas/i)).toBeInTheDocument());
-        expect(true).toBe(true);
+        await waitFor(() =>
+            expect(screen.getByText(/¡Error!/i)).toBeInTheDocument()
+        );
 
     });
 
-    test("should redirect to the correct route after successful login", async () => {
+    test("debe redirigir a la ruta correcta después de iniciar sesión correctamente", async () => {
         // Simulamos el login exitoso
         const mockAuthResponse = {
             jwt: "fake-jwt-token",

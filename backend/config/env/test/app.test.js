@@ -1,16 +1,15 @@
 const fs = require('fs');
 const { setupStrapi, cleanupStrapi } = require("./helpers/strapi");
-require("./user")
-
+require('./rols/index')
 
 beforeAll(async () => {
   await setupStrapi();
+  
 });
-
 afterAll(async () => {
   await cleanupStrapi();
 });
-
-it("strapi es definido", () => {
+it("strapi is defined", () => {
   expect(strapi).toBeDefined();
 });
+

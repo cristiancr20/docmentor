@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getRoles, registerUser } from "../core/Autentication";
-import { successAlert, errorAlert } from "../components/Alerts/Alerts";
+import { successAlert, registerErrorAlert } from "../components/Alerts/Alerts";
 import { motion } from "framer-motion";
 
 function SignUp() {
@@ -10,18 +10,27 @@ function SignUp() {
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState("");
   const [roles, setRoles] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await getRoles();
-        setRoles(response.data);
-      } catch (error) {
-        console.error("Error fetching roles:", error);
-      }
-    };
     fetchRoles();
   }, []);
+  const fetchRoles = async () => {
+    try {
+      const response = await getRoles();
+      // Accede a la propiedad 'data' para obtener los roles
+      if (response && response.data) {
+        setRoles(response.data); // Aquí asignas directamente los roles a setRoles
+      } else {
+        console.error(
+          "Error: La respuesta no contiene los roles correctamente."
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,19 +44,22 @@ function SignUp() {
       setEmail("");
       setPassword("");
       setRol("");
-      window.location.href = "/login";
+      navigate("/login");
     } catch (error) {
-      console.error("Error registering user:", error);
       if (error.response) {
         if (error.response.status === 409) {
-          errorAlert("El usuario ya existe.");
+          registerErrorAlert("El usuario ya existe.");
         } else if (error.response.status === 400) {
-          errorAlert("Error en los datos proporcionados.");
+          registerErrorAlert("Error en los datos proporcionados.");
         } else {
-          errorAlert("Error al registrar el usuario. Inténtalo de nuevo.");
+          erroregisterErrorAlertrAlert(
+            "Error al registrar el usuario. Inténtalo de nuevo."
+          );
         }
       } else {
-        errorAlert("Error al registrar el usuario. Inténtalo de nuevo.");
+        registerErrorAlert(
+          "Error al registrar el usuario. Inténtalo de nuevo."
+        );
       }
     }
   };
@@ -137,11 +149,15 @@ function SignUp() {
               onChange={(e) => setRol(e.target.value)}
             >
               <option value="">Seleccione una opción</option>
-              {roles.map((rol) => (
-                <option key={rol.id} value={rol.id}>
-                  {rol.attributes.tipoRol}
-                </option>
-              ))}
+              {roles && roles.length > 0 ? (
+                roles.map((rol) => (
+                  <option key={rol.id} value={rol.id}>
+                    {rol.attributes.tipoRol}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Cargando roles...</option>
+              )}
             </select>
           </div>
 

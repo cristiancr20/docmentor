@@ -70,10 +70,7 @@ const Login = () => {
     } catch (error) {
       console.error("Error en el proceso de autenticación:", error);
 
-      const errorMessage =
-        error.response?.data?.error?.message ||
-        error.message ||
-        "Error en el inicio de sesión. Verifica tus credenciales.";
+      const errorMessage ="Error en el inicio de sesión. Verifica tus credenciales.";
 
       loginErrorAlert(errorMessage);
     }

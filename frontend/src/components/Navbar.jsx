@@ -6,17 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
 
 function Navbar() {
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const navigate = useNavigate();
   const [userData, setUserData] = useState({});
-  
+
   useEffect(() => {
-    
- 
     const encryptedToken = localStorage.getItem("jwtToken");
     const encryptedUserData = localStorage.getItem("userData");
 
@@ -33,7 +30,6 @@ function Navbar() {
     const jwtToken = decryptData(encryptedToken);
 
     try {
-
       if (!jwtToken) {
         console.error("Token desencriptado inválido o vacío.");
         return;
@@ -43,15 +39,13 @@ function Navbar() {
         console.error("El token no tiene un formato JWT válido:", jwtToken);
         return;
       }
-
     } catch (error) {
       console.error("Error al procesar el token:", error.message);
     }
 
     const user = decryptData(encryptedUserData);
 
-
-    if(!user) {
+    if (!user) {
       console.error("Datos de usuario desencriptados inválidos o vacíos.");
       return;
     }
@@ -82,7 +76,6 @@ function Navbar() {
   const markAsRead = async (notification) => {
     const notificationId = notification.id;
     const documentData = notification.attributes.document?.data;
-
 
     try {
       await markAsReadNotification(notificationId);
@@ -117,7 +110,7 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("jwtToken");
-    localStorage.removeItem("userData"); 
+    localStorage.removeItem("userData");
     navigate("/", { replace: true });
   };
 
@@ -186,7 +179,7 @@ function Navbar() {
                       to="/tutor/dashboard"
                       className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      Inicio
+                      <span className="font-medium">Inicio</span>
                     </Link>
                   </motion.li>
                   <motion.li whileHover={{ scale: 1.05 }}>
@@ -194,7 +187,7 @@ function Navbar() {
                       to="/proyectos/asignados"
                       className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      Proyectos asignados
+                      <span className="font-medium">Ver mis Proyectos</span>
                     </Link>
                   </motion.li>
                 </>
@@ -207,7 +200,7 @@ function Navbar() {
                       to="/student/dashboard"
                       className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      Inicio
+                      <span className="font-medium">Inicio</span>
                     </Link>
                   </motion.li>
                   <motion.li whileHover={{ scale: 1.05 }}>
@@ -215,7 +208,7 @@ function Navbar() {
                       to="/proyecto/ver"
                       className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      Ver mis Proyectos
+                      <span className="font-medium">Ver mis Proyectos</span>
                     </Link>
                   </motion.li>
                 </>

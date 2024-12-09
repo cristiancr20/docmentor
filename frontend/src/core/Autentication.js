@@ -107,7 +107,8 @@ export const getRoles = async () => {
     const response = await axios.get(`${API_URL}/api/rols`);
     return response.data;
   } catch (error) {
-    console.error(error);
+    console.error("Error al obtener los roles:", error);
+    return []; // Devuelve un array vacío en caso de error
   }
 };
 

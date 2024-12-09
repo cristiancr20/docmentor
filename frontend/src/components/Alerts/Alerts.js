@@ -11,7 +11,16 @@ export const successAlert = () => {
   });
 }
 
-// Alerta DE ERROR
+// Alerta DE ERROR AL REGISTRAR USUARIO
+export const registerErrorAlert = (mensaje) => {
+  Swal.fire({
+    icon: 'error',
+    title: '¡Error al registrar el usuario!',
+    text: mensaje,
+  });
+}
+
+//Alerta de error al subir documento
 export const errorAlert = (mensaje) => {
   Swal.fire({
     icon: 'error',
@@ -40,11 +49,11 @@ export const loginSuccessAlert = (username) => {
 }
 
 //ALERTA DE ERROR AL INICIAR SESION - CREDENCIALES INCOORRECTAS
-export const loginErrorAlert = () => {
+export const loginErrorAlert = (mensaje) => {
   Swal.fire({
     icon: 'error',
     title: '¡Error!',
-    text: 'Credenciales incorrectas',
+    text: mensaje,
   });
 }
 

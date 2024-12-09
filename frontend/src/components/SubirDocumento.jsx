@@ -27,7 +27,8 @@ const SubirDocumento = ({ projectId, onClose }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error uploading document:", error);
-      errorAlert();
+      const mensaje = error.response?.data?.message || "Error al subir el documento";
+      errorAlert(mensaje);
     }
   };
 
