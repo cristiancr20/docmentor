@@ -1,0 +1,56 @@
+name: 04 SAST
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  SAST-CodeQL:
+    name: Build and SAST CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - frontend
+          - backend
+        node-version: [18.20.5]
+
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Node.js environment for the selected project
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Install dependencies for the current project (frontend/backend)
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: npm install
+
+      # Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+          queries: +security-and-quality
+
+      # Run CodeQL build
+      - name: Build project
+        working-directory: ${{ matrix.project }}
+        run: npm run build || echo "Build step skipped for ${{ matrix.project }}"
+
+      # Run CodeQL analysis
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
