@@ -21,7 +21,8 @@ const SubirDocumento = ({ projectId, onClose }) => {
         uploadedFile.id,
         projectId
       );
-      successAlert();
+      const mensaje = "Documento subido correctamente";
+      successAlert(mensaje);
       setTitle("");
       setFile(null);
       if (onClose) onClose();

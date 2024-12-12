@@ -48,6 +48,8 @@ export const deleteProject = async (projectId) => {
     const response = await axios.delete(
       `${API_URL}/api/new-projects/${projectId}`
     );
+    console.log(response.data);
+    console.log("Proyecto eliminado", response);
     return response.data;
   } catch (error) {
     console.error("Error al eliminar el proyecto:", error);

@@ -1,11 +1,11 @@
 import Swal from 'sweetalert2';
 
 // Alerta DE SATISFACCION
-export const successAlert = () => {
+export const successAlert = (mensaje) => {
   Swal.fire({
     icon: 'success',
     title: '¡Éxito!',
-    text: 'La operación se realizó correctamente',
+    text: mensaje,
     showConfirmButton: false,
     timer: 1500
   });

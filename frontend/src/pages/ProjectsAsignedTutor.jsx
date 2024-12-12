@@ -114,19 +114,11 @@ const ProjectsAsignedTutor = () => {
 
         {/* Filters */}
 
-        <div className="mb-4 flex flex-col md:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Buscar por Autor"
-            value={authorFilter}
-            onChange={(e) => setAuthorFilter(e.target.value)}
-            className="p-2 border rounded"
-          />
-
+        <div className="mb-4 flex flex-col md:flex-row gap-4 items-center">
           <select
             value={itineraryFilter}
             onChange={(e) => setItineraryFilter(e.target.value)}
-            className="p-2 border border-gray-300 rounded bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
+            className="font-bold bg-gray-900 text-white py-3 px-6 rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
           >
             <option value="" className="bg-white">
               Seleccionar Itinerario
@@ -148,7 +140,7 @@ const ProjectsAsignedTutor = () => {
               setDateSortOrder(e.target.value); // Actualiza el estado del ordenamiento
               handleFilterChange(); // Llama a la función para aplicar el nuevo orden
             }}
-            className="p-2 border border-gray-300 rounded bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer"
+            className="font-bold bg-gray-900 text-white py-3 px-6 rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
           >
             <option value="recent" className="bg-white">
               Más Recientes
@@ -157,6 +149,32 @@ const ProjectsAsignedTutor = () => {
               Más Antiguos
             </option>
           </select>
+
+          <div className="relative flex items-center w-full max-w-sm">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                className="w-5 h-5 text-gray-400"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-4.35-4.35m2.48-4.48a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Buscar por Estudiante"
+              value={authorFilter}
+              onChange={(e) => setAuthorFilter(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:outline-none w-full"
+            />
+          </div>
         </div>
 
         <ProjectsTable

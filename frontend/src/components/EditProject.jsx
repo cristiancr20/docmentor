@@ -3,7 +3,7 @@ import { updateProject } from "../core/Projects";
 import Swal from "sweetalert2";
 import { getTutors } from "../core/Projects";
 import { motion } from "framer-motion";
-
+import { errorAlert, successAlert } from "./Alerts/Alerts";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -53,14 +53,14 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       await updateProject(project.id, formData);
       onUpdate(); // Notifica al componente padre que se actualizó el proyecto
       onClose(); // Cierra el modal
-      Swal.fire("Editado!", "El proyecto ha sido editado.", "success");
+
+      const mensaje = "El proyecto ha sido editado.";
+      successAlert(mensaje);
     } catch (error) {
       console.error("Error al actualizar el proyecto:", error);
-      Swal.fire(
-        "Error!",
-        "Hubo un problema al actualizar el proyecto.",
-        "error"
-      );
+      const mensaje =
+        error.response?.data?.message || "Error al actualizar el proyecto";
+      errorAlert(mensaje);
     }
   };
 
@@ -127,22 +127,23 @@ const EditProject = ({ project, onClose, onUpdate }) => {
           >
             <option value="">Selecciona un tutor</option>
             {Array.isArray(tutores) && tutores.length > 0 ? (
-                tutores.map((tutor) => (
-                  <option key={tutor.id} value={tutor.id}>
-                    {tutor.username}
-                  </option>
-                ))
-              ) : (
-                <option disabled>Cargando tutores...</option>
-              )}
+              tutores.map((tutor) => (
+                <option key={tutor.id} value={tutor.id}>
+                  {tutor.username}
+                </option>
+              ))
+            ) : (
+              <option disabled>Cargando tutores...</option>
+            )}
           </select>
         </motion.div>
 
-        <motion.div 
-          initial={{opacity:0, y:-20}}
-          animate={{opacity:1, y:0}}
-          transition={{delay:0.6}}
-        className="flex items-center justify-between m-2">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="flex items-center justify-between m-2"
+        >
           <button
             type="submit"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 px-4 m-2 rounded"

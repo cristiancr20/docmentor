@@ -7,8 +7,10 @@ import { API_URL } from "./config";
 
 //METODO PARA REGISTRAR UN USUARIO
 export const registerUser = async (data) => {
+  console.log("data", data);
   try {
     const response = await axios.post(`${API_URL}/api/auth/local/register`, data);
+    console.log("response", response.data);
     return response.data;
   } catch (error) {
     // Si hay un error, lo vuelves a lanzar para que pueda ser manejado en el componente

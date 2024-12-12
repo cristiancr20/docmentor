@@ -58,6 +58,10 @@ const ViewProjectsStudents = () => {
     setIsEditModalOpen(false);
   };
 
+  const handleDelete = async() => {
+    await fetchProjects();
+  };
+
   const columns = [
     { key: "Title", label: "Título" },
     { key: "Descripcion", label: "Descripción" },
@@ -108,7 +112,7 @@ const ViewProjectsStudents = () => {
           projects={projects}
           columns={columns}
           linkBase="/proyecto"
-          fetchProjects={fetchProjects}
+          fetchProjects={handleDelete}
           onEdit={handleEdit}
         />
       </div>

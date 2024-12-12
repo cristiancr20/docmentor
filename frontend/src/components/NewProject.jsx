@@ -120,10 +120,11 @@ const NewProject = ({ onClose, fetchProjects }) => {
       tipoProyecto: projectType,
       itinerario: selectedItinerary,
     };
-
+    
+    const mensaje= "Proyecto creado exitosamente";
     try {
       await createProject(projectData);
-      successAlert();
+      successAlert(mensaje);
       fetchProjects();
       onClose();
       setTitle("");

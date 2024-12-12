@@ -11,6 +11,7 @@ import GeneratePdfButton from "../components/GeneratePdfButton";
 
 import DocumentComparePopup from "../components/DocumentComparePopup";
 import { decryptData } from "../utils/encryption";
+import ProjectsTable from "../components/ProjectsTable";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -92,6 +93,45 @@ const ProyectoDetalle = () => {
     // Opcionalmente, podrías volver a cargar los documentos aquí si es necesario
     fetchProject();
   };
+
+  const columns = [
+    {
+      key: "title",
+      label: "Documento",
+      render: (doc) => doc.attributes.title,
+    },
+    {
+      key: "estado",
+      label: "Estado",
+      render: (doc) =>
+        doc.attributes.revisado === false
+          ? "Pendiente de revisión"
+          : doc.attributes.revisado === true
+            ? "Revisado"
+            : "Sin estado",
+    },
+    {
+      key: "fechaSubida",
+      label: "Fecha de Subida",
+      render: (doc) => doc.attributes.fechaSubida || "No disponible",
+    },
+    {
+      key: "acciones",
+      label: "",
+      render: (doc) =>
+        doc.attributes.documentFile?.data?.length > 0 &&
+        doc.attributes.documentFile.data[0]?.attributes?.url ? (
+          <a
+            href={`/documento/${doc.id}`}
+            className="text-blue-600 hover:underline"
+          >
+            Ver Documento
+          </a>
+        ) : (
+          <span className="text-gray-500">No hay documento</span>
+        ),
+    },
+  ];
 
   return (
     <div>
@@ -297,88 +337,8 @@ const ProyectoDetalle = () => {
             )}
           </AnimatePresence>
 
-          {documents.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 bg-gray-100 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Documento
-                    </th>
-                    <th className="px-6 py-3 bg-gray-100 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 bg-gray-100 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Fecha de Subida
-                    </th>
-                    <th className="px-6 py-3 bg-gray-100"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documents.map((doc, index) => {
-                    // Determina el color de fondo de la fila basado en el estado del documento
-                    const rowColor =
-                      doc.attributes.revisado === false
-                        ? "bg-yellow-100" // Amarillo claro para pendiente
-                        : doc.attributes.revisado === true
-                          ? "bg-green-100" // Verde claro para revisado
-                          : index % 2 === 0
-                            ? "bg-white"
-                            : "bg-gray-50";
+          <ProjectsTable projects={documents} columns={columns} />
 
-                    return (
-                      <motion.tr
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                        key={doc.id}
-                        className={`${rowColor} ${
-                          index % 2 === 0 && doc.attributes.revisado === null
-                            ? "bg-gray-50"
-                            : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {doc.attributes.title}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.attributes.revisado === false
-                            ? "Pendiente de revisión"
-                            : doc.attributes.revisado === true
-                              ? "Revisado"
-                              : "Sin estado"}
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.attributes.fechaSubida || "No disponible"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {doc.attributes.documentFile?.data?.length > 0 &&
-                          doc.attributes.documentFile.data[0]?.attributes
-                            ?.url ? (
-                            <a
-                              href={`/documento/${doc.id}`} // Cambia aquí para redirigir al visor de documentos
-                              className="text-blue-600 hover:underline"
-                            >
-                              Ver Documento
-                            </a>
-                          ) : (
-                            <span className="text-gray-500">
-                              No hay documento
-                            </span>
-                          )}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-md text-gray-600">
-              No hay versiones disponibles.
-            </p>
-          )}
         </div>
       </div>
 

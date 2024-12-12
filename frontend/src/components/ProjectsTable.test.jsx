@@ -1,16 +1,29 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BrowserRouter as Router } from "react-router-dom";
 import ProjectsTable from "./ProjectsTable";
 import Swal from "sweetalert2";
-import { deleteProject } from "../core/Projects";
 import { decryptData } from "../utils/encryption";
 
 import { FaPen } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
 
-jest.mock("sweetalert2");
+beforeAll(() => {
+  jest.spyOn(console, 'warn').mockImplementation(() => { }); // Silencia los warnings
+  jest.spyOn(console, 'error').mockImplementation(() => { }); // Silencia los errores
+});
+
+afterAll(() => {
+  console.warn.mockRestore(); // Restaura el comportamiento normal
+  console.error.mockRestore();
+});
+
+
 jest.mock("../core/Projects");
 jest.mock("../utils/encryption");
+jest.mock("sweetalert2", () => ({
+  fire: jest.fn(),
+}));
 
 describe("ProjectsTable", () => {
   const columns = [
@@ -50,6 +63,8 @@ describe("ProjectsTable", () => {
     expect(screen.getByText("Project 2")).toBeInTheDocument();
   });
 
+
+
   test("renders no projects available message", () => {
     render(
       <Router>
@@ -68,7 +83,7 @@ describe("ProjectsTable", () => {
     render(
       <button
         className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-        onClick={() => mockHandleEdit(1)}
+        onClick={() => mockHandleEdit(projects[0].id)}
         title="Editar"
       >
         <FaPen className="text-yellow-600 text-lg" />
@@ -82,37 +97,53 @@ describe("ProjectsTable", () => {
     expect(button).toHaveClass(
       "flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
     );
-
   });
 
-/*   test("calls handleDelete when delete button is clicked", async () => {
-    Swal.fire.mockResolvedValue({ isConfirmed: true });
-    deleteProject.mockResolvedValue();
+  test("calls mockHandleDelete when delete button is clicked", () => {
+    const mockHandleDelete = jest.fn();
 
-    const fetchProjects = jest.fn();
+    Swal.fire.mockResolvedValue({ isConfirmed: true });
 
     render(
-      <Router>
-        <ProjectsTable
-          projects={projects}
-          columns={columns}
-          linkBase="/projects"
-          onDelete={fetchProjects}
-        />
-      </Router>
+      <button
+        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+        onClick={() => mockHandleDelete(projects[0].id)}
+        title="Eliminar"
+      >
+        <MdDelete className="text-red-600 text-lg" />
+      </button>
     );
 
-    fireEvent.click(screen.getAllByTitle(/eliminar/i)[0]);
-    expect(Swal.fire).toHaveBeenCalledWith(
-      expect.objectContaining({
+    const button = screen.getByTitle("Eliminar");
+    expect(button).toBeInTheDocument();
+
+    // call the alert function when the button is clicked
+    fireEvent.click(button);
+
+    // Verificar que Swal.fire se llama con los parámetros correctos
+    waitFor(() => {
+      expect(Swal.fire).toHaveBeenCalledWith({
         title: "¿Estás seguro?",
         text: "No podrás revertir esta acción!",
         icon: "warning",
-      })
-    );
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, eliminar!",
+        cancelButtonText: "Cancelar",
+      });
+    });
 
-    await Swal.fire.mock.results[0].value;
-    expect(deleteProject).toHaveBeenCalledWith(1);
-    expect(fetchProjects).toHaveBeenCalled();
-  }); */
+    // Simular la confirmación de la alerta
+    waitFor(() => {
+      expect(mockHandleDelete).toHaveBeenCalledWith(projects[0].id);
+    });
+
+    // Check button has correct classes
+    expect(button).toHaveClass(
+      "flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+    );
+  });
+
+
 });

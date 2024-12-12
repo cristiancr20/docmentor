@@ -34,3 +34,8 @@ jobs:
     name: k6
     uses: ./.github/workflows/k6.yml
     secrets: inherit
+
+  sast:
+    name: SAST
+    uses: ./.github/workflows/sast.yml
+    secrets: inherit

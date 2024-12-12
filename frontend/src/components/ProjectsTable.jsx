@@ -8,12 +8,13 @@ import { motion } from "framer-motion";
 
 import Swal from "sweetalert2";
 import { decryptData } from "../utils/encryption";
+import { errorAlert, successAlert } from "./Alerts/Alerts";
 
 const ProjectsTable = ({
   projects,
   columns,
   linkBase,
-  onDelete: fetchProjects,
+  fetchProjects,
   onEdit,
 }) => {
   const formattedProjects = Array.isArray(projects) ? projects : [projects];
@@ -46,8 +47,10 @@ const ProjectsTable = ({
       if (result.isConfirmed) {
         try {
           await deleteProject(projectId);
-          fetchProjects; // Recarga los proyectos después de la eliminación
-          Swal.fire("Eliminado!", "El proyecto ha sido eliminado.", "success");
+          fetchProjects(); // Recarga los proyectos después de la eliminación
+          //Swal.fire("Eliminado!", "El proyecto ha sido eliminado.", "success");
+          const mensaje = "El proyecto ha sido eliminado";
+          successAlert(mensaje);
         } catch (error) {
           console.error("Error al eliminar el proyecto:", error);
           Swal.fire(
@@ -55,6 +58,10 @@ const ProjectsTable = ({
             "Hubo un problema al eliminar el proyecto.",
             "error"
           );
+
+          //const mensaje = error.response?.data?.message || "Error al eliminar el proyecto";
+
+          errorAlert(mensaje);
         }
       }
     });
@@ -79,13 +86,13 @@ const ProjectsTable = ({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="px-4 py-2 bg-gray-800 text-left text-xs font-medium text-white uppercase tracking-wider"
+                className="px-4 py-2 bg-gray-800 text-left text-sm font-medium text-white uppercase tracking-wider"
               >
                 {column.label}
               </th>
             ))}
             {linkBase && (
-              <th className="px-4 py-2 bg-gray-800 text-left text-xs font-medium text-white uppercase tracking-wider">
+              <th className="px-4 py-2 bg-gray-800 text-left text-sm font-medium text-white uppercase tracking-wider">
                 Acciones
               </th>
             )}
@@ -102,57 +109,66 @@ const ProjectsTable = ({
               </td>
             </tr>
           ) : (
-            projects.map((project) => (
-              <motion.tr
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                key={project.id}
-                className="bg-gray-50"
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900"
-                  >
-                    {column.render
-                      ? column.render(project)
-                      : project[column.key]}
-                  </td>
-                ))}
-                {linkBase && (
-                  <td className="p-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center space-x-4">
-                    <Link
-                      to={`${linkBase}/${project.id}`}
-                      className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+            projects.map((project) => {
+              // Verifica si el atributo 'revisado' existe antes de determinar el color de la fila
+              const rowColor =
+                project.attributes?.revisado === false
+                  ? "bg-yellow-100" // Pendiente
+                  : project.attributes?.revisado === true
+                    ? "bg-green-100" // Revisado
+                    : "bg-gray-50"; // Por defecto
+
+              return (
+                <motion.tr
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  key={project.id}
+                  className={`${rowColor}`}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="px-4 py-2 whitespace-nowrap text-base font-medium text-gray-900"
                     >
-                      <FaEye className="text-blue-600 text-lg" title="Ver" />
-                    </Link>
+                      {column.render
+                        ? column.render(project)
+                        : project[column.key]}
+                    </td>
+                  ))}
+                  {linkBase && (
+                    <td className="p-4 whitespace-nowrap text-base font-medium text-gray-900 flex items-center space-x-4">
+                      <Link
+                        to={`${linkBase}/${project.id}`}
+                        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                      >
+                        <FaEye className="text-blue-600 text-lg" title="Ver" />
+                      </Link>
 
-                    {rol === "estudiante" && (
-                      <>
-                        <button
-                          className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                          onClick={() => handleEdit(project.id)}
-                          title="Editar"
-                        >
-                          <FaPen className="text-yellow-600 text-lg" />
-                        </button>
+                      {rol === "estudiante" && (
+                        <>
+                          <button
+                            className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                            onClick={() => handleEdit(project.id)}
+                            title="Editar"
+                          >
+                            <FaPen className="text-yellow-600 text-lg" />
+                          </button>
 
-                        <button
-                          className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                          onClick={() => handleDelete(project.id)}
-                          title="Eliminar"
-                        >
-                          <MdDelete className="text-red-600 text-lg" />
-                        </button>
-                      </>
-                    )}
-                  </td>
-                )}
-                <td></td>
-              </motion.tr>
-            ))
+                          <button
+                            className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                            onClick={() => handleDelete(project.id)}
+                            title="Eliminar"
+                          >
+                            <MdDelete className="text-red-600 text-lg" />
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  )}
+                </motion.tr>
+              );
+            })
           )}
         </tbody>
       </motion.table>
