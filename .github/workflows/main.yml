@@ -19,14 +19,12 @@ permissions:
   packages: write
 
 jobs:
-  
-
-  # 04 - SAST - Static Application Security Testing
-  sast:
-    name: SAST
-    uses: ./.github/workflows/sast.yml
+  # 02 - Frontend - Unit test
+  unit_test_frontend:
+    name: unit_test_frontend
+    uses: ./.github/workflows/unit_test_frontend.yml
     secrets: inherit
-    
+
   
 
   
