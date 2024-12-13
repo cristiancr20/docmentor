@@ -9,6 +9,13 @@ jobs:
     name: Lint Code with ESLint
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - frontend
+        node-version: [18.20.5]
+
     steps:
       # Paso 1: Clonar el repositorio
       - name: Checkout repository
@@ -18,17 +25,18 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.20.4  # Asegúrate de usar la versión que necesita tu proyecto
+          node-version: ${{ matrix.node-version }} # Asegúrate de usar la versión que necesita tu proyecto
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       # Paso 3: Instalar dependencias
       - name: Install dependencies
-        working-directory: frontend  # Asegúrate de usar el directorio correcto si tu código está dentro de `frontend`
+        working-directory: ${{ matrix.project }} # Asegúrate de usar el directorio correcto si tu código está dentro de `frontend`
         run: npm ci
 
       # Paso 4: Ejecutar ESLint
       - name: Run ESLint
-        working-directory: frontend
+        working-directory: ${{ matrix.project }}
         run: npm run lint
 
       # Paso 5: Reportar resultados (opcional)
