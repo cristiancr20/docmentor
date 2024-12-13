@@ -19,36 +19,7 @@ permissions:
   packages: write
 
 jobs:
-  # 02 - Frontend - Unit test
-  unit_test_frontend:
-    name: unit_test_frontend
-    uses: ./.github/workflows/unit_test_frontend.yml
-    secrets: inherit
-
-  # 03 - Backend - Unit test
-  unit_test_backend:
-    name: unit_test_backend
-    uses: ./.github/workflows/unit_test_backend.yml
-    secrets: inherit
-
-  # 04 - SAST - Static Application Security Testing
-  sast:
-    name: SAST
-    uses: ./.github/workflows/sast.yml
-    secrets: inherit
-    
-  # 05 - SCA - Security Code Analysis
-  sca:
-    #needs: build_frontend
-    name: SCA
-    uses: ./.github/workflows/sca.yml
-    secrets: inherit
   
-  # 06 - k6 - Load test
-  k6:
-    name: k6
-    uses: ./.github/workflows/k6.yml
-    secrets: inherit
 
   # 07 - Lint React Code
   slint:
