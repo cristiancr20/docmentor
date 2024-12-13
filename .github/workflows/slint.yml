@@ -1,13 +1,8 @@
 name: 07 - Lint React Code
 
 on:
-  pull_request:  # Ejecutar el workflow en cada PR
-    branches:
-      - main
-  push:  # Ejecutar el workflow en cada push
-    branches:
-      - main
-  workflow_dispatch:  # Permitir ejecución manual
+    workflow_dispatch:
+    workflow_call:
 
 jobs:
   lint:
