@@ -78,12 +78,16 @@ const EditProject = ({ project, onClose, onUpdate }) => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <label className="block text-gray-700 text-sm font-bold mb-2">
+          <label
+            htmlFor="title"
+            className="block text-gray-700 text-sm font-bold mb-2"
+          >
             Título
           </label>
           <input
             type="text"
-            name="Title"
+            name="title"
+            id="title"
             value={formData.Title}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
@@ -95,11 +99,14 @@ const EditProject = ({ project, onClose, onUpdate }) => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <label className="block text-gray-700 text-sm font-bold mb-2">
+          <label 
+            htmlFor="descripcion"
+          className="block text-gray-700 text-sm font-bold mb-2">
             Descripción
           </label>
           <textarea
-            name="Descripcion"
+            name="descripcion"
+            id="descripcion"
             value={formData.Descripcion}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
@@ -120,6 +127,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
           <select
             id="tutor"
             name="tutor"
+            data-testid="tutor-select"
             value={formData.tutor}
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-200"

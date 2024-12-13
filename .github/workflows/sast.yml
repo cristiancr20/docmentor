@@ -1,4 +1,4 @@
-name: 04 SAST
+name: 04 - SAST
 
 on:
   workflow_dispatch:

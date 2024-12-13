@@ -1,4 +1,4 @@
-name: 02 Build pipeline with frontend 
+name: 02 - Unit test Frontend 
 
 on:
   workflow_dispatch:

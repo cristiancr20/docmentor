@@ -13,7 +13,7 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "strapi": "strapi",
-    "test": "jest" 
+    "test": "jest --forceExit --detectOpenHandles"
 
 
   },
@@ -44,7 +44,6 @@
     "uuid": "ecc98c67-21cf-4b6f-96c2-bbdabd9e56b1"
   },
   "jest": {
-    "testEnvironment": "node",
     "testPathIgnorePatterns": [
       "/node_modules/",
       ".tmp",

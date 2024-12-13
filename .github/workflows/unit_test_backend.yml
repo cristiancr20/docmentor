@@ -1,0 +1,49 @@
+name: 03 - Unit test Backend
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+    build:
+        permissions:
+            contents: read
+            issues: read
+            checks: write
+            pull-requests: write
+        runs-on: ubuntu-latest
+        
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+    
+        # Backend steps
+        - name: Set up Node.js 18.20.4
+          uses: actions/setup-node@v4
+          with:
+            node-version: 18.20.4
+            cache: 'npm'
+            cache-dependency-path: backend/package-lock.json
+    
+        - name: Install backend dependencies
+          working-directory: backend
+          run: npm ci
+    
+        - name: Run backend tests
+          working-directory: backend
+          run: npm test -- --coverage
+    
+        - name: Upload backend coverage report
+          uses: actions/upload-artifact@v4
+          with:
+            name: Coverage-Report
+            path: backend/coverage
+
+        - name: Publish Test Results
+          uses: EnricoMi/publish-unit-test-result-action@v2
+          if: always()
+          with:
+            files: |
+               backend/**/*.json 
+
+    

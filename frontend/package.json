@@ -39,8 +39,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "eject": "react-scripts eject",
-    "test": "react-scripts test --coverage",
-    "test:coverage": "react-scripts test --coverage --coverageReporters=json"
+    "test": "react-scripts test --coverage"
   },
   "browserslist": {
     "production": [

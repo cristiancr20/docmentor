@@ -1,4 +1,4 @@
-name: k6 Load Test
+name: 06 - k6 Load Test
 
 on:
     workflow_dispatch:
