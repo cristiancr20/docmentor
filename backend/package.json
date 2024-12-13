@@ -13,9 +13,14 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "strapi": "strapi",
-    "test": "jest --forceExit --detectOpenHandles"
-
-
+    "test": "NODE_ENV=test jest --forceExit --detectOpenHandles"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      ".tmp",
+      ".cache"
+    ]
   },
   "dependencies": {
     "@strapi/plugin-cloud": "^4.12.0",
@@ -42,12 +47,5 @@
   },
   "strapi": {
     "uuid": "ecc98c67-21cf-4b6f-96c2-bbdabd9e56b1"
-  },
-  "jest": {
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      ".tmp",
-      ".cache"
-    ]
   }
 }

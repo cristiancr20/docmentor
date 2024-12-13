@@ -38,14 +38,14 @@ describe('GET-POST-UPDATE-DELETE /comments', () => {
     });
 
     it("should edit a Comment", async () => {
-        const mockCommentData = {
+/*         const mockCommentData = {
             highlightAreas: "highlightAreas test",
             quote: "sdsdfsdf",
             correccion: "correccion test",
         };
         await strapi.service('api::comment.comment').create({
             ...mockCommentData,
-        });
+        }); */
 
         await strapi.service('api::comment.comment').update(1, {
             data: {
