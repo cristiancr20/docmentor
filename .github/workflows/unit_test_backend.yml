@@ -31,7 +31,9 @@ jobs:
     
          # Establece las variables de entorno para GitHub Actions
         - name: Set environment variables
-          run: echo "DATABASE_FILENAME=./data.db" >> $GITHUB_ENV
+          run: 
+            echo "DATABASE_FILENAME=./data.db" >> $GITHUB_ENV
+            echo "JWT_SECRET=wTFwYYoXICYxCameL+fgyw==" >> $GITHUB_ENV
        
   
         - name: Run backend tests
@@ -39,6 +41,7 @@ jobs:
           run: npm test -- --coverage
           env:
             DATABASE_FILENAME: ./data.db  # Aquí defines la base de datos de prueba
+            JWT_SECRET: wTFwYYoXICYxCameL+fgyw==
 
         - name: Upload backend coverage report
           uses: actions/upload-artifact@v4
