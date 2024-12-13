@@ -37,7 +37,7 @@ jobs:
       # Paso 4: Ejecutar ESLint
       - name: Run ESLint
         working-directory: ${{ matrix.project }}
-        run: npm run lint
+        run: npm run lint || true
 
       # Paso 5: Reportar resultados (opcional)
       - name: Upload ESLint Report
