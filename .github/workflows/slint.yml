@@ -18,7 +18,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18.20.5  # Asegúrate de usar la versión que necesita tu proyecto
+          node-version: 18.20.4  # Asegúrate de usar la versión que necesita tu proyecto
           cache: 'npm'
 
       # Paso 3: Instalar dependencias
@@ -28,8 +28,8 @@ jobs:
 
       # Paso 4: Ejecutar ESLint
       - name: Run ESLint
-        run: npm run lint
         working-directory: frontend
+        run: npm run lint
 
       # Paso 5: Reportar resultados (opcional)
       - name: Upload ESLint Report
