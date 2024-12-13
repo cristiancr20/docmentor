@@ -35,19 +35,6 @@ jobs:
             echo "DATABASE_FILENAME=./data.db" >> $GITHUB_ENV
             echo "JWT_SECRET=wTFwYYoXICYxCameL+fgyw==" >> $GITHUB_ENV
        
-        # Inicia el servidor de Strapi en segundo plano (con nohup o sin él)
-        - name: Start Strapi server
-          run: |
-            nohup npm run develop &
-  
-        # Espera a que Strapi esté listo para recibir solicitudes
-        - name: Wait for Strapi to be ready
-          run: |
-            until curl -s http://localhost:1337; do
-              echo "Waiting for Strapi to be ready..."
-              sleep 5
-            done
-
         # Ejecuta las pruebas backend
         - name: Run backend tests
           working-directory: backend

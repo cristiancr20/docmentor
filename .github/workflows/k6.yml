@@ -6,14 +6,31 @@ on:
 
 jobs:
   run-test:
+    name: Run k6 Load Test
     runs-on: ubuntu-latest
+
     steps:
+      # Clonar el repositorio
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup K6
-        uses: grafana/setup-k6-action@v1
-      - name: Run local k6 test
-        uses: grafana/run-k6-action@v1
+      # Configurar k6
+      - name: Install k6
+        run: |
+          sudo apt update
+          sudo apt install -y k6
+
+      # Ejecutar las pruebas de k6
+      - name: Run k6 Test
+        env:
+          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }} # Token para usar k6 Cloud (opcional)
+          GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }} # URL de tu Loki (Grafana)
+        run: |
+          k6 run --out loki=$GRAFANA_LOKI_URL --tag test=load-test frontend/src/k6/proyecto.js
+
+      # Subir los resultados como artefacto
+      - name: Upload k6 Results
+        uses: actions/upload-artifact@v3
         with:
-          path: frontend/src/k6/test.js
+          name: k6-results
+          path: ./k6-results.json

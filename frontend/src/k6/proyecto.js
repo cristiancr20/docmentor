@@ -9,7 +9,7 @@ export let options = {
   ],
 };
 
-const BASE_URL = 'https://eb0d-45-161-34-42.ngrok-free.app/api'; // URL de tu API
+const BASE_URL = 'https://silly-things-refuse.loca.lt/api'; // URL de tu API
 
 export default function () {
   // 1. Crear un nuevo Proyecto
