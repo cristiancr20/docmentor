@@ -21,11 +21,13 @@ permissions:
 jobs:
   
 
-  # 07 - Lint React Code
-  slint:
-    name: Lint React Code
-    uses: ./.github/workflows/slint.yml
+  # 04 - SAST - Static Application Security Testing
+  sast:
+    name: SAST
+    uses: ./.github/workflows/sast.yml
     secrets: inherit
+    
+  
 
   
 
