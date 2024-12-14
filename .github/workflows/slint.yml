@@ -49,6 +49,8 @@ jobs:
           name: eslint-reports
           path: frontend/eslint-report*.{json,html}
 
+      - name: Install jq
+        run: sudo apt-get install jq
 
       # Paso 6: Crear anotaciones a partir del reporte JSON de ESLint
       - name: Create ESLint annotations
