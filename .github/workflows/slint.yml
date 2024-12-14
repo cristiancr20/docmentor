@@ -37,7 +37,9 @@ jobs:
       # Paso 4: Ejecutar ESLint
       - name: Run ESLint
         working-directory: ${{ matrix.project }}
-        run: npm run lint -f json -o frontend/eslint-report.json && npm run lint -f html -o frontend/eslint-report.html
+        run: |
+          npm run lint -f json -o frontend/eslint-report.json
+          npm run lint -f html -o frontend/eslint-report.html
 
 
       # Paso 5: Subir los reportes (JSON y HTML)
