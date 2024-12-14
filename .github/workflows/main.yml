@@ -19,11 +19,12 @@ permissions:
   packages: write
 
 jobs:
+ 
 
-  # 08 - License Compliance
-  license_compliance:
-    name: License Compliance
-    uses: ./.github/workflows/license_compliance.yml
+      # 07 - Lint React Code
+  slint:
+    name: Lint React Code
+    uses: ./.github/workflows/slint.yml
     secrets: inherit
 
   

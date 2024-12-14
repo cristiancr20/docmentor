@@ -31,7 +31,7 @@ jobs:
 
       # Paso 3: Instalar dependencias
       - name: Install dependencies
-        working-directory: ${{ matrix.project }} # Asegúrate de usar el directorio correcto si tu código está dentro de `frontend`
+        working-directory: ${{ matrix.project }} 
         run: npm ci
 
       # Paso 4: Ejecutar ESLint
@@ -39,10 +39,18 @@ jobs:
         working-directory: ${{ matrix.project }}
         run: npm run lint || true
 
-      # Paso 5: Reportar resultados (opcional)
+      # Paso 5: Publicar resultados de ESLint en GitHub Actions
+      - name: Publish ESLint Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: frontend/eslint-report.json  # Asegúrate de que este sea el archivo JSON generado por ESLint
+          check_name: "Frontend ESLint Linting"
+
+      # Paso 6: Subir los reportes (JSON y HTML)
       - name: Upload ESLint Report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: eslint-report
-          path: frontend/eslint-report.html  # Cambia según donde ESLint guarde reportes (si aplica)
+          path: frontend/eslint-report*.{json,html}  # Subir ambos archivos .json y .html generados
+
