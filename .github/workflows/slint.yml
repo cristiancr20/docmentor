@@ -47,8 +47,3 @@ jobs:
       #    name: eslint-report
       #    path: frontend/eslint-report.html  # Cambia según donde ESLint guarde reportes (si aplica)
 
-      - name: Upload eslint report
-        uses: actions/upload-artifact@v4
-        with:
-          name: eslint-Report
-          path: frontend/coverage
