@@ -374,8 +374,8 @@ export interface ApiCommentComment extends Schema.CollectionType {
     draftAndPublish: true;
   };
   attributes: {
-    correccion: Attribute.Text;
-    correccionTutor: Attribute.Relation<
+    correction: Attribute.Text;
+    correctionTutor: Attribute.Relation<
       'api::comment.comment',
       'manyToOne',
       'plugin::users-permissions.user'
@@ -433,19 +433,18 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
-    fechaSubida: Attribute.Date;
-    notificacion: Attribute.Relation<
+    isRevised: Attribute.Boolean;
+    notification: Attribute.Relation<
       'api::document.document',
       'oneToOne',
-      'api::notificacion.notificacion'
+      'api::notification.notification'
     >;
     project: Attribute.Relation<
       'api::document.document',
       'manyToOne',
-      'api::new-project.new-project'
+      'api::project.project'
     >;
     publishedAt: Attribute.DateTime;
-    revisado: Attribute.Boolean;
     title: Attribute.String;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
@@ -457,13 +456,13 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
   };
 }
 
-export interface ApiNewProjectNewProject extends Schema.CollectionType {
-  collectionName: 'new_projects';
+export interface ApiNotificationNotification extends Schema.CollectionType {
+  collectionName: 'notifications';
   info: {
     description: '';
-    displayName: 'Project';
-    pluralName: 'new-projects';
-    singularName: 'new-project';
+    displayName: 'Notification';
+    pluralName: 'notifications';
+    singularName: 'notification';
   };
   options: {
     draftAndPublish: true;
@@ -471,35 +470,27 @@ export interface ApiNewProjectNewProject extends Schema.CollectionType {
   attributes: {
     createdAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
-      'api::new-project.new-project',
+      'api::notification.notification',
       'oneToOne',
       'admin::user'
     > &
       Attribute.Private;
-    Descripcion: Attribute.Text;
-    documents: Attribute.Relation<
-      'api::new-project.new-project',
-      'oneToMany',
+    document: Attribute.Relation<
+      'api::notification.notification',
+      'oneToOne',
       'api::document.document'
     >;
-    estudiantes: Attribute.Relation<
-      'api::new-project.new-project',
-      'manyToMany',
-      'plugin::users-permissions.user'
-    >;
-    FechaCreacion: Attribute.Date;
-    itinerario: Attribute.String;
+    isRead: Attribute.Boolean;
+    message: Attribute.String;
     publishedAt: Attribute.DateTime;
-    tipoProyecto: Attribute.String;
-    Title: Attribute.String;
     tutor: Attribute.Relation<
-      'api::new-project.new-project',
+      'api::notification.notification',
       'manyToOne',
       'plugin::users-permissions.user'
     >;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
-      'api::new-project.new-project',
+      'api::notification.notification',
       'oneToOne',
       'admin::user'
     > &
@@ -507,13 +498,13 @@ export interface ApiNewProjectNewProject extends Schema.CollectionType {
   };
 }
 
-export interface ApiNotificacionNotificacion extends Schema.CollectionType {
-  collectionName: 'notificacions';
+export interface ApiProjectProject extends Schema.CollectionType {
+  collectionName: 'projects';
   info: {
     description: '';
-    displayName: 'notificacion';
-    pluralName: 'notificacions';
-    singularName: 'notificacion';
+    displayName: 'Project';
+    pluralName: 'projects';
+    singularName: 'project';
   };
   options: {
     draftAndPublish: true;
@@ -521,27 +512,34 @@ export interface ApiNotificacionNotificacion extends Schema.CollectionType {
   attributes: {
     createdAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
-      'api::notificacion.notificacion',
+      'api::project.project',
       'oneToOne',
       'admin::user'
     > &
       Attribute.Private;
-    document: Attribute.Relation<
-      'api::notificacion.notificacion',
-      'oneToOne',
+    description: Attribute.Text;
+    documents: Attribute.Relation<
+      'api::project.project',
+      'oneToMany',
       'api::document.document'
     >;
-    leido: Attribute.Boolean;
-    mensaje: Attribute.String;
+    itinerary: Attribute.String;
+    projectType: Attribute.String;
     publishedAt: Attribute.DateTime;
+    students: Attribute.Relation<
+      'api::project.project',
+      'manyToMany',
+      'plugin::users-permissions.user'
+    >;
+    title: Attribute.String;
     tutor: Attribute.Relation<
-      'api::notificacion.notificacion',
+      'api::project.project',
       'manyToOne',
       'plugin::users-permissions.user'
     >;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
-      'api::notificacion.notificacion',
+      'api::project.project',
       'oneToOne',
       'admin::user'
     > &
@@ -552,7 +550,7 @@ export interface ApiNotificacionNotificacion extends Schema.CollectionType {
 export interface ApiRolRol extends Schema.CollectionType {
   collectionName: 'rols';
   info: {
-    displayName: 'rol';
+    displayName: 'Rol';
     pluralName: 'rols';
     singularName: 'rol';
   };
@@ -564,7 +562,7 @@ export interface ApiRolRol extends Schema.CollectionType {
     createdBy: Attribute.Relation<'api::rol.rol', 'oneToOne', 'admin::user'> &
       Attribute.Private;
     publishedAt: Attribute.DateTime;
-    tipoRol: Attribute.String;
+    rolType: Attribute.String;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<'api::rol.rol', 'oneToOne', 'admin::user'> &
       Attribute.Private;
@@ -978,10 +976,10 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
-    notificacions: Attribute.Relation<
+    notifications: Attribute.Relation<
       'plugin::users-permissions.user',
       'oneToMany',
-      'api::notificacion.notificacion'
+      'api::notification.notification'
     >;
     password: Attribute.Password &
       Attribute.Private &
@@ -991,12 +989,12 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
     project_es: Attribute.Relation<
       'plugin::users-permissions.user',
       'manyToMany',
-      'api::new-project.new-project'
+      'api::project.project'
     >;
     project_ts: Attribute.Relation<
       'plugin::users-permissions.user',
       'oneToMany',
-      'api::new-project.new-project'
+      'api::project.project'
     >;
     provider: Attribute.String;
     resetPasswordToken: Attribute.String & Attribute.Private;
@@ -1038,8 +1036,8 @@ declare module '@strapi/types' {
       'admin::user': AdminUser;
       'api::comment.comment': ApiCommentComment;
       'api::document.document': ApiDocumentDocument;
-      'api::new-project.new-project': ApiNewProjectNewProject;
-      'api::notificacion.notificacion': ApiNotificacionNotificacion;
+      'api::notification.notification': ApiNotificationNotification;
+      'api::project.project': ApiProjectProject;
       'api::rol.rol': ApiRolRol;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

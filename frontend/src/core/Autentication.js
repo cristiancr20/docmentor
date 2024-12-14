@@ -68,7 +68,7 @@ export const loginOrRegister = async (data) => {
         rol: data.rol,
       };
       
-      const registerResponse = await registerUser(registerData);
+      await registerUser(registerData);
       
       // Después del registro exitoso, hacemos login automáticamente
       const loginData = {

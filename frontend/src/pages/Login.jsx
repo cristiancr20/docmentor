@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginOrRegister, getUserWithRole, login } from "../core/Autentication";
+import { getUserWithRole, login } from "../core/Autentication";
 import {
   loginSuccessAlert,
   loginErrorAlert,
@@ -9,8 +9,6 @@ import { motion } from "framer-motion";
 
 import {
   ROLE_ROUTES,
-  USER_STORAGE_KEYS,
-  saveUserData,
   validateAuthResponse,
 } from "../utils/auth.utils";
 import { encryptData } from "../utils/encryption";

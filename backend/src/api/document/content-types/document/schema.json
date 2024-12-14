@@ -18,13 +18,10 @@
     "project": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::new-project.new-project",
+      "target": "api::project.project",
       "inversedBy": "documents"
     },
-    "fechaSubida": {
-      "type": "date"
-    },
-    "revisado": {
+    "isRevised": {
       "type": "boolean"
     },
     "documentFile": {
@@ -44,10 +41,10 @@
       "target": "api::comment.comment",
       "mappedBy": "document"
     },
-    "notificacion": {
+    "notification": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::notificacion.notificacion",
+      "target": "api::notification.notification",
       "mappedBy": "document"
     }
   }

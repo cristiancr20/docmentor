@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { uploadFile, createDocument } from "../core/Document";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
+import PropTypes from 'prop-types';
 
 const SubirDocumento = ({ projectId, onClose }) => {
   const [title, setTitle] = useState("");
@@ -16,7 +17,7 @@ const SubirDocumento = ({ projectId, onClose }) => {
 
     try {
       const uploadedFile = await uploadFile(file);
-      const documentData = await createDocument(
+      await createDocument(
         title,
         uploadedFile.id,
         projectId
@@ -88,6 +89,11 @@ const SubirDocumento = ({ projectId, onClose }) => {
       </button>
     </form>
   );
+};
+
+SubirDocumento.propTypes = {
+  projectId: PropTypes.string.isRequired,
+  onClose: PropTypes.func,
 };
 
 export default SubirDocumento;

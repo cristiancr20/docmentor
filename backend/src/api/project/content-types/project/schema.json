@@ -1,9 +1,9 @@
 {
   "kind": "collectionType",
-  "collectionName": "new_projects",
+  "collectionName": "projects",
   "info": {
-    "singularName": "new-project",
-    "pluralName": "new-projects",
+    "singularName": "project",
+    "pluralName": "projects",
     "displayName": "Project",
     "description": ""
   },
@@ -12,19 +12,16 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "FechaCreacion": {
-      "type": "date"
-    },
     "documents": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::document.document",
       "mappedBy": "project"
     },
-    "Title": {
+    "title": {
       "type": "string"
     },
-    "Descripcion": {
+    "description": {
       "type": "text"
     },
     "tutor": {
@@ -33,16 +30,16 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "project_ts"
     },
-    "estudiantes": {
+    "students": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
       "mappedBy": "project_es"
     },
-    "tipoProyecto": {
+    "projectType": {
       "type": "string"
     },
-    "itinerario": {
+    "itinerary": {
       "type": "string"
     }
   }

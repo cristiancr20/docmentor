@@ -52,7 +52,7 @@ function SignUp() {
         } else if (error.response.status === 400) {
           registerErrorAlert("Error en los datos proporcionados.");
         } else {
-          erroregisterErrorAlertrAlert(
+          registerErrorAlert(
             "Error al registrar el usuario. Inténtalo de nuevo."
           );
         }

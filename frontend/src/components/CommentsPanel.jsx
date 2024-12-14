@@ -5,6 +5,7 @@ import { FaArrowDown, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
+import PropTypes from 'prop-types';
 
 const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
 
@@ -221,6 +222,12 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
       </div>
     </div>
   );
+};
+
+CommentsPanel.propTypes = {
+  comments: PropTypes.array,
+  onUpdateComments: PropTypes.func,
+  onCommentClick: PropTypes.func,
 };
 
 export default CommentsPanel;

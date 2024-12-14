@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getDocumentsByProjectId } from "../core/Document"; // Asegúrate de agregar deleteDocument a tus funciones core
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
@@ -69,9 +69,9 @@ const ProyectoDetalle = () => {
     }
   };
 
-  const closeComparePopup = () => {
+/*   const closeComparePopup = () => {
     setShowIsComparePopupOpen(false);
-  };
+  }; */
 
   if (!project) {
     return <p>Cargando detalles del proyecto...</p>;

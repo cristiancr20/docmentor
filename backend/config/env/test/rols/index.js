@@ -25,7 +25,7 @@ describe('GET-POST /rols', () => {
   it("should create a new Rol", async () => {
     // Datos del rol para crear
     const mockRoleData = {
-      tipoRol: "profesor", // Valor para el atributo `tipoRol`
+      rolType: "profesor", // Valor para el atributo `tipoRol`
     };
   
     // Crear el nuevo rol utilizando el servicio de Strapi

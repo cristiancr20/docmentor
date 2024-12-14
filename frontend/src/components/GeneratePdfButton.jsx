@@ -3,6 +3,7 @@ import { jsPDF } from "jspdf";
 import { motion } from "framer-motion";
 import logo_computacion from "../assets/logo_computacion.jpg";
 import logo_unl from "../assets/logo_unl.png";
+import PropTypes from "prop-types";
 
 const GeneratePdfButton = ({ userInfo }) => {
   const generatePDF = () => {
@@ -120,6 +121,16 @@ const GeneratePdfButton = ({ userInfo }) => {
       Generar Informe de revisión
     </motion.button>
   );
+};
+
+GeneratePdfButton.propTypes = {
+  userInfo: PropTypes.shape({
+    Title: PropTypes.string,
+    Descripcion: PropTypes.string,
+    FechaCreacion: PropTypes.string,
+    tutor: PropTypes.object,
+    estudiante: PropTypes.object,
+  }),
 };
 
 export default GeneratePdfButton;

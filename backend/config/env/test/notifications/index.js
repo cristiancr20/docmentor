@@ -5,7 +5,7 @@ describe('GET-POST /notification', () => {
 
     it("should return Notifications", async () => {
         const response = await request(strapi.server.httpServer)
-            .get("/api/notificacions")
+            .get("/api/notifications")
             .expect(200) // Expect response http code 200
 
         const { data } = response.body;
@@ -21,16 +21,16 @@ describe('GET-POST /notification', () => {
 
     it("should create a new Notification", async () => {
         const mockNotificationData = {
-            mensaje:"test de notification",
-            leido:false
+            message:"test de notification",
+            isRead:false
         };
 
-        await strapi.service('api::notificacion.notificacion').create({
+        await strapi.service('api::notification.notification').create({
             data: mockNotificationData,
         });
 
         const response = await request(strapi.server.httpServer)
-            .get("/api/notificacions")
+            .get("/api/notifications")
             .expect(200);
 
         const newNotification = response.body;

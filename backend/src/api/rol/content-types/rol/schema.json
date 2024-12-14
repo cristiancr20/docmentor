@@ -4,14 +4,14 @@
   "info": {
     "singularName": "rol",
     "pluralName": "rols",
-    "displayName": "rol"
+    "displayName": "Rol"
   },
   "options": {
     "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
-    "tipoRol": {
+    "rolType": {
       "type": "string"
     },
     "users": {

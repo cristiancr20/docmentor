@@ -3,7 +3,7 @@ version: '3'
 services:
   frontend:
     build:
-      context: ./Doc-version-frontend
+      context: ./frontend
     ports:
       - "3000:3000"
     depends_on:
@@ -13,11 +13,11 @@ services:
 
   backend:
     build:
-      context: ./doc-version-backend
+      context: ./backend
     ports:
       - "1337:1337"
     volumes:
-      - ./doc-version-backend:/app
+      - ./backend:/app
       - /app/node_modules  # Añadido para preservar node_modules del contenedor
     environment:
       NODE_ENV: development

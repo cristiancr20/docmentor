@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * new-project router
+ * project router
  */
 
 const { createCoreRouter } = require('@strapi/strapi').factories;
 
-module.exports = createCoreRouter('api::new-project.new-project');
+module.exports = createCoreRouter('api::project.project');

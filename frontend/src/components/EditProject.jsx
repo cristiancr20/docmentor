@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import { getTutors } from "../core/Projects";
 import { motion } from "framer-motion";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
+import PropTypes from "prop-types";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -169,6 +170,17 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       </div>
     </motion.form>
   );
+};
+
+EditProject.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  project: PropTypes.shape({
+    id: PropTypes.number,
+    Title: PropTypes.string,
+    Descripcion: PropTypes.string,
+    tutor: PropTypes.object,
+  }),
 };
 
 export default EditProject;

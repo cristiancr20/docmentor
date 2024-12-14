@@ -12,10 +12,10 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "correccion": {
+    "correction": {
       "type": "text"
     },
-    "correccionTutor": {
+    "correctionTutor": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",

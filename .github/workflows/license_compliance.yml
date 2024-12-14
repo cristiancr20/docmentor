@@ -1,0 +1,46 @@
+name: 08 - License Compliance
+
+on:
+    workflow_dispatch:
+    workflow_call:
+
+jobs:
+  license-frontend:
+    name: Check licenses for Frontend
+    runs-on: ubuntu-latest
+
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run License Finder for Frontend
+        uses: jmservera/license-finder-action@main
+        with:
+          permitted-licenses: MIT, Apache-2.0
+
+      - name: Upload Frontend License Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-license-report
+          path: frontend/license_finder_report.xml
+
+  license-backend:
+    name: Check licenses for Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run License Finder for Backend
+        uses: jmservera/license-finder-action@main
+        with:
+          permitted-licenses: MIT, Apache-2.0
+
+      - name: Upload Backend License Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-license-report
+          path: backend/license_finder_report.xml

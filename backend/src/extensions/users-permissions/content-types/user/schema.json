@@ -74,26 +74,26 @@
     "project_ts": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::new-project.new-project",
+      "target": "api::project.project",
       "mappedBy": "tutor"
     },
     "comments": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::comment.comment",
-      "mappedBy": "correccionTutor"
+      "mappedBy": "correctionTutor"
     },
-    "notificacions": {
+    "notifications": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::notificacion.notificacion",
+      "target": "api::notification.notification",
       "mappedBy": "tutor"
     },
     "project_es": {
       "type": "relation",
       "relation": "manyToMany",
-      "target": "api::new-project.new-project",
-      "inversedBy": "estudiantes"
+      "target": "api::project.project",
+      "inversedBy": "students"
     }
   }
 }

@@ -5,6 +5,7 @@ import { FaEye, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { deleteProject } from "../core/Projects";
 import { motion } from "framer-motion";
+import PropTypes from 'prop-types';
 
 import Swal from "sweetalert2";
 import { decryptData } from "../utils/encryption";
@@ -59,7 +60,7 @@ const ProjectsTable = ({
             "error"
           );
 
-          //const mensaje = error.response?.data?.message || "Error al eliminar el proyecto";
+          const mensaje = error.response?.data?.message || "Error al eliminar el proyecto";
 
           errorAlert(mensaje);
         }
@@ -174,6 +175,28 @@ const ProjectsTable = ({
       </motion.table>
     </div>
   );
+};
+
+// Validación de props
+ProjectsTable.propTypes = {
+  projects: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      attributes: PropTypes.shape({
+        revisado: PropTypes.bool,
+      }),
+    })
+  ).isRequired,
+  columns: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+      render: PropTypes.func,
+    })
+  ).isRequired,
+  linkBase: PropTypes.string,
+  fetchProjects: PropTypes.func,
+  onEdit: PropTypes.func,
 };
 
 export default ProjectsTable;

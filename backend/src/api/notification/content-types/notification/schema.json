@@ -1,10 +1,10 @@
 {
   "kind": "collectionType",
-  "collectionName": "notificacions",
+  "collectionName": "notifications",
   "info": {
-    "singularName": "notificacion",
-    "pluralName": "notificacions",
-    "displayName": "notificacion",
+    "singularName": "notification",
+    "pluralName": "notifications",
+    "displayName": "Notification",
     "description": ""
   },
   "options": {
@@ -16,18 +16,18 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "notificacions"
+      "inversedBy": "notifications"
     },
     "document": {
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::document.document",
-      "inversedBy": "notificacion"
+      "inversedBy": "notification"
     },
-    "mensaje": {
+    "message": {
       "type": "string"
     },
-    "leido": {
+    "isRead": {
       "type": "boolean"
     }
   }

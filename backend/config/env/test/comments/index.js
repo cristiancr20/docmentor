@@ -19,7 +19,7 @@ describe('GET-POST-UPDATE-DELETE /comments', () => {
         const mockCommentData = {
             highlightAreas: "highlightAreas test",
             quote: "sdsdfsdf",
-            correccion: "correccion test",
+            correction: "correccion test",
         };
 
         await strapi.service('api::comment.comment').create({
@@ -51,7 +51,7 @@ describe('GET-POST-UPDATE-DELETE /comments', () => {
             data: {
                 highlightAreas: "highlightAreas test",
                 quote: "sdsdfsdf",
-                correccion: "correccion test",
+                correction: "correccion test",
             },
         });
 

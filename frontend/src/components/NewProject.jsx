@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import {
   createProject,
   getTutors,
@@ -17,7 +18,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const [selectedTutor, setSelectedTutor] = useState("");
   const [projectType, setProjectType] = useState("Individual");
   const [partnerEmail, setPartnerEmail] = useState("");
-  const [partnerId, setPartnerId] = useState(null); // Guardar el ID del compañero
   const [partnerData, setPartnerData] = useState(null);
   const [selectedItinerary, setSelectedItinerary] = useState("");
   const [selectedPartners, setSelectedPartners] = useState([]);
@@ -71,8 +71,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
     // Buscar el compañero por el correo ingresado
     const getPartnerId = await getPartnerIdByEmail(email);
 
-    setPartnerId(getPartnerId);
-
     if (getPartnerId) {
       try {
         const response = await getUserById(getPartnerId);
@@ -120,8 +118,8 @@ const NewProject = ({ onClose, fetchProjects }) => {
       tipoProyecto: projectType,
       itinerario: selectedItinerary,
     };
-    
-    const mensaje= "Proyecto creado exitosamente";
+
+    const mensaje = "Proyecto creado exitosamente";
     try {
       await createProject(projectData);
       successAlert(mensaje);
@@ -130,7 +128,6 @@ const NewProject = ({ onClose, fetchProjects }) => {
       setTitle("");
       setDescripcion("");
       setPartnerEmail("");
-      setPartnerId(null);
       setSelectedTutor("");
     } catch (error) {
       console.error(
@@ -439,6 +436,12 @@ const NewProject = ({ onClose, fetchProjects }) => {
       </motion.form>
     </motion.div>
   );
+};
+
+// Validación de props
+NewProject.propTypes = {
+  onClose: PropTypes.func.isRequired, // Debe ser una función obligatoria
+  fetchProjects: PropTypes.func.isRequired, // Debe ser una función obligatoria
 };
 
 export default NewProject;

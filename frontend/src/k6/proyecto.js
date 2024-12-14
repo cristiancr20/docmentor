@@ -20,7 +20,7 @@ export default function () {
     itinerario: 'Desarrollo de Software',
   };
 
-  let createProjectResponse = http.post(`${BASE_URL}/new-projects`, JSON.stringify({
+  let createProjectResponse = http.post(`${BASE_URL}/projects`, JSON.stringify({
     data: { createProjectData }
   }), {
     headers: { 'Content-Type': 'application/json' },
@@ -30,12 +30,12 @@ export default function () {
     'Proyecto creado': (r) => r.status === 201,
   });
 
-  const projectId = createProjectResponse.json().id; // Obtener ID del proyecto creado
+  //const projectId = createProjectResponse.json().id; // Obtener ID del proyecto creado
 
   sleep(1); // Pausa para simular retraso entre peticiones
 
   // 2. Listar todos los Proyectos (GET)
-  let listProjectsResponse = http.get(`${BASE_URL}/new-projects`);
+  let listProjectsResponse = http.get(`${BASE_URL}/projects`);
   check(listProjectsResponse, {
     'Listado de proyectos exitoso': (r) => r.status === 200,
   });
@@ -48,7 +48,7 @@ export default function () {
       Descripcion: 'Descripción de proyecto actualizada',
     };
   
-    let updateProjectResponse = http.put(`${BASE_URL}/new-projects/${projectId}`, JSON.stringify(updateProjectData), {
+    let updateProjectResponse = http.put(`${BASE_URL}/projects/${projectId}`, JSON.stringify(updateProjectData), {
       headers: { 'Content-Type': 'application/json' },
     });
   
@@ -59,7 +59,7 @@ export default function () {
     sleep(1); // Pausa
   
     // 4. Eliminar el Proyecto (DELETE)
-    let deleteProjectResponse = http.del(`${BASE_URL}/new-projects/${projectId}`);
+    let deleteProjectResponse = http.del(`${BASE_URL}/projects/${projectId}`);
     check(deleteProjectResponse, {
       'Proyecto eliminado': (r) => r.status === 200,
     });

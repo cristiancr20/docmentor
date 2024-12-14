@@ -18,8 +18,7 @@ describe("GET-POST /documents", () => {
     it("should create a new Document", async () => {
         const mockDocumentData = {
             title: "Document 1",
-            fechaSubida: new Date().toISOString(),
-            revisa: false,
+            isRevised: false,
         };
 
         await strapi.service('api::document.document').create({
