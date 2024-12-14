@@ -13,6 +13,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Set up Node.js 18.20.4
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.20.4
     
       - name: Install frontend dependencies
         working-directory: frontend
@@ -33,9 +38,15 @@ jobs:
   license-backend:
     name: Check licenses for Backend
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+    
+      - name: Set up Node.js 18.20.4
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.20.4
 
       - name: Install backend dependencies
         working-directory: backend
