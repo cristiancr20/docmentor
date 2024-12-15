@@ -12,6 +12,7 @@ import GeneratePdfButton from "../components/GeneratePdfButton";
 import DocumentComparePopup from "../components/DocumentComparePopup";
 import { decryptData } from "../utils/encryption";
 import ProjectsTable from "../components/ProjectsTable";
+import Header from "../components/Header";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -78,15 +79,16 @@ const ProyectoDetalle = () => {
   }
 
   const { attributes } = project;
+  console.log("attributes", attributes);
   const tutor = attributes.tutor?.data?.attributes || {};
   // Acceder a los estudiantes (iterar sobre el array)
   const estudiantes =
-    attributes.estudiantes?.data?.map((estudiante) => {
+    attributes.students?.data?.map((estudiante) => {
       return estudiante.attributes;
     }) || [];
 
-  const itinerario = attributes.itinerario || {};
-  const tipoProyecto = attributes.tipoProyecto || {};
+  const itinerario = attributes.itinerary || {};
+  const tipoProyecto = attributes.projectType || {};
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -101,19 +103,32 @@ const ProyectoDetalle = () => {
       render: (doc) => doc.attributes.title,
     },
     {
-      key: "estado",
+      key: "isRevised",
       label: "Estado",
       render: (doc) =>
-        doc.attributes.revisado === false
+        doc.attributes.isRevised === false
           ? "Pendiente de revisión"
-          : doc.attributes.revisado === true
+          : doc.attributes.isRevised === true
             ? "Revisado"
             : "Sin estado",
     },
     {
-      key: "fechaSubida",
+      key: "publishedAt",
       label: "Fecha de Subida",
-      render: (doc) => doc.attributes.fechaSubida || "No disponible",
+      render: (doc) => {
+        const date = new Date(doc.attributes.publishedAt);
+        // Convierte la fecha al formato local
+        return date.toLocaleString('es-ES', {
+          weekday: 'long', // Día de la semana
+          year: 'numeric', // Año completo
+          month: 'long', // Mes completo
+          day: 'numeric', // Día del mes
+          hour: '2-digit', // Hora en formato de 2 dígitos
+          minute: '2-digit', // Minutos
+          second: '2-digit', // Segundos
+          hour12: false, // Usa el formato de 24 horas
+        });
+      },
     },
     {
       key: "acciones",
@@ -122,7 +137,7 @@ const ProyectoDetalle = () => {
         doc.attributes.documentFile?.data?.length > 0 &&
         doc.attributes.documentFile.data[0]?.attributes?.url ? (
           <a
-            href={`/documento/${doc.id}`}
+            href={`/document/${doc.id}`}
             className="text-blue-600 hover:underline"
           >
             Ver Documento
@@ -136,6 +151,7 @@ const ProyectoDetalle = () => {
   return (
     <div>
       <Navbar />
+      <Header />
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         {error && <p className="text-red-500 mb-4">{error}</p>}
         <div className="flex flex-col md:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
@@ -152,7 +168,7 @@ const ProyectoDetalle = () => {
               transition={{ duration: 0.3 }}
               className="text-4xl font-bold mb-4 text-gray-900 border-b pb-4 text-center"
             >
-              {project ? attributes.Title : "Cargando..."}
+              {project ? attributes.title : "Cargando..."}
             </motion.h1>
 
             <h2 className="text-2xl font-bold ">Descripción del Proyecto:</h2>
@@ -162,7 +178,7 @@ const ProyectoDetalle = () => {
               transition={{ duration: 0.5 }}
               className="text-lg mb-4 text-gray-700 leading-relaxed"
             >
-              {attributes.Descripcion}
+              {attributes.description}
             </motion.p>
 
             <div className="flex items-center ">
@@ -173,10 +189,19 @@ const ProyectoDetalle = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="inline-flex items-center p-2 rounded-full bg-blue-50 text-blue-700"
+                className="inline-flex items-center p-2  md:rounded-md rounded-lg bg-blue-50 text-blue-700"
               >
                 <span className="text-xs md:text-base">
-                  {attributes.FechaCreacion}
+                  {new Date(attributes.publishedAt).toLocaleDateString("es-ES",{
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                  })}
                 </span>
               </motion.div>
             </div>
@@ -188,7 +213,7 @@ const ProyectoDetalle = () => {
               className="flex items-center space-x-2 text-1xl mt-2"
             >
               <h3 className="font-bold text-gray-800">Itinerario:</h3>
-              <p className="px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+              <p className="px-3 py-1 md:rounded-md rounded-lg bg-blue-50 text-blue-700 text-xs md:text-base ">
                 {itinerario || "Itinerario no especificado"}
               </p>
             </motion.div>
@@ -213,12 +238,12 @@ const ProyectoDetalle = () => {
                       <h2 className="text-xl font-bold text-gray-800">
                         Tutor del Proyecto
                       </h2>
-                      <p className="text-lg font-semibold text-blue-600">
+                      <p className="text-lg font-semibold text-blue-600 ">
                         {tutor.username}
                       </p>
                       <div className="flex flex-col items-center text-center">
                         <div className="flex items-center m-1">
-                          <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
+                          <p className="inline-flex items-center px-4 py-2  md:rounded-md rounded-lg  bg-blue-50 text-blue-700">
                             {tutor.email}
                           </p>
                         </div>
@@ -325,6 +350,7 @@ const ProyectoDetalle = () => {
           </motion.button>
 
           {rol === "tutor" && <GeneratePdfButton userInfo={attributes} />}
+          
 
           <AnimatePresence>
             {isShowComparePopupOpen && (

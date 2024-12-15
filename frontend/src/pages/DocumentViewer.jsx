@@ -13,6 +13,7 @@ import { Calendar, CheckCircle, XCircle } from "lucide-react";
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 import { API_URL } from "../core/config.js";
 import { decryptData } from "../utils/encryption.js";
+import Header from "../components/Header";
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -76,7 +77,7 @@ const DocumentoViewer = () => {
 
       const notesWithHighlights = data.map((comment) => ({
         id: comment.id,
-        content: comment.attributes.correccion,
+        content: comment.attributes.correction,
         highlightAreas: JSON.parse(comment.attributes.highlightAreas) || [],
         quote: comment.attributes.quote || "",
       }));
@@ -116,6 +117,7 @@ const DocumentoViewer = () => {
     handleAddComment(note.content, note.highlightAreas, note.quote);
   };
 
+
   if (error) {
     return <p className="text-red-500 mb-4">{error}</p>;
   }
@@ -124,8 +126,26 @@ const DocumentoViewer = () => {
     return <p>Cargando documento...</p>;
   }
 
-  const { title, fechaSubida, revisado, documentFile } =
+  const { title, publishedAt, isRevised, documentFile } =
     document?.data?.attributes || {};
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date)) {
+      return "Fecha no válida";
+    }
+    return date.toLocaleString("es-ES", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  };
+
   const documentUrl = documentFile
     ? `${API_URL}${documentFile.data?.[0]?.attributes?.url}`
     : null;
@@ -137,7 +157,7 @@ const DocumentoViewer = () => {
   return (
     <div>
       <Navbar />
-
+      <Header />
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="mb-2">
           <motion.h1
@@ -149,7 +169,8 @@ const DocumentoViewer = () => {
             {title}
           </motion.h1>
 
-          <div className="grid grid-cols-3 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-4">
+            {/* Fecha de creación */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -164,25 +185,30 @@ const DocumentoViewer = () => {
                   Fecha de Creación
                 </h2>
                 <p className="text-sm md:text-lg font-semibold text-gray-900">
-                  {fechaSubida}
+                  {publishedAt
+                    ? formatDate(publishedAt)
+                    : "Fecha no disponible"}
                 </p>
               </div>
             </motion.div>
 
+            {/* Estado de revisión */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               className={`p-4 rounded-xl shadow-sm border flex items-center space-x-4 ${
-                revisado
+                isRevised
                   ? "bg-green-50 border-green-100"
                   : "bg-red-50 border-red-100"
               }`}
             >
               <div
-                className={`p-3 rounded-lg ${revisado ? "bg-green-100" : "bg-red-100"}`}
+                className={`p-3 rounded-lg ${
+                  isRevised ? "bg-green-100" : "bg-red-100"
+                }`}
               >
-                {revisado ? (
+                {isRevised ? (
                   <CheckCircle className="w-6 h-6 text-green-600" />
                 ) : (
                   <XCircle className="w-6 h-6 text-red-600" />
@@ -193,29 +219,34 @@ const DocumentoViewer = () => {
                   Estado de Revisión
                 </h2>
                 <p
-                  className={`text-sm md:text-lg font-semibold ${revisado ? "text-green-700" : "text-red-700"}`}
+                  className={`text-sm md:text-lg font-semibold ${
+                    isRevised ? "text-green-700" : "text-red-700"
+                  }`}
                 >
-                  {revisado ? "Revisado" : "Pendiente"}
+                  {isRevised ? "Revisado" : "Pendiente"}
                 </p>
               </div>
             </motion.div>
 
-            {rol === "tutor" && (
+            
+          </div>
+
+          {/* Botón para tutor */}
+          {rol === "tutor" && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white p-4 rounded-xl flex items-center space-x-4"
+                className="col-span-3 flex justify-end m-2"
               >
                 <button
                   className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                   onClick={handleRevisadoClick}
                 >
-                  Revisado
+                  Marcar como Revisado
                 </button>
               </motion.div>
             )}
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 ">

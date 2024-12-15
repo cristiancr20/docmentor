@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import iconImageTutor from "../assets/tutor_icon.png";
 import { motion } from "framer-motion";
 import { decryptData } from "../utils/encryption";
+import Header from "../components/Header";
 
 function TutorDashboard() {
   let username = null;
@@ -22,7 +23,8 @@ function TutorDashboard() {
   return (
     <div className="Tutor">
       <Navbar />
-      <div className="flex items-center justify-center min-h-screen bg-blue-50 p-6">
+      <Header />
+      <div className="flex items-center justify-center min-h-screen  p-6">
         <div className="container mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-8 lg:gap-16">
           {/* Sección de texto */}
           <motion.div

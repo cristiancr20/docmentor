@@ -60,8 +60,7 @@ export const createDocument = async (title, fileId, projectId) => {
       title: title,
       documentFile: [fileId],
       project: numProjectId,
-      fechaSubida: new Date().toISOString(),
-      revisado: false,
+      isRevised: false,
     },
   };
 
@@ -101,7 +100,7 @@ export const createDocument = async (title, fileId, projectId) => {
 const createNotification = async (title, projectId, documentoId) => {
   try {
     const projectResponse = await axios.get(
-      `${API_URL}/api/new-projects/${projectId}?populate=tutor`
+      `${API_URL}/api/projects/${projectId}?populate=tutor`
     );
 
 
@@ -117,19 +116,19 @@ const createNotification = async (title, projectId, documentoId) => {
 
     const projectAttributes = projectResponse.data.data.attributes;
     const tutor = projectAttributes.tutor.data;
-    const proyecto = projectAttributes.Title
+    const proyecto = projectAttributes.title
 
     if (tutor) {
       const notificationData = {
         data: {
-          mensaje: `En el proyecto ${proyecto} se ha subido un nuevo documento: ${title}`,
+          message: `En el proyecto ${proyecto} se ha subido un nuevo documento: ${title}`,
           tutor: tutor.id,
           document: documentoId,
-          leido: false,
+          isRead: false,
         },
       };
 
-      await axios.post(`${API_URL}/api/notificacions`, notificationData);
+      await axios.post(`${API_URL}/api/notifications`, notificationData);
     }
   } catch (error) {
     handleError(error);
@@ -185,7 +184,7 @@ export const getDocumentById = async (documentId) => {
 export const deleteDocument = async (documentId) => {
   try {
     // Primero, obtenemos las notificaciones asociadas al documento
-    const notificationsResponse = await axios.get(`${API_URL}/api/notificacions`, {
+    const notificationsResponse = await axios.get(`${API_URL}/api/notifications`, {
       params: {
         'filters[document][id][$eq]': documentId,
       },
@@ -195,7 +194,7 @@ export const deleteDocument = async (documentId) => {
 
     // Eliminamos las notificaciones asociadas
     for (const notification of notifications) {
-      await axios.delete(`${API_URL}/api/notificacions/${notification.id}`);
+      await axios.delete(`${API_URL}/api/notifications/${notification.id}`);
     }
 
     // Ahora eliminamos el documento

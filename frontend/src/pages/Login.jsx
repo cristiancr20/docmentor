@@ -37,7 +37,7 @@ const Login = () => {
 
       // Obtener rol del usuario
       const userWithRole = await getUserWithRole(user.id);
-      const userRole = userWithRole.rol?.tipoRol;
+      const userRole = userWithRole.rol?.rolType;
 
       if (!userRole) {
         throw new Error("No se pudo obtener el rol del usuario");
@@ -132,7 +132,7 @@ const Login = () => {
           </button>
           <div className="mt-4 text-center text-white">
             ¿No tienes cuenta?{" "}
-            <Link to="/signup" className="text-blue-500 hover:underline">
+            <Link to="/sign-up" className="text-blue-500 hover:underline">
               Regístrate
             </Link>
           </div>

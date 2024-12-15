@@ -8,8 +8,8 @@ import PropTypes from "prop-types";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
-    Title: "",
-    Descripcion: "",
+    title: "",
+    description: "",
     tutor: "", // Asegúrate de que esto esté alineado con tus datos
   });
   const [tutores, setTutores] = useState([]);
@@ -17,8 +17,8 @@ const EditProject = ({ project, onClose, onUpdate }) => {
   useEffect(() => {
     if (project) {
       setFormData({
-        Title: project.Title || "",
-        Descripcion: project.Descripcion || "",
+        title: project.title || "",
+        description: project.description || "",
         tutor: project.tutor ? project.tutor.id : "", // Extraer el ID del tutor
       });
     }
@@ -89,7 +89,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
             type="text"
             name="title"
             id="title"
-            value={formData.Title}
+            value={formData.title}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
           />
@@ -101,14 +101,14 @@ const EditProject = ({ project, onClose, onUpdate }) => {
           transition={{ delay: 0.4 }}
         >
           <label 
-            htmlFor="descripcion"
+            htmlFor="description"
           className="block text-gray-700 text-sm font-bold mb-2">
             Descripción
           </label>
           <textarea
-            name="descripcion"
-            id="descripcion"
-            value={formData.Descripcion}
+            name="description"
+            id="description"
+            value={formData.description}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
           />
@@ -177,8 +177,8 @@ EditProject.propTypes = {
   onUpdate: PropTypes.func.isRequired,
   project: PropTypes.shape({
     id: PropTypes.number,
-    Title: PropTypes.string,
-    Descripcion: PropTypes.string,
+    title: PropTypes.string,
+    description: PropTypes.string,
     tutor: PropTypes.object,
   }),
 };

@@ -6,12 +6,13 @@ import { MdDelete } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
 import PropTypes from 'prop-types';
+import { successAlert } from "./Alerts/Alerts";
 
 const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
 
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [updatedContent, setUpdatedContent] = useState("");
-  const [isDropdownOpenComments, setIsDropdownOpenComments] = useState(false);
+  const [isDropdownOpenComments, setIsDropdownOpenComments] = useState(true);
 
   const encryptedUserData = localStorage.getItem("userData");
   let rol = null;
@@ -57,18 +58,12 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
         try {
           await deleteComment(commentId);
           onUpdateComments();
-          Swal.fire(
-            "Eliminado!",
-            "El comentario ha sido eliminado.",
-            "success"
-          );
+          const mensaje = "El comentario ha sido eliminado.";
+          successAlert(mensaje);
         } catch (error) {
           console.error("Error deleting comment", error);
-          Swal.fire(
-            "Error!",
-            "Hubo un problema al eliminar el comentario.",
-            "error"
-          );
+          const mensaje = "Error al eliminar el comentario";
+          errorAlert(mensaje);
         }
       }
     });
@@ -142,7 +137,7 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
                             <strong className="font-semibold">
                               Comentario:
                             </strong>{" "}
-                            {comment.attributes.correccion}
+                            {comment.attributes.correction}
                           </p>
                           {comment.attributes.quote && (
                             <p className="text-gray-600 text-sm mt-1 italic border-l-4 border-blue-900 pl-2 bg-blue-50 rounded p-2">

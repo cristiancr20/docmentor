@@ -16,7 +16,6 @@ import SignUp from "./pages/SignUp";
 
 /* ESTUDIANTE */
 import StudentsDashboard from "./pages/StudentDashboard";
-import SubirDocumento from "./components/SubirDocumento";
 import ViewProjectsStudents from "./pages/ViewProjectsStudents";
 import ProjectDetalle from "./pages/ProyectoDetalle";
 
@@ -61,20 +60,20 @@ function App() {
           {/* Rutas públicas */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path="/sign-up" element={<SignUp />} />
 
           {/* Rutas protegidas */}
           <Route element={<ProtectedRoute />}>
             {/* Rutas de Tutor */}
             <Route path="/tutor/dashboard" element={<TutorDashboard />} />
-            <Route path="/proyectos/asignados" element={<ProjectsAsignedTutor />} />
-            <Route path="/documento/:documentId" element={<DocumentoViewer />} />
+            <Route path="/tutor/assigned-projects" element={<ProjectsAsignedTutor />} />
+            <Route path="/document/:documentId" element={<DocumentoViewer />} />
 
             {/* Rutas de Estudiante */}
             <Route path="/student/dashboard" element={<StudentsDashboard />} />
-            <Route path="/proyecto/ver" element={<ViewProjectsStudents />} />
-            <Route path="/subir/documento" element={<SubirDocumento />} />
-            <Route path="/proyecto/:projectId" element={<ProjectDetalle />} />
+            <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
+            
+            <Route path="/project/:projectId" element={<ProjectDetalle />} />
           </Route>
 
           {/* Ruta 404 */}

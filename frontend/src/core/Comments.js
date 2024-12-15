@@ -43,7 +43,7 @@ const postComment = async (
     },
     body: JSON.stringify({
       data: {
-        correccion: newComment,
+        correction: newComment,
         correccionTutor: tutorId,
         document: documentId,
         highlightAreas: JSON.stringify(
@@ -70,7 +70,7 @@ export const updateDocumentStatusRevisado = async (documentId) => {
     },
     body: JSON.stringify({
       data: {
-        revisado: true, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
+        isRevised: true, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
       },
     }),
   });

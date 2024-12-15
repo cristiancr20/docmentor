@@ -17,6 +17,8 @@ export const saveUserData = (user, userRole) => {
     userId: user.id,
   };
 
+  console.log("Datos del usuario:", userData);
+
   // Convertir el objeto a JSON y encriptarlo
   const encryptedUserData = encryptData(JSON.stringify(userData));
 

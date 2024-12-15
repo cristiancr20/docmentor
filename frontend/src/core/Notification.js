@@ -4,7 +4,7 @@ import { API_URL } from "./config";
 
 export const getNotifications = async (token) => {
   try {
-    const response = await axios.get(`${API_URL}/api/notificacions?populate=*`, {
+    const response = await axios.get(`${API_URL}/api/notifications?populate=*`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -36,10 +36,10 @@ export const getNotifications = async (token) => {
 export const markAsReadNotification = async (notificationId) => {
   try {
     const response = await axios.put(
-      `${API_URL}/api/notificacions/${notificationId}`,
+      `${API_URL}/api/notifications/${notificationId}`,
       {
         data: {
-          leido: true,
+          isRead: true,
         },
       }
     );

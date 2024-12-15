@@ -6,6 +6,7 @@ import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
 import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
+import Header from "../components/Header";
 
 const ViewProjectsStudents = () => {
   const [projects, setProjects] = useState([]);
@@ -46,7 +47,6 @@ const ViewProjectsStudents = () => {
     }
   };
 
-
   const handleEdit = (projectId) => {
     const project = projects.find((project) => project.id === projectId);
     setCurrentProject(project);
@@ -58,13 +58,13 @@ const ViewProjectsStudents = () => {
     setIsEditModalOpen(false);
   };
 
-  const handleDelete = async() => {
+  const handleDelete = async () => {
     await fetchProjects();
   };
 
   const columns = [
-    { key: "Title", label: "Título" },
-    { key: "Descripcion", label: "Descripción" },
+    { key: "title", label: "Título" },
+    { key: "description", label: "Descripción" },
     {
       key: "tutor",
       label: "Tutor",
@@ -75,9 +75,9 @@ const ViewProjectsStudents = () => {
       label: "Estudiante",
       render: (project) => (
         <ul>
-          {project.estudiantes.map((estudiante) => (
+          {project.students.map((estudiante) => (
             <li key={estudiante.id}>
-              {estudiante.username}
+              {estudiante.username}<br/>
               <span className="text-blue-600 ml-2">({estudiante.email})</span>
             </li>
           ))}
@@ -85,16 +85,35 @@ const ViewProjectsStudents = () => {
       ),
     },
     {
-      key: "Proyecto",
+      key: "projectType",
       label: "Tipo de Proyecto",
-      render: (project) => project.tipoProyecto,
+      render: (project) => project.projectType,
     },
-    { key: "FechaCreacion", label: "Fecha de Creación" },
+    {
+      key: "FechaCreacion",
+      label: "Fecha de Creación",
+      render: (project) => {
+        const date = new Date(project.publishedAt);
+        // Convierte la fecha al formato local
+        return date.toLocaleString('es-ES', {
+          weekday: 'long', // Día de la semana
+          year: 'numeric', // Año completo
+          month: 'long', // Mes completo
+          day: 'numeric', // Día del mes
+          hour: '2-digit', // Hora en formato de 2 dígitos
+          minute: '2-digit', // Minutos
+          second: '2-digit', // Segundos
+          hour12: false, // Usa el formato de 24 horas
+        });
+      },
+    }
+    
   ];
 
   return (
     <div>
       <Navbar />
+      <Header />
 
       <div className="container mx-auto p-4">
         <motion.button
@@ -111,7 +130,7 @@ const ViewProjectsStudents = () => {
         <ProjectsTable
           projects={projects}
           columns={columns}
-          linkBase="/proyecto"
+          linkBase="/project"
           fetchProjects={handleDelete}
           onEdit={handleEdit}
         />

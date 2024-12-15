@@ -13,7 +13,7 @@ import { User } from "lucide-react";
 
 const NewProject = ({ onClose, fetchProjects }) => {
   const [title, setTitle] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+  const [description, setDescription] = useState("");
   const [tutores, setTutores] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState("");
   const [projectType, setProjectType] = useState("Individual");
@@ -110,13 +110,12 @@ const NewProject = ({ onClose, fetchProjects }) => {
     ].filter((id) => id != null);
 
     const projectData = {
-      Title: title,
-      Descripcion: descripcion,
+      title: title,
+      description: description,
       tutor: parseInt(selectedTutor, 10),
-      estudiantes: validEstudiantes,
-      FechaCreacion: new Date().toISOString(),
-      tipoProyecto: projectType,
-      itinerario: selectedItinerary,
+      students: validEstudiantes,
+      projectType: projectType,
+      itinerary: selectedItinerary,
     };
 
     const mensaje = "Proyecto creado exitosamente";
@@ -126,7 +125,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
       fetchProjects();
       onClose();
       setTitle("");
-      setDescripcion("");
+      setDescription("");
       setPartnerEmail("");
       setSelectedTutor("");
     } catch (error) {
@@ -187,8 +186,8 @@ const NewProject = ({ onClose, fetchProjects }) => {
             </label>
             <textarea
               id="description"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 min-h-[120px] resize-y"
               placeholder="Describa brevemente su proyecto"
               required

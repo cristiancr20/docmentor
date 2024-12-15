@@ -3,6 +3,7 @@ import { getProjectsByTutor } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
 import { decryptData } from "../utils/encryption";
+import Header from "../components/Header";
 
 const ProjectsAsignedTutor = () => {
   const [projects, setProjects] = useState([]);
@@ -47,14 +48,14 @@ const ProjectsAsignedTutor = () => {
 
   useEffect(() => {
     handleFilterChange();
-  }, [authorFilter, itineraryFilter, dateSortOrder]);
+  }, [authorFilter, itineraryFilter]);
 
   const handleFilterChange = () => {
     let filtered = [...projects];
 
     if (authorFilter) {
       filtered = filtered.filter((project) =>
-        project.estudiantes.some((estudiante) =>
+        project.students.some((estudiante) =>
           estudiante.email.toLowerCase().includes(authorFilter.toLowerCase())
         )
       );
@@ -63,18 +64,10 @@ const ProjectsAsignedTutor = () => {
     if (itineraryFilter.trim()) {
       filtered = filtered.filter(
         (project) =>
-          project.itinerario &&
-          project.itinerario.toLowerCase().trim() ===
+          project.itinerary &&
+          project.itinerary.toLowerCase().trim() ===
             itineraryFilter.toLowerCase().trim()
       );
-    }
-
-    if (dateSortOrder) {
-      filtered.sort((a, b) => {
-        const dateA = new Date(a.FechaCreacion).getTime();
-        const dateB = new Date(b.FechaCreacion).getTime();
-        return dateSortOrder === "recent" ? dateB - dateA : dateA - dateB;
-      });
     }
 
     setFilteredProjects(filtered);
@@ -86,7 +79,7 @@ const ProjectsAsignedTutor = () => {
       label: "Estudiante",
       render: (project) => (
         <ul>
-          {project.estudiantes.map((estudiante) => (
+          {project.students.map((estudiante) => (
             <li key={estudiante.id}>
               {estudiante.username}
               <span className="text-blue-600 ml-2">({estudiante.email})</span>
@@ -95,20 +88,38 @@ const ProjectsAsignedTutor = () => {
         </ul>
       ),
     },
-    { key: "Title", label: "Título" },
-    { key: "Descripcion", label: "Descripción" },
-    { key: "itinerario", label: "Itinerario" },
+    { key: "title", label: "Título" },
+    { key: "description", label: "Descripción" },
+    { key: "itinerary", label: "Itinerario" },
     {
-      key: "Proyecto",
+      key: "projectType",
       label: "Tipo de Proyecto",
-      render: (project) => project.tipoProyecto,
+      render: (project) => project.projectType,
     },
-    { key: "FechaCreacion", label: "Fecha de Creación" },
+    {
+      key: "FechaCreacion",
+      label: "Fecha de Creación",
+      render: (project) => {
+        const date = new Date(project.publishedAt);
+        // Convierte la fecha al formato local
+        return date.toLocaleString("es-ES", {
+          weekday: "long", // Día de la semana
+          year: "numeric", // Año completo
+          month: "long", // Mes completo
+          day: "numeric", // Día del mes
+          hour: "2-digit", // Hora en formato de 2 dígitos
+          minute: "2-digit", // Minutos
+          second: "2-digit", // Segundos
+          hour12: false, // Usa el formato de 24 horas
+        });
+      },
+    },
   ];
 
   return (
     <div>
       <Navbar />
+      <Header /> 
       <div className="container mx-auto p-4">
         {error && <p className="text-red-500">{error}</p>}
 
@@ -120,33 +131,17 @@ const ProjectsAsignedTutor = () => {
             onChange={(e) => setItineraryFilter(e.target.value)}
             className="font-bold bg-gray-900 text-white py-3 px-6 rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
           >
-            <option value="" className="bg-white">
+            <option value="" className="bg-gray-700">
               Seleccionar Itinerario
             </option>
-            <option value="Ingeniería de Software" className="bg-white">
+            <option value="Ingeniería de Software" className="bg-gray-700">
               Ingeniería de Software
             </option>
-            <option value="Sistemas Inteligentes" className="bg-white">
+            <option value="Sistemas Inteligentes" className="bg-gray-700">
               Sistemas Inteligentes
             </option>
-            <option value="Computación Aplicada" className="bg-white">
+            <option value="Computación Aplicada" className="bg-gray-700">
               Computación Aplicada
-            </option>
-          </select>
-
-          <select
-            value={dateSortOrder}
-            onChange={(e) => {
-              setDateSortOrder(e.target.value); // Actualiza el estado del ordenamiento
-              handleFilterChange(); // Llama a la función para aplicar el nuevo orden
-            }}
-            className="font-bold bg-gray-900 text-white py-3 px-6 rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
-          >
-            <option value="recent" className="bg-white">
-              Más Recientes
-            </option>
-            <option value="oldest" className="bg-white">
-              Más Antiguos
             </option>
           </select>
 
@@ -180,7 +175,7 @@ const ProjectsAsignedTutor = () => {
         <ProjectsTable
           projects={filteredProjects}
           columns={columns}
-          linkBase="/proyecto"
+          linkBase="/project"
         />
       </div>
     </div>

@@ -44,7 +44,7 @@ export const checkUserExists = async (email) => {
 };
 
 
-export const loginOrRegister = async (data) => {
+/* export const loginOrRegister = async (data) => {
   try {
     // Primero verificamos si el usuario existe
     const userExists = await checkUserExists(data.email);
@@ -90,7 +90,7 @@ export const loginOrRegister = async (data) => {
     }
     throw error;
   }
-};
+}; */
 
 // Método para obtener el usuario con el rol incluido
 export const getUserWithRole = async (userId) => {

@@ -11,15 +11,6 @@ export const successAlert = (mensaje) => {
   });
 }
 
-// Alerta DE ERROR AL REGISTRAR USUARIO
-export const registerErrorAlert = (mensaje) => {
-  Swal.fire({
-    icon: 'error',
-    title: '¡Error al registrar el usuario!',
-    text: mensaje,
-  });
-}
-
 //Alerta de error al subir documento
 export const errorAlert = (mensaje) => {
   Swal.fire({
@@ -29,10 +20,20 @@ export const errorAlert = (mensaje) => {
   });
 }
 
+// Alerta DE ADVERTENCIA
 export const warningAlert = (mensaje) => {
   Swal.fire({
     icon: 'warning',
     title: '¡Atención!',
+    text: mensaje,
+  });
+}
+
+// Alerta DE ERROR AL REGISTRAR USUARIO
+export const registerErrorAlert = (mensaje) => {
+  Swal.fire({
+    icon: 'error',
+    title: '¡Error al registrar el usuario!',
     text: mensaje,
   });
 }

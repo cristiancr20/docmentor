@@ -19,12 +19,28 @@ permissions:
   packages: write
 
 jobs:
- 
+  # 02 - Frontend - Unit test
+  unit_test_frontend:
+    name: unit_test_frontend
+    uses: ./.github/workflows/unit_test_frontend.yml
+    secrets: inherit
 
-      # 07 - Lint React Code
+    # 04 - SAST - Static Application Security Testing
+  sast:
+    name: SAST
+    uses: ./.github/workflows/sast.yml
+    secrets: inherit
+
+    # 07 - Lint React Code
   slint:
     name: Lint React Code
     uses: ./.github/workflows/slint.yml
+    secrets: inherit
+
+  # 08 - License Compliance
+  license_compliance:
+    name: License Compliance
+    uses: ./.github/workflows/license_compliance.yml
     secrets: inherit
 
   

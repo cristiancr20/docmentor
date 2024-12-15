@@ -85,14 +85,14 @@ function Navbar() {
           notification.id === notificationId
             ? {
                 ...notification,
-                attributes: { ...notification.attributes, leido: true },
+                attributes: { ...notification.attributes, isRead: true },
               }
             : notification
         )
       );
       if (documentData) {
         const documentId = documentData.id;
-        navigate(`/documento/${documentId}`);
+        navigate(`/document/${documentId}`);
       } else {
         console.warn("No hay documento asociado a la notificación");
       }
@@ -105,7 +105,7 @@ function Navbar() {
   };
 
   const unreadNotificationsCount = notifications.filter(
-    (notification) => !notification.attributes.leido
+    (notification) => !notification.attributes.isRead
   ).length;
 
   const handleLogout = () => {
@@ -184,10 +184,10 @@ function Navbar() {
                   </motion.li>
                   <motion.li whileHover={{ scale: 1.05 }}>
                     <Link
-                      to="/proyectos/asignados"
+                      to="/tutor/assigned-projects"
                       className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      <span className="font-medium">Ver mis Proyectos</span>
+                      <span className="font-medium">Ver proyectos asignados</span>
                     </Link>
                   </motion.li>
                 </>
@@ -205,10 +205,10 @@ function Navbar() {
                   </motion.li>
                   <motion.li whileHover={{ scale: 1.05 }}>
                     <Link
-                      to="/proyecto/ver"
+                      to="/student/projects/view"
                       className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
                     >
-                      <span className="font-medium">Ver mis Proyectos</span>
+                      <span className="font-medium">Ver mis proyectos</span>
                     </Link>
                   </motion.li>
                 </>
@@ -265,14 +265,14 @@ function Navbar() {
                               animate={{ opacity: 1, y: 0 }}
                               whileHover={{ scale: 1.02 }}
                               className={`p-3 rounded-lg mt-2 cursor-pointer ${
-                                notification.attributes.leido
+                                notification.attributes.isRead
                                   ? "bg-gray-900 text-white"
                                   : "bg-blue-100 text-gray-900"
                               }`}
                               onClick={() => markAsRead(notification)}
                             >
                               <p className="text-sm">
-                                {notification.attributes.mensaje}
+                                {notification.attributes.message}
                               </p>
                             </motion.div>
                           ))
@@ -370,7 +370,7 @@ function Navbar() {
                     className="overflow-hidden rounded-xl"
                   >
                     <Link
-                      to="/proyectos/asignados"
+                      to="/tutor/assigned-projects"
                       className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
                       onClick={() => setIsNavOpen(false)}
                     >
@@ -401,7 +401,7 @@ function Navbar() {
                     className="overflow-hidden rounded-xl"
                   >
                     <Link
-                      to="/proyecto/ver"
+                      to="/student/projects/view"
                       className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
                       onClick={() => setIsNavOpen(false)}
                     >

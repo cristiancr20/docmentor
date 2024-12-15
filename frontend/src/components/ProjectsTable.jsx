@@ -5,7 +5,7 @@ import { FaEye, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { deleteProject } from "../core/Projects";
 import { motion } from "framer-motion";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 import Swal from "sweetalert2";
 import { decryptData } from "../utils/encryption";
@@ -19,6 +19,20 @@ const ProjectsTable = ({
   onEdit,
 }) => {
   const formattedProjects = Array.isArray(projects) ? projects : [projects];
+
+  // Ordena los proyectos por la fecha de `publishedAt` (más reciente primero)
+
+  const sortedProjects = formattedProjects.sort((a, b) => {
+    // Verifica si `publishedAt` está en `attributes` o directamente en el objeto
+    const dateA = a.attributes?.publishedAt
+      ? new Date(a.attributes.publishedAt)
+      : new Date(a.publishedAt || 0); // Si no existe, usa una fecha mínima
+    const dateB = b.attributes?.publishedAt
+      ? new Date(b.attributes.publishedAt)
+      : new Date(b.publishedAt || 0);
+
+    return dateB - dateA; // Orden descendente (más reciente primero)
+  });
 
   const encryptedUserData = localStorage.getItem("userData");
   let rol = null;
@@ -60,7 +74,8 @@ const ProjectsTable = ({
             "error"
           );
 
-          const mensaje = error.response?.data?.message || "Error al eliminar el proyecto";
+          const mensaje =
+            error.response?.data?.message || "Error al eliminar el proyecto";
 
           errorAlert(mensaje);
         }
@@ -87,13 +102,13 @@ const ProjectsTable = ({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="px-4 py-2 bg-gray-800 text-left text-sm font-medium text-white uppercase tracking-wider"
+                className="px-4 py-2 bg-gray-800 text-center text-sm font-medium text-white uppercase tracking-wider"
               >
                 {column.label}
               </th>
             ))}
             {linkBase && (
-              <th className="px-4 py-2 bg-gray-800 text-left text-sm font-medium text-white uppercase tracking-wider">
+              <th className="px-4 py-2 bg-gray-800 text-center text-sm font-medium text-white uppercase tracking-wider">
                 Acciones
               </th>
             )}
@@ -110,14 +125,14 @@ const ProjectsTable = ({
               </td>
             </tr>
           ) : (
-            projects.map((project) => {
+            sortedProjects.map((project) => {
               // Verifica si el atributo 'revisado' existe antes de determinar el color de la fila
               const rowColor =
-                project.attributes?.revisado === false
-                  ? "bg-yellow-100" // Pendiente
-                  : project.attributes?.revisado === true
-                    ? "bg-green-100" // Revisado
-                    : "bg-gray-50"; // Por defecto
+                project.attributes?.isRevised === false
+                  ? "bg-yellow-100 border-b hover:bg-gray-300" // Pendiente
+                  : project.attributes?.isRevised === true
+                    ? "bg-green-100 border-b hover:bg-gray-300" // Revisado
+                    : "bg-gray-50 border-b hover:bg-gray-300"; // Por defecto
 
               return (
                 <motion.tr
@@ -130,7 +145,7 @@ const ProjectsTable = ({
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className="px-4 py-2 whitespace-nowrap text-base font-medium text-gray-900"
+                      className="px-4 py-2 whitespace-nowrap text-base font-medium text-gray-900 text-center cursor-pointer "
                     >
                       {column.render
                         ? column.render(project)
@@ -138,7 +153,7 @@ const ProjectsTable = ({
                     </td>
                   ))}
                   {linkBase && (
-                    <td className="p-4 whitespace-nowrap text-base font-medium text-gray-900 flex items-center space-x-4">
+                    <td className="p-4 whitespace-nowrap text-base font-medium text-red-900  space-x-4 justify-center flex items-center ">
                       <Link
                         to={`${linkBase}/${project.id}`}
                         className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
