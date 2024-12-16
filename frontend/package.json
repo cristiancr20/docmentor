@@ -22,7 +22,7 @@
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
     "jwt-decode": "^3.1.2",
-    "lucide-react": "^0.453.0",
+    "lucide-react": "^0.456.0",
     "nodemon": "^3.1.4",
     "pdf-annotate.js": "^1.0.0",
     "pdfjs-dist": "^3.11.174",
