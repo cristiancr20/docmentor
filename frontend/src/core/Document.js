@@ -12,9 +12,7 @@ export const uploadFile = async (file) => {
 
   let token = null; 
 
-
   const encryptedToken = localStorage.getItem("jwtToken");
-
 
   if (encryptedToken) {
     // Desencriptar los datos
@@ -177,30 +175,5 @@ export const getDocumentById = async (documentId) => {
   } catch (error) {
     console.error("Error fetching document:", error);
     throw error;
-  }
-};
-
-// Función para eliminar un documento
-export const deleteDocument = async (documentId) => {
-  try {
-    // Primero, obtenemos las notificaciones asociadas al documento
-    const notificationsResponse = await axios.get(`${API_URL}/api/notifications`, {
-      params: {
-        'filters[document][id][$eq]': documentId,
-      },
-    });
-
-    const notifications = notificationsResponse.data.data;
-
-    // Eliminamos las notificaciones asociadas
-    for (const notification of notifications) {
-      await axios.delete(`${API_URL}/api/notifications/${notification.id}`);
-    }
-
-    // Ahora eliminamos el documento
-    await axios.delete(`${API_URL}/api/documents/${documentId}`);
-
-  } catch (error) {
-    console.error('Error eliminando el documento o las notificaciones:', error.response || error.message);
   }
 };

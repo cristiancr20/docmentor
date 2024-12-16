@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getDocumentsByProjectId } from "../core/Document"; // Asegúrate de agregar deleteDocument a tus funciones core
+import { getDocumentsByProjectId } from "../core/Document"; 
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";

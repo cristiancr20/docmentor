@@ -19,22 +19,31 @@ permissions:
   packages: write
 
 jobs:
-  
+
+  # 02 - Build Frontend Application
+  build_frontend:
+    name: Build Frontend Application
+    uses: ./.github/workflows/build_frontend.yml
+    secrets: inherit
+
 
      # 04 - SAST - Static Application Security Testing
   sast:
+    needs: build_frontend
     name: SAST
     uses: ./.github/workflows/sast.yml
     secrets: inherit
 
   # 07 - Lint React Code
   slint:
+    needs: build_frontend
     name: Lint React Code
     uses: ./.github/workflows/slint.yml
     secrets: inherit
 
   # 08 - License Compliance
   license_compliance:
+    needs: build_frontend
     name: License Compliance
     uses: ./.github/workflows/license_compliance.yml
     secrets: inherit

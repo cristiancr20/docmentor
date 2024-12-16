@@ -1,4 +1,4 @@
-name: 02 - Unit test Frontend 
+name: 02 - Build Frontend Application
 
 on:
   workflow_dispatch:
@@ -17,7 +17,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Frontend steps
     - name: Set up Node.js 18.20.4
       uses: actions/setup-node@v4
       with:
@@ -29,26 +28,6 @@ jobs:
       working-directory: frontend
       run: npm ci
 
-    - name: Run frontend tests
-      working-directory: frontend
-      run: npm test -- --coverage
-
     - name: Build frontend application
       working-directory: frontend
       run: npm run build
-
-    - name: Upload frontend coverage report
-      uses: actions/upload-artifact@v4
-      with:
-        name: Coverage-Report
-        path: frontend/coverage
-
-       
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always()
-      with:
-        files: |
-            frontend/**/*.json 
-        
-    

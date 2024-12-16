@@ -33,65 +33,6 @@ export const login = async (data) => {
   }
 };
 
-export const checkUserExists = async (email) => {
-  try {
-    const response = await axios.get(`${API_URL}/api/users?filters[email][$eq]=${email}`);
-    return response.data.length > 0;
-  } catch (error) {
-    console.error("Error verificando usuario:", error);
-    throw error;
-  }
-};
-
-
-/* export const loginOrRegister = async (data) => {
-  try {
-    // Primero verificamos si el usuario existe
-    const userExists = await checkUserExists(data.email);
-    
-    if (userExists) {
-      // Si el usuario existe, intentamos el login
-      const loginData = {
-        identifier: data.email,
-        password: data.password,
-      };
-      
-      const loginResponse = await login(loginData);
-      return loginResponse;
-      
-    } else {
-      // Si el usuario no existe, lo registramos
-      const registerData = {
-        username: data.email,
-        email: data.email,
-        password: data.password,
-        rol: data.rol,
-      };
-      
-      await registerUser(registerData);
-      
-      // Después del registro exitoso, hacemos login automáticamente
-      const loginData = {
-        identifier: data.email,
-        password: data.password,
-      };
-      
-      const loginResponse = await login(loginData);
-      return loginResponse;
-    }
-  } catch (error) {
-    console.error("Error en login o registro:", error);
-    if (error.response) {
-      console.error("Detalles del error:", {
-        data: error.response.data,
-        status: error.response.status,
-        headers: error.response.headers
-      });
-    }
-    throw error;
-  }
-}; */
-
 // Método para obtener el usuario con el rol incluido
 export const getUserWithRole = async (userId) => {
   try {
