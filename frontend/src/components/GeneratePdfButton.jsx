@@ -12,7 +12,6 @@ const GeneratePdfButton = ({ userInfo }) => {
       title: nombreProyecto,
       description: descripcionProyecto,
       publishedAt,
-      updateAt,
       tutor,
       students,
       documents,
@@ -186,6 +185,7 @@ GeneratePdfButton.propTypes = {
     tutor: PropTypes.object,
     students: PropTypes.object,
     documents: PropTypes.object,
+    itinerary: PropTypes.string,
   }),
 };
 

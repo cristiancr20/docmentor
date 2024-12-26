@@ -44,7 +44,7 @@ const postComment = async (
     body: JSON.stringify({
       data: {
         correction: newComment,
-        correccionTutor: tutorId,
+        correctionTutor: tutorId,
         document: documentId,
         highlightAreas: JSON.stringify(
           Array.isArray(highlightAreas) ? highlightAreas : []
@@ -90,7 +90,7 @@ const updateDocumentStatusNoRevisado = async (documentId) => {
     },
     body: JSON.stringify({
       data: {
-        revisado: false, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
+        isRevised: false, // Cambia esto por el campo que estás utilizando para representar el estado del comentario
       },
     }),
   });
@@ -140,7 +140,7 @@ export const updateComment = async (commentId, newContent) => {
       `${API_URL}/api/comments/${commentId}`,
       {
         data: {
-          correccion: newContent, // Solo actualiza el campo "correccion"
+          correction: newContent, // Solo actualiza el campo "correccion"
         },
       },
       {

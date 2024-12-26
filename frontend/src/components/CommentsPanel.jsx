@@ -6,7 +6,7 @@ import { MdDelete } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
 import PropTypes from 'prop-types';
-import { successAlert } from "./Alerts/Alerts";
+import { errorAlert, successAlert } from "./Alerts/Alerts";
 
 const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
 

@@ -11,7 +11,6 @@ const ProjectsAsignedTutor = () => {
   const [error, setError] = useState(null);
   const [authorFilter, setAuthorFilter] = useState("");
   const [itineraryFilter, setItineraryFilter] = useState("");
-  const [dateSortOrder, setDateSortOrder] = useState("recent"); // 'recent' or 'oldest'
   let userId = null;
 
   const encryptedUserData = localStorage.getItem("userData");
