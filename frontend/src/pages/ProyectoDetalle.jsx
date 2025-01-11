@@ -79,7 +79,6 @@ const ProyectoDetalle = () => {
   }
 
   const { attributes } = project;
-  console.log("attributes", attributes);
   const tutor = attributes.tutor?.data?.attributes || {};
   // Acceder a los estudiantes (iterar sobre el array)
   const estudiantes =

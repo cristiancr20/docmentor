@@ -35,7 +35,7 @@ module.exports = {
 
             console.log("ID del proyecto:", projectId);
 
-            const proyecto = await strapi.db.query('api::new-project.new-project').findOne({
+            const proyecto = await strapi.db.query('api::project.project').findOne({
                 where: { id: projectId },
                 populate: ['tutor', 'estudiante'],
             });
@@ -45,10 +45,12 @@ module.exports = {
                 return;
             }
 
+            console.log("Proyecto encontrado:", proyecto);
+
             // Verificar que el tutor tenga un correo electrónico
             const tutorEmail = proyecto.tutor?.email;
             const tutorUsername = proyecto.tutor?.username || 'Tutor';  // Asegurarse de que el tutor tenga un nombre
-            const projectName = proyecto.Title || 'Sin título';  // Título del proyecto
+            const projectName = proyecto.title || 'Sin título';  // Título del proyecto
             const documentTitle = result.title || 'Documento sin título';  // Título del documento
 
 
@@ -86,29 +88,41 @@ module.exports = {
 
 
     async afterUpdate(event) {
-        const { result, params } = event;
+    const { result, params } = event;
 
-        try {
-            console.log("Evento completo:", {
-                result: result,
-                params: params
+    try {
+        console.log("Evento completo:", {
+            result: result,
+            params: params
+        });
+
+        if (result.isRevised === true) {
+            console.log("Documento marcado como revisado. Iniciando proceso de envío de correos.");
+
+            const documentWithPopulate = await strapi.entityService.findOne('api::document.document', result.id, {
+                populate: ['project', 'project.students', 'comments'] // Asegúrate de que 'students' esté correctamente relacionado
             });
 
-            if (result.revisado === true) {
-                console.log("Documento marcado como revisado. Iniciando proceso de envío de correo.");
+            console.log("Documento con relaciones:", documentWithPopulate);
 
-                const documentWithPopulate = await strapi.entityService.findOne('api::document.document', result.id, {
-                    populate: ['project', 'project.estudiante', 'comments']
-                });
+            const project = documentWithPopulate.project;
+            const students = project.students; // Accedemos a 'students.data'
 
-                console.log("Documento con relaciones:", documentWithPopulate);
+            console.log("Proyecto del documento:", project);
+            console.log("Estudiantes del proyecto:", students);
 
-                const project = documentWithPopulate.project;
-                const estudiante = project.estudiante;
+            if (!students || students.length === 0) {
+                console.warn(`No se encontraron estudiantes en el proyecto: ${project.title}`);
+                return;
+            }
 
-                if (!estudiante || !estudiante.email) {
-                    console.warn(`No se encontró correo electrónico para el estudiante en el proyecto: ${project.Title}`);
-                    return;
+            // Recorremos el arreglo de estudiantes
+            for (let student of students) {
+                const estudiante = student; // Los atributos del estudiante están dentro de 'attributes'
+                
+                if (!estudiante.email) {
+                    console.warn(`No se encontró correo electrónico para el estudiante: ${estudiante.username} en el proyecto: ${project.title}`);
+                    continue;  // Si no hay correo, pasamos al siguiente estudiante
                 }
 
                 console.log(`Preparando correo para el estudiante: ${estudiante.email}`);
@@ -127,10 +141,10 @@ module.exports = {
                 const context = {
                     username: estudiante.username || 'Estudiante',
                     documentTitle: result.title,
-                    projectTitle: project.Title,
+                    projectTitle: project.title,
                     hasComments: comentarios.length > 0,
                     comments: comentarios.map(comment => ({
-                        correccion: comment.correccion,
+                        correccion: comment.correction,
                         quote: comment.quote
                     }))
                 };
@@ -149,11 +163,13 @@ module.exports = {
                 });
 
                 strapi.log.info(`Correo enviado al estudiante (${estudiante.email}) para el documento: ${result.title}`);
-            } else {
-                console.log("El documento no está marcado como revisado. No se enviará correo.");
             }
-        } catch (error) {
-            console.error('Error en afterUpdate lifecycle de documentos:', error);
+        } else {
+            console.log("El documento no está marcado como revisado. No se enviarán correos.");
         }
-    },
-}; */
+    } catch (error) {
+        console.error('Error en afterUpdate lifecycle de documentos:', error);
+    }
+},
+
+};  */

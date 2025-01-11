@@ -7,51 +7,99 @@ const responseTime = new Trend('custom_response_time', true);
 const requestErrors = new Counter('custom_request_errors');
 
 export let options = {
-    stages: [
-        { duration: '1m', target: 10 },
-        { duration: '3m', target: 50 },
-        { duration: '5m', target: 100 },
-        { duration: '2m', target: 0 },
-    ],
-    
+    scenarios: {
+        login: {
+            executor: 'ramping-vus',
+            exec: 'loginScenario',
+            stages: [
+                { duration: '1m', target: 10 }, // Sube a 10 usuarios en 1 minuto
+                { duration: '2m', target: 20 }, // Sube a 50 usuarios en 2 minutos
+                /* { duration: '2m', target: 100 },  */// Sube a 100 usuarios en 2 minutos
+                { duration: '1m', target: 0 },  // Baja a 0 usuarios en 1 minuto
+            ],
+        },
+        /*  getRequests: {
+             executor: 'constant-vus',
+             exec: 'getScenario',
+             vus: 10,
+             duration: '1m',
+             startTime: '1m',
+         },
+         postRequests: {
+             executor: 'constant-vus',
+             exec: 'postScenario',
+             vus: 10,
+             duration: '1m',
+             startTime: '2m',
+         },
+         putRequests: {
+             executor: 'constant-vus',
+             exec: 'putScenario',
+             vus: 10,
+             duration: '1m',
+             startTime: '3m',
+         }, */
+    },
     thresholds: {
         http_req_duration: ['p(95)<500'], // 95% de las solicitudes < 500ms
         http_req_failed: ['rate<0.01'],  // Menos del 1% de errores permitidos
         custom_response_time: ['avg<400'], // Tiempo de respuesta promedio < 400ms
-    }
+    },
 };
 
 const BASE_URL = 'http://localhost:1337'; // Cambiar por tu URL ngrok o servidor desplegado
 
-export default function () {
-    // Definir los endpoints de la API para métodos GET
+export function loginScenario() {
+    const loginPayload = JSON.stringify({
+        identifier: 'cristian.capa20@gmail.com',
+        password: 'Capitacr20',
+    });
+
+    const loginRes = http.post(`${BASE_URL}/api/auth/local`, loginPayload, {
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    check(loginRes, {
+        'Login successful': (r) => r.status === 200,
+    });
+
+    responseTime.add(loginRes.timings.duration);
+    if (loginRes.status !== 200) {
+        requestErrors.add(1);
+    }
+
+    sleep(1);
+    return loginRes.json().jwt;
+}
+
+/* export function getScenario() {
     const getEndpoints = [
         { name: 'List Projects', url: `${BASE_URL}/api/projects` },
         { name: 'List Documents', url: `${BASE_URL}/api/documents` },
         { name: 'View Document with Comments', url: `${BASE_URL}/api/documents?populate=comments` },
-        { name: 'View Assigned Projects', url: `${BASE_URL}/api/projects?filters[tutor][id][$eq]=<TUTOR_ID>` },
         { name: 'View Notifications', url: `${BASE_URL}/api/notifications` },
     ];
 
     getEndpoints.forEach((endpoint) => {
         const res = http.get(endpoint.url);
 
-        // Agregar métricas personalizadas con etiquetas por etapa
-        responseTime.add(res.timings.duration, { stage: `${__VU} users` });
+        responseTime.add(res.timings.duration);
         if (res.status !== 200 && res.status !== 201) {
-            requestErrors.add(1, { stage: `${__VU} users` });
+            requestErrors.add(1);
         }
 
-        // Chequeos de la respuesta
         check(res, {
             [`${endpoint.name} - is status 200`]: (r) => r.status === 200 || r.status === 201,
-            [`${endpoint.name} - response time < 200ms`]: (r) => r.timings.duration < 200,
         });
 
-        sleep(1); // Simular retraso entre acciones del usuario
+        sleep(1);
     });
+} */
 
-    // Definir los endpoints de la API para métodos POST
+/* export function postScenario() {
+    const token = loginScenario();
+    const AUTH_TOKEN = `Bearer ${token}`;
+
     const postEndpoints = [
         {
             name: 'Create Project',
@@ -64,9 +112,6 @@ export default function () {
                     itinerary: 'Desarrollo de Software',
                 },
             }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
         },
         {
             name: 'Add Comment',
@@ -74,9 +119,8 @@ export default function () {
             payload: JSON.stringify({
                 data: {
                     correction: 'Test comment',
-                }
+                },
             }),
-            headers: { 'Content-Type': 'application/json' },
         },
         {
             name: 'Create Document',
@@ -86,9 +130,8 @@ export default function () {
                     title: "test document",
                     project: 20,
                     isRevised: false,
-                }
+                },
             }),
-            headers: { 'Content-Type': 'application/json' },
         },
         {
             name: 'Create Notification',
@@ -97,37 +140,40 @@ export default function () {
                 data: {
                     message: `En el proyecto se ha subido un nuevo documento:`,
                     isRead: false,
-                }
+                },
             }),
-            headers: { 'Content-Type': 'application/json' },
         },
-
     ];
 
     postEndpoints.forEach((endpoint) => {
-        const res = http.post(endpoint.url, endpoint.payload, { headers: endpoint.headers });
-
-        // Agregar métricas personalizadas con etiquetas por etapa
-        responseTime.add(res.timings.duration, { stage: `${__VU} users` });
-        if (res.status !== 200 && res.status !== 201) {
-            requestErrors.add(1, { stage: `${__VU} users` });
-        }
-
-        // Chequeos de la respuesta
-        check(res, {
-            [`${endpoint.name} - is status 200`]: (r) => r.status === 200 || r.status === 201,
-            [`${endpoint.name} - response time < 200ms`]: (r) => r.timings.duration < 200,
+        const res = http.post(endpoint.url, endpoint.payload, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: AUTH_TOKEN,
+            },
         });
 
-        sleep(1); // Simular retraso entre acciones del usuario
+        responseTime.add(res.timings.duration);
+        if (res.status !== 200 && res.status !== 201) {
+            requestErrors.add(1);
+        }
+
+        check(res, {
+            [`${endpoint.name} - is status 200`]: (r) => r.status === 200 || r.status === 201,
+        });
+
+        sleep(1);
     });
+} */
 
+/* export function putScenario() {
+    const token = loginScenario();
+    const AUTH_TOKEN = `Bearer ${token}`;
 
-    // Definir los endpoints de la API para métodos PUT
     const putEndpoints = [
         {
             name: 'Update Project',
-            url: `${BASE_URL}/api/projects/4177`,
+            url: `${BASE_URL}/api/projects/9`,
             payload: JSON.stringify({
                 data: {
                     title: 'Proyecto Actualizado',
@@ -136,64 +182,54 @@ export default function () {
                     itinerary: 'Desarrollo de Software',
                 },
             }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
         },
         {
-            name: "Update comments",
-            url: `${BASE_URL}/api/comments/356`,
+            name: 'Update comments',
+            url: `${BASE_URL}/api/comments/4`,
             payload: JSON.stringify({
                 data: {
                     correction: 'Test comment updated',
-                }
+                },
             }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
         },
         {
-            name: "Update Document Status Revisado",
-            url: `${BASE_URL}/api/documents/356`,
+            name: 'Update Document Status Revisado',
+            url: `${BASE_URL}/api/documents/4`,
             payload: JSON.stringify({
                 data: {
                     isRevised: true,
                 },
             }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
         },
         {
-            name: "Update Document Status No Revisado",
-            url: `${BASE_URL}/api/documents/854`,
+            name: 'Update Document Status No Revisado',
+            url: `${BASE_URL}/api/documents/5`,
             payload: JSON.stringify({
                 data: {
                     isRevised: false,
                 },
             }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }
+        },
     ];
 
     putEndpoints.forEach((endpoint) => {
-        const res = http.put(endpoint.url, endpoint.payload, { headers: endpoint.headers });
-
-        // Agregar métricas personalizadas con etiquetas por etapa
-        responseTime.add(res.timings.duration, { stage: `${__VU} users` });
-        if (res.status !== 200 && res.status !== 201) {
-            requestErrors.add(1, { stage: `${__VU} users` });
-        }
-
-        // Chequeos de la respuesta
-        check(res, {
-            [`${endpoint.name} - is status 200`]: (r) => r.status === 200 || r.status === 201,
-            [`${endpoint.name} - response time < 200ms`]: (r) => r.timings.duration < 200,
+        const res = http.put(endpoint.url, endpoint.payload, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: AUTH_TOKEN,
+            },
         });
 
-        sleep(1); // Simular retraso entre acciones del usuario
-    });
+        responseTime.add(res.timings.duration);
+        if (res.status !== 200 && res.status !== 201) {
+            requestErrors.add(1);
+        }
 
+        check(res, {
+            [`${endpoint.name} - is status 200`]: (r) => r.status === 200 || r.status === 201,
+        });
+
+        sleep(1);
+    });
 }
+ */

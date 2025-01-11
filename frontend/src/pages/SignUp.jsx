@@ -152,7 +152,7 @@ function SignUp() {
               {roles && roles.length > 0 ? (
                 roles.map((rol) => (
                   <option key={rol.id} value={rol.id}>
-                    {rol.attributes.tipoRol}
+                    {rol.attributes.rolType}
                   </option>
                 ))
               ) : (

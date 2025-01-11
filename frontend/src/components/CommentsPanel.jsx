@@ -30,7 +30,7 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
 
   const handleEditClick = (comment) => {
     setEditingCommentId(comment.id);
-    setUpdatedContent(comment.attributes.correccion);
+    setUpdatedContent(comment.attributes.correction);
   };
 
   const handleEditSubmit = async (commentId) => {
