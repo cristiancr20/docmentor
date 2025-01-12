@@ -63,13 +63,7 @@ const ViewProjectsStudents = () => {
   };
 
   const columns = [
-    { key: "title", label: "Título" },
-    { key: "description", label: "Descripción" },
-    {
-      key: "tutor",
-      label: "Tutor",
-      render: (project) => project.tutor.username,
-    },
+    { key: "itinerary", label: "Itinerario" },
     {
       key: "estudiante",
       label: "Estudiante",
@@ -77,13 +71,23 @@ const ViewProjectsStudents = () => {
         <ul>
           {project.students.map((estudiante) => (
             <li key={estudiante.id}>
-              {estudiante.username}<br/>
+              {estudiante.username}
               <span className="text-blue-600 ml-2">({estudiante.email})</span>
             </li>
           ))}
         </ul>
       ),
     },
+    { key: "title", label: "Título" },
+    { key: "description", label: "Descripción" },
+    {
+      key: "tutor",
+      label: "Tutor",
+      render: (project) => (
+        <span className="text-blue-600 ml-2">{project.tutor.username}</span>
+      ),
+    },
+
     {
       key: "projectType",
       label: "Tipo de Proyecto",
@@ -95,19 +99,18 @@ const ViewProjectsStudents = () => {
       render: (project) => {
         const date = new Date(project.publishedAt);
         // Convierte la fecha al formato local
-        return date.toLocaleString('es-ES', {
-          weekday: 'long', // Día de la semana
-          year: 'numeric', // Año completo
-          month: 'long', // Mes completo
-          day: 'numeric', // Día del mes
-          hour: '2-digit', // Hora en formato de 2 dígitos
-          minute: '2-digit', // Minutos
-          second: '2-digit', // Segundos
+        return date.toLocaleString("es-ES", {
+          weekday: "long", // Día de la semana
+          year: "numeric", // Año completo
+          month: "long", // Mes completo
+          day: "numeric", // Día del mes
+          hour: "2-digit", // Hora en formato de 2 dígitos
+          minute: "2-digit", // Minutos
+          second: "2-digit", // Segundos
           hour12: false, // Usa el formato de 24 horas
         });
       },
-    }
-    
+    },
   ];
 
   return (

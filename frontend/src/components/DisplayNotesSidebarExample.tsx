@@ -280,7 +280,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       <div
       style={{
         alignItems: "center",
-        backgroundColor: "#eeeeee",
+        backgroundColor: "#f3f4f6",
         borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
         display: "flex",
         padding: "4px",

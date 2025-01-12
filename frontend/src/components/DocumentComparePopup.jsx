@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { API_URL } from "../core/config.js";
-import * as Diff from "diff";
 
-
+import { diffWords } from "diff";
+import * as pdfjsLib from "pdfjs-dist";
+import "pdfjs-dist/build/pdf.worker.entry";
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 import DisplayNotesSidebarExample from "./DisplayNotesSidebarExample.tsx";
 
 import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
 import { FaCodeCompare } from "react-icons/fa6";
 import { getCommentsByDocument } from "../core/Comments";
-import { ZoomOut } from "lucide-react";
-
-
 
 const DocumentComparePopup = ({
   documents,
@@ -23,6 +22,7 @@ const DocumentComparePopup = ({
   const [notesDocument1, setNotesDocument1] = useState([]);
   const [notesDocument2, setNotesDocument2] = useState([]);
   const [isComparing, setIsComparing] = useState(true);
+  const [differences, setDifferences] = useState([]);
 
   const sortedDocuments = [...documents].sort((a, b) => a.id - b.id);
   const doc1 = sortedDocuments[currentIndex];
@@ -34,15 +34,20 @@ const DocumentComparePopup = ({
   const doc1Id = doc1.id;
   const doc2Id = doc2.id;
 
+  const nameDocumento1 = doc1.attributes.title;
+  const nameDocumento2 = doc2.attributes.title;
+
   useEffect(() => {
     getHighlightedAreas();
   }, [documento1, documento2]);
 
   const handlePrevious = () => {
+    setDifferences([]);
     setCurrentIndex(currentIndex - 1);
   };
 
   const handleNext = () => {
+    setDifferences([]);
     setCurrentIndex(currentIndex + 1);
   };
 
@@ -75,131 +80,67 @@ const DocumentComparePopup = ({
     }
   };
 
-  //COMPARAR LOS DOCUMENTOS 1 y 2 CON AYUDA DE LA LIBRERÍA DIFF
-  const handleCompareClick = () => {
-    // Función para obtener texto concatenado desde las notas
-    const extractTextFromNotes = (notes) => {
-      return notes
-        .sort((a, b) => {
-          const aStart = a.highlightAreas[0]?.top || 0;
-          const bStart = b.highlightAreas[0]?.top || 0;
-          return aStart - bStart;
-        })
-        .map((note) => note.quote)
-        .join(" ");
-    };
-  
-    // Extraer texto concatenado desde las notas
-    const string1 = extractTextFromNotes(notesDocument1);
-    const string2 = extractTextFromNotes(notesDocument2);
-  
-    // Comparar usando diffWords
-    const diff = Diff.diffWords(string1, string2);
-  
-    // Procesar diferencias
-    let differences = [];
-    diff.forEach((part) => {
-      if (part.added) {
-        differences.push({
-          type: "added",
-          value: part.value.trim(),
-          positionInDoc2: string2.indexOf(part.value.trim()),
+  const extractTextAndPositions = async (fileUrl) => {
+    const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+    const textWithPositions = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const content = await page.getTextContent();
+
+      content.items.forEach((item) => {
+        textWithPositions.push({
+          text: item.str,
+          x: item.transform[4], // Coordenada X
+          y: item.transform[5], // Coordenada Y
+          width: item.width, // Ancho del texto
+          height: item.height, // Alto del texto
         });
-      } else if (part.removed) {
-        differences.push({
-          type: "removed",
-          value: part.value.trim(),
-          positionInDoc1: string1.indexOf(part.value.trim()),
-        });
-      }
-    });
-  
-    // Mostrar las diferencias
-    if (differences.length > 0) {
-      console.log("Diferencias encontradas:");
-      differences.forEach((diff) => {
-        if (diff.type === "added") {
-          console.log(
-            `Texto agregado: "${diff.value}" en posición ${diff.positionInDoc2} del documento 2.`
-          );
-        } else if (diff.type === "removed") {
-          console.log(
-            `Texto eliminado: "${diff.value}" en posición ${diff.positionInDoc1} del documento 1.`
-          );
+      });
+    }
+
+    return textWithPositions;
+  };
+
+  const compareDocuments = async () => {
+    try {
+      // Extraer el texto y posiciones de ambos documentos
+      const text1 = await extractTextAndPositions(documento1);
+      const text2 = await extractTextAndPositions(documento2);
+
+      // Combinar el texto en un solo string por documento
+      const text1Str = text1.map((item) => item.text).join(" ");
+      const text2Str = text2.map((item) => item.text).join(" ");
+
+      // Encuentra las diferencias entre los documentos
+      const differences = diffWords(text1Str, text2Str);
+      const result = [];
+
+      // Procesar diferencias con análisis más preciso
+      differences.forEach((part, index) => {
+        if (part.added) {
+          result.push({
+            type: "added",
+            value: part.value.trim(),
+            document: nameDocumento2, // Este texto fue agregado en el Documento 2
+          });
+        } else if (part.removed) {
+          result.push({
+            type: "removed",
+            value: part.value.trim(),
+            document: nameDocumento1, // Este texto fue eliminado del Documento 2
+          });
         }
       });
-    } else {
-      console.log("No hay diferencias entre los documentos.");
-    }
-  };
-  
 
-  const handleCompareByHighlightAreas = () => {
-    try {
-      // Función para obtener texto desde las posiciones de highlightAreas
-      const extractTextByHighlightAreas = (documentText, highlightAreas) => {
-        // Simulamos la extracción de texto en base a las áreas destacadas
-        return highlightAreas.map((area) => {
-          const start = area.start || 0;
-          const end = area.end || documentText.length;
-          return documentText.substring(start, end);
-        });
-      };
-  
-      // Obtener las áreas destacadas del documento 1
-      const text1 = notesDocument1.map((note) => ({
-        id: note.id,
-        content: extractTextByHighlightAreas(
-          note.quote || "", // Contenido del documento 1
-          note.highlightAreas
-        ),
-      }));
-  
-      // Obtener las áreas destacadas correspondientes del documento 2
-      const text2 = notesDocument1.map((note) => ({
-        id: note.id,
-        content: extractTextByHighlightAreas(
-          notesDocument2.find((n) => n.id === note.id)?.quote || "", // Contenido correspondiente del documento 2
-          note.highlightAreas
-        ),
-      }));
-  
-      // Comparar los textos extraídos
-      let differences = [];
-      text1.forEach((note1, index) => {
-        const note2 = text2[index];
-        note1.content.forEach((segment1, i) => {
-          const segment2 = note2.content[i] || "";
-          if (segment1 !== segment2) {
-            differences.push({
-              id: note1.id,
-              position: i,
-              contentDoc1: segment1,
-              contentDoc2: segment2,
-            });
-          }
-        });
-      });
-  
-      // Mostrar las diferencias
-      if (differences.length > 0) {
-        console.log("Diferencias encontradas:");
-        differences.forEach((diff) => {
-          console.log(
-            `Diferencia en posición ${diff.position} del área destacada del documento ${diff.id}:\n` +
-            `Documento 1: "${diff.contentDoc1}"\n` +
-            `Documento 2: "${diff.contentDoc2}"`
-          );
-        });
-      } else {
-        console.log("No hay diferencias en las áreas destacadas.");
-      }
+      // Actualizar el estado con las diferencias procesadas
+      setDifferences(result);
     } catch (error) {
       console.error("Error comparando documentos:", error);
+    } finally {
+      setIsComparing(false);
     }
   };
-  
-
 
   return (
     <motion.div
@@ -211,7 +152,7 @@ const DocumentComparePopup = ({
       <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-11/12 h-11/12 overflow-hidden">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Comparar Documentos
+            Comparador de Documentos
           </h2>
           <motion.button
             onClick={onClose}
@@ -279,6 +220,107 @@ const DocumentComparePopup = ({
               />
             </div>
           </motion.div>
+          <motion.div className="relative flex-1 bg-gray-100 p-4 rounded-lg shadow-md">
+            <h3 className="text-lg font-medium mb-4">Diferencias</h3>
+
+            {/* Contenedor con scroll y altura fija */}
+            <div
+              className="grid grid-cols-2 gap-4 mb-6"
+              style={{ height: "400px", overflowY: "auto" }}
+            >
+              {/* Columna izquierda - Eliminados */}
+              <div>
+                <h4 className="text-md font-semibold mb-2 text-red-600">
+                  Eliminado
+                </h4>
+                {differences.filter((diff) => diff.type === "removed").length >
+                0 ? (
+                  differences
+                    .filter((diff) => diff.type === "removed")
+                    .map((diff, index) => (
+                      <motion.div
+                        key={index}
+                        className="p-3 mb-2 rounded bg-red-50 border border-red-300"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 50 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <p className="text-sm text-gray-700 mb-1">
+                          {diff.value}
+                        </p>
+                        <p className="text-xs text-gray-500 italic font-semibold">
+                          Documento: {diff.document}
+                        </p>
+                      </motion.div>
+                    ))
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    No se encontraron elementos eliminados.
+                  </p>
+                )}
+              </div>
+
+              {/* Columna derecha - Agregados */}
+              <div>
+                <h4 className="text-md font-semibold mb-2 text-green-600">
+                  Agregado
+                </h4>
+                {differences.filter((diff) => diff.type === "added").length >
+                0 ? (
+                  differences
+                    .filter((diff) => diff.type === "added")
+                    .map((diff, index) => (
+                      <motion.div
+                        key={index}
+                        className="p-3 mb-2 rounded bg-green-50 border border-green-300"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 50 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <p className="text-sm text-gray-700 mb-1">
+                          {diff.value}
+                        </p>
+                        <p className="text-xs text-gray-500 italic font-semibold">
+                          Documento: {diff.document}
+                        </p>
+                      </motion.div>
+                    ))
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    No se encontraron elementos agregados.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Mensaje centrado */}
+            <p className="col-span-2 text-center text-gray-600">
+              Haz clic en "Comparar" para ver las diferencias.
+            </p>
+
+            {/* Sección de instrucciones */}
+            <div className="bg-gray-700 p-4 rounded-lg border border-red-300">
+              <h4 className="text-md font-semibold mb-2 text-yellow-600">
+                Instrucciones
+              </h4>
+              <ul className="list-disc list-inside text-sm text-white">
+                <li className="flex items-center mb-2">
+                  <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
+                  Secciones señaladas para corrección.
+                </li>
+                <li className="flex items-center mb-2">
+                  <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                  Texto eliminado.
+                </li>
+                <li className="flex items-center">
+                  <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                  Texto agregado.
+                </li>
+              </ul>
+            </div>
+          </motion.div>
         </div>
 
         <div className="mt-4 flex justify-between">
@@ -291,7 +333,7 @@ const DocumentComparePopup = ({
           </button>
 
           <button
-            onClick={handleCompareByHighlightAreas}
+            onClick={compareDocuments}
             className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
           >
             <motion.div

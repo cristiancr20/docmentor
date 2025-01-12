@@ -73,6 +73,7 @@ const ProjectsAsignedTutor = () => {
   };
 
   const columns = [
+    { key: "itinerary", label: "Itinerario" },
     {
       key: "estudiante",
       label: "Estudiante",
@@ -89,7 +90,6 @@ const ProjectsAsignedTutor = () => {
     },
     { key: "title", label: "Título" },
     { key: "description", label: "Descripción" },
-    { key: "itinerary", label: "Itinerario" },
     {
       key: "projectType",
       label: "Tipo de Proyecto",
