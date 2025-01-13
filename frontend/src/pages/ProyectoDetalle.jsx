@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { getDocumentsByProjectId } from "../core/Document"; 
+import { Link, useParams } from "react-router-dom";
+import { getDocumentsByProjectId } from "../core/Document";
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
@@ -13,6 +13,7 @@ import DocumentComparePopup from "../components/DocumentComparePopup";
 import { decryptData } from "../utils/encryption";
 import ProjectsTable from "../components/ProjectsTable";
 import Header from "../components/Header";
+import { IoArrowBack } from "react-icons/io5";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -70,7 +71,7 @@ const ProyectoDetalle = () => {
     }
   };
 
-/*   const closeComparePopup = () => {
+  /*   const closeComparePopup = () => {
     setShowIsComparePopupOpen(false);
   }; */
 
@@ -117,14 +118,14 @@ const ProyectoDetalle = () => {
       render: (doc) => {
         const date = new Date(doc.attributes.publishedAt);
         // Convierte la fecha al formato local
-        return date.toLocaleString('es-ES', {
-          weekday: 'long', // Día de la semana
-          year: 'numeric', // Año completo
-          month: 'long', // Mes completo
-          day: 'numeric', // Día del mes
-          hour: '2-digit', // Hora en formato de 2 dígitos
-          minute: '2-digit', // Minutos
-          second: '2-digit', // Segundos
+        return date.toLocaleString("es-ES", {
+          weekday: "long", // Día de la semana
+          year: "numeric", // Año completo
+          month: "long", // Mes completo
+          day: "numeric", // Día del mes
+          hour: "2-digit", // Hora en formato de 2 dígitos
+          minute: "2-digit", // Minutos
+          second: "2-digit", // Segundos
           hour12: false, // Usa el formato de 24 horas
         });
       },
@@ -161,14 +162,38 @@ const ProyectoDetalle = () => {
             transition={{ duration: 0.5 }}
             className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
           >
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: project ? 1 : 0.5, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-4xl font-bold mb-4 text-gray-900 border-b pb-4 text-center"
-            >
-              {project ? attributes.title : "Cargando..."}
-            </motion.h1>
+            <div className="flex items-center border-b pb-4 mb-4">
+              <div className="flex items-center space-x-3 m-2">
+                {rol === "estudiante" && (
+                  <Link
+                    to="/student/projects/view"
+                    className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    <IoArrowBack className="text-white text-xl mr-2" />
+                    <span className="text-lg font-bold">Volver a los proyectos</span>
+                  </Link>
+                )}
+
+                {rol === "tutor" && (
+                  <Link
+                    to="/tutor/assigned-projects"
+                    className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    <IoArrowBack className="text-white text-xl mr-2" />
+                    <span className="text-lg font-bold">Volver a los proyectos</span>
+                  </Link>
+                )}
+              </div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: project ? 1 : 0.5, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="inline-flex items-center text-4xl font-bold text-gray-900 text-center"
+              >
+                {project ? attributes.title : "Cargando..."}
+              </motion.h1>
+            </div>
 
             <h2 className="text-2xl font-bold ">Descripción del Proyecto:</h2>
             <motion.p
@@ -191,16 +216,19 @@ const ProyectoDetalle = () => {
                 className="inline-flex items-center p-2  md:rounded-md rounded-lg bg-blue-50 text-blue-700"
               >
                 <span className="text-xs md:text-base">
-                  {new Date(attributes.publishedAt).toLocaleDateString("es-ES",{
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                    hour12: false,
-                  })}
+                  {new Date(attributes.publishedAt).toLocaleDateString(
+                    "es-ES",
+                    {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: false,
+                    }
+                  )}
                 </span>
               </motion.div>
             </div>
@@ -349,7 +377,6 @@ const ProyectoDetalle = () => {
           </motion.button>
 
           {rol === "tutor" && <GeneratePdfButton userInfo={attributes} />}
-          
 
           <AnimatePresence>
             {isShowComparePopupOpen && (
@@ -363,7 +390,6 @@ const ProyectoDetalle = () => {
           </AnimatePresence>
 
           <ProjectsTable projects={documents} columns={columns} />
-
         </div>
       </div>
 

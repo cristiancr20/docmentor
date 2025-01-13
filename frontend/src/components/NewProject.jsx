@@ -21,6 +21,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const [partnerData, setPartnerData] = useState(null);
   const [selectedItinerary, setSelectedItinerary] = useState("");
   const [selectedPartners, setSelectedPartners] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const encryptedUserData = localStorage.getItem("userData");
   let userId = null;
@@ -104,6 +105,8 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setIsSubmitting(true);
+
     const validEstudiantes = [
       userId,
       ...selectedPartners.map((partner) => partner.id),
@@ -134,6 +137,8 @@ const NewProject = ({ onClose, fetchProjects }) => {
         error.response ? error.response.data : error.message
       );
       errorAlert();
+    } finally {
+      setIsSubmitting(false);
     }
   };
   return (
@@ -426,9 +431,10 @@ const NewProject = ({ onClose, fetchProjects }) => {
           >
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg"
+              disabled={isSubmitting} // Deshabilitar el botón si isSubmitting es true
+              className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              Crear Proyecto
+              {isSubmitting ? "Creando Proyecto..." : "Crear Proyecto"}
             </button>
           </motion.div>
         </div>

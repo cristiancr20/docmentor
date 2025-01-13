@@ -128,7 +128,7 @@ const ProjectsAsignedTutor = () => {
           <select
             value={itineraryFilter}
             onChange={(e) => setItineraryFilter(e.target.value)}
-            className="font-bold bg-gray-900 text-white py-3 px-6 rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
+            className="font-bold bg-indigo-600 text-white py-3 px-6 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
           >
             <option value="" className="bg-gray-700">
               Seleccionar Itinerario

@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { uploadFile, createDocument } from "../core/Document";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 const SubirDocumento = ({ projectId, onClose }) => {
   const [title, setTitle] = useState("");
   const [file, setFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!file || !title || !projectId) {
       alert("Por favor, complete todos los campos.");
@@ -17,11 +19,7 @@ const SubirDocumento = ({ projectId, onClose }) => {
 
     try {
       const uploadedFile = await uploadFile(file);
-      await createDocument(
-        title,
-        uploadedFile.id,
-        projectId
-      );
+      await createDocument(title, uploadedFile.id, projectId);
       const mensaje = "Documento subido correctamente";
       successAlert(mensaje);
       setTitle("");
@@ -29,8 +27,11 @@ const SubirDocumento = ({ projectId, onClose }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error uploading document:", error);
-      const mensaje = error.response?.data?.message || "Error al subir el documento";
+      const mensaje =
+        error.response?.data?.message || "Error al subir el documento";
       errorAlert(mensaje);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -83,9 +84,10 @@ const SubirDocumento = ({ projectId, onClose }) => {
 
       <button
         type="submit"
-        className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
+        disabled={isSubmitting}
+        className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
       >
-        Subir Documento
+        {isSubmitting ? "Subiendo Documento..." : "Subir Documento"}
       </button>
     </form>
   );

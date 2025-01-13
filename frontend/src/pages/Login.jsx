@@ -7,19 +7,18 @@ import {
 } from "../components/Alerts/Alerts";
 import { motion } from "framer-motion";
 
-import {
-  ROLE_ROUTES,
-  validateAuthResponse,
-} from "../utils/auth.utils";
+import { ROLE_ROUTES, validateAuthResponse } from "../utils/auth.utils";
 import { encryptData } from "../utils/encryption";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsSubmitting(true);
 
     try {
       // 1. Intento de login o registro
@@ -34,7 +33,6 @@ const Login = () => {
       // Extraer datos y guardar JWT
       const { jwt, user } = authResponse;
 
-
       // Obtener rol del usuario
       const userWithRole = await getUserWithRole(user.id);
       const userRole = userWithRole.rol?.rolType;
@@ -43,10 +41,10 @@ const Login = () => {
         throw new Error("No se pudo obtener el rol del usuario");
       }
 
-      const userWithRoleData ={
+      const userWithRoleData = {
         ...user,
-        rol: userRole
-      }
+        rol: userRole,
+      };
 
       // Encriptar los datos antes de guardarlos
       const encryptedJwt = encryptData(jwt);
@@ -68,9 +66,12 @@ const Login = () => {
     } catch (error) {
       console.error("Error en el proceso de autenticación:", error);
 
-      const errorMessage ="Error en el inicio de sesión. Verifica tus credenciales.";
+      const errorMessage =
+        "Error en el inicio de sesión. Verifica tus credenciales.";
 
       loginErrorAlert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -124,11 +125,13 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          
           <button
             type="submit"
-            className="w-full px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg sm:w-auto hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            disabled={isSubmitting}
+            className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            Iniciar Sesión
+            {isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
           </button>
           <div className="mt-4 text-center text-white">
             ¿No tienes cuenta?{" "}

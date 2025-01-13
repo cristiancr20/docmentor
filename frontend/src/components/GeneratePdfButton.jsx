@@ -169,7 +169,7 @@ const GeneratePdfButton = ({ userInfo }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="font-bold mb-4 ml-4 bg-blue-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
+      className="font-bold mb-4 ml-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
       onClick={generatePDF}
     >
       Generar Informe de revisión

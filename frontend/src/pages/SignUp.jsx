@@ -11,6 +11,7 @@ function SignUp() {
   const [rol, setRol] = useState("");
   const [roles, setRoles] = useState([]);
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchRoles();
@@ -34,6 +35,7 @@ function SignUp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
       const data = { username, email, password, rol };
@@ -61,6 +63,8 @@ function SignUp() {
           "Error al registrar el usuario. Inténtalo de nuevo."
         );
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -163,9 +167,10 @@ function SignUp() {
 
           <button
             type="submit"
-            className="w-full px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg sm:w-auto hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            disabled={isSubmitting}
+            className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            Registrarme
+            {isSubmitting ? "Registrando..." : "Registrarme"}
           </button>
           <div className="mt-4 text-center text-white">
             ¿Ya tienes una cuenta?{" "}
