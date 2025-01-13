@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documento revisado</title>
+    <title>Notificación de Asignación de Proyecto</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -64,18 +64,6 @@
         text-align: center;
       }
 
-      ul li {
-        list-style: none;
-        margin-bottom: 10px;
-        border-radius: 5px;
-        padding: 10px;
-        background-color: #f4f4f4;
-      }
-
-      .highlight {
-        font-weight: bold;
-        color: #d9534f;
-      }
       .footer {
         font-size: 0.9rem;
         margin-top: 20px;
@@ -86,41 +74,32 @@
     <div class="container">
       <!-- Header -->
       <header>
-        <img
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuFM07aHefyzoqY-AsCuc49PxvhWVBXrLsKQ&s"
-          alt="Logo de la carrera Computación - UNL"
-        />
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuFM07aHefyzoqY-AsCuc49PxvhWVBXrLsKQ&s" alt="Logo de la carrera Computación - UNL" />
         <h1><strong>CARRERA DE COMPUTACIÓN</strong></h1>
       </header>
 
       <!-- Main Content -->
       <div class="content">
         <div class="app">
-          <h1>Revisión del PIC</h1>
+          <h1>Notificación de Asignación de Proyecto</h1>
         </div>
-        <!-- src/templates/email-template.html -->
-        <h1>Hola {{username}},</h1>
+        <h1>Estimado/a {{docenteName}},</h1>
         <p>
-          Tu documento <strong class="highlight">{{documentTitle}}</strong> del
-          proyecto <strong class="highlight">{{projectTitle}}</strong> ha sido
-          revisado.
+          Se le informa que se ha creado un nuevo proyecto titulado
+          <strong class="highlight">{{projectTitle}}</strong>, y usted ha sido asignado/a
+          como tutor/a del mismo.
+        </p>
+        <p>
+          Este proyecto ha sido creado por:
+          <ul>
+            {{students}}
+          </ul>
+          
         </p>
 
-        {{#if hasComments}}
-        <h2>Comentarios de la revisión:</h2>
-        <ul>
-          {{#each comments}}
-          <li>
-            <strong>Corrección:</strong> {{correccion}}<br />
-            <strong>Cita:</strong> "{{quote}}"
-          </li>
-          {{/each}}
-        </ul>
-        {{/if}}
-
         <p>
-          Por favor, revisa los comentarios dentro de tu documento
-          <strong class="highlight">{{documentTitle}}</strong>.
+          Por favor, acceda al sistema para revisar los detalles y gestionar las
+          actividades relacionadas con este proyecto.
         </p>
 
         <p class="footer">
@@ -131,7 +110,7 @@
       <!-- Footer -->
       <footer>
         <p>
-          &copy; 2024 Universidad Nacional de Loja. Todos los derechos
+          &copy; 2025 Universidad Nacional de Loja. Todos los derechos
           reservados.
         </p>
       </footer>
