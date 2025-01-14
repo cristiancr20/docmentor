@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getUserWithRole, login } from "../core/Autentication";
+import { getUserWithRole, login as loginServer } from "../core/Autentication";
 import {
   loginSuccessAlert,
   loginErrorAlert,
@@ -8,13 +8,14 @@ import {
 import { motion } from "framer-motion";
 
 import { ROLE_ROUTES, validateAuthResponse } from "../utils/auth.utils";
-import { encryptData } from "../utils/encryption";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -22,7 +23,7 @@ const Login = () => {
 
     try {
       // 1. Intento de login o registro
-      const authResponse = await login({
+      const authResponse = await loginServer({
         identifier: email,
         password: password,
       });
@@ -41,22 +42,20 @@ const Login = () => {
         throw new Error("No se pudo obtener el rol del usuario");
       }
 
-      const userWithRoleData = {
+
+      // Crear el objeto con los datos completos del usuario
+      const userData = {
         ...user,
         rol: userRole,
       };
 
-      // Encriptar los datos antes de guardarlos
-      const encryptedJwt = encryptData(jwt);
-      const encryptedUserData = encryptData(userWithRoleData);
+      // 3. Llamar al método `login` del contexto
+      login(userData, jwt); // Encripta y guarda los datos globalmente
 
-      localStorage.setItem("jwtToken", encryptedJwt);
-      localStorage.setItem("userData", encryptedUserData);
-
-      // Mostrar mensaje de éxito
+      // 4. Mostrar mensaje de éxito
       loginSuccessAlert(user.username);
 
-      // Redireccionar según el rol
+      // 5. Redirigir según el rol
       const route = ROLE_ROUTES[userRole];
       if (route) {
         navigate(route);
@@ -65,11 +64,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Error en el proceso de autenticación:", error);
-
-      const errorMessage =
-        "Error en el inicio de sesión. Verifica tus credenciales.";
-
-      loginErrorAlert(errorMessage);
+      loginErrorAlert("Error en el inicio de sesión. Verifica tus credenciales.");
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +120,6 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          
           <button
             type="submit"
             disabled={isSubmitting}

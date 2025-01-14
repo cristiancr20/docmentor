@@ -6,7 +6,7 @@ import {
   Outlet
 } from "react-router-dom";
 
-/* import { AuthProvider, useAuth } from "./context/AuthContext"; */
+import { useAuth, AuthProvider } from "./context/AuthContext";
 
 import Dashboard from "./pages/Dashboard";
 
@@ -35,51 +35,46 @@ const NotFound = () => {
 };
 
 /* COMPONENTE RUTAS PROTEGIDAS */
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ requiredRole }) => {
+  const { user, loading } = useAuth();
 
-  const encryptedUserData = localStorage.getItem("userData");
-  if (!encryptedUserData) {
-    console.warn("No se encontraron datos de usuario en localStorage.");
-    return;
+  if (loading) return <div>Cargando...</div>; // O un spinner de carga
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (requiredRole && user.rol !== requiredRole) {
+    return <Navigate to="/" replace />; // Redirige si no tiene el rol adecuado
   }
-  const userData = decryptData(encryptedUserData);
 
-
-  const isAutenticated = () => {
-    const email = userData.email;
-    return email !== null;
-  };
-
-  return isAutenticated() ? <Outlet /> : <Navigate to="/" replace />;
+  return <Outlet />;
 };
 
 function App() {
   return (
-    <>
-        <Routes>
-          {/* Rutas públicas */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/sign-up" element={<SignUp />} />
+    <AuthProvider>
+      <Routes>
+        {/* Rutas públicas */}
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/sign-up" element={<SignUp />} />
 
-          {/* Rutas protegidas */}
-          <Route element={<ProtectedRoute />}>
-            {/* Rutas de Tutor */}
-            <Route path="/tutor/dashboard" element={<TutorDashboard />} />
-            <Route path="/tutor/assigned-projects" element={<ProjectsAsignedTutor />} />
-            <Route path="/document/:documentId" element={<DocumentoViewer />} />
+        {/* Rutas protegidas */}
+        <Route element={<ProtectedRoute requiredRole="tutor" />}>
+          <Route path="/tutor/dashboard" element={<TutorDashboard />} />
+          <Route path="/tutor/assigned-projects" element={<ProjectsAsignedTutor />} />
+          <Route path="/document/:documentId" element={<DocumentoViewer />} />
+        </Route>
 
-            {/* Rutas de Estudiante */}
-            <Route path="/student/dashboard" element={<StudentsDashboard />} />
-            <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
-            
-            <Route path="/project/:projectId" element={<ProjectDetalle />} />
-          </Route>
+        <Route element={<ProtectedRoute requiredRole="estudiante" />}>
+          <Route path="/student/dashboard" element={<StudentsDashboard />} />
+          <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
+          <Route path="/project/:projectId" element={<ProjectDetalle />} />
+        </Route>
 
-          {/* Ruta 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-    </>
+        {/* Ruta 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 

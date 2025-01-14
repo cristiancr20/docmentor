@@ -2,76 +2,66 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
 import { getNotifications, markAsReadNotification } from "../core/Notification";
-import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
+import { AnimatePresence, motion } from "framer-motion";
 
-function Navbar() {
+const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const [userData, setUserData] = useState({});
+
+  // Efecto para cargar las notificaciones (solo para tutores)
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (userData?.rol === "tutor") {
+        try {
+          const response = await getNotifications(token);
+          setNotifications(response.data || []);
+        } catch (error) {
+          console.error("Error al cargar notificaciones:", error);
+        }
+      }
+    };
+
+    if (userData) {
+      loadNotifications();
+    }
+  }, [userData]);
 
   useEffect(() => {
     const encryptedToken = localStorage.getItem("jwtToken");
     const encryptedUserData = localStorage.getItem("userData");
 
-    if (!encryptedToken) {
-      console.warn("No se encontró un token en localStorage.");
+    if (!encryptedToken || !encryptedUserData) {
+      console.warn("Token o datos de usuario no encontrados en localStorage.");
+      setIsLoading(false);
       return;
     }
-
-    if (!encryptedUserData) {
-      console.warn("No se encontraron datos de usuario en localStorage.");
-      return;
-    }
-
-    const jwtToken = decryptData(encryptedToken);
 
     try {
-      if (!jwtToken) {
-        console.error("Token desencriptado inválido o vacío.");
-        return;
-      }
+      const jwtToken = decryptData(encryptedToken);
+      const user = JSON.parse(decryptData(encryptedUserData));
+      setUserData(user);
+      setToken(jwtToken);
+      setIsLoading(false);
 
-      if (jwtToken.split(".").length !== 3) {
-        console.error("El token no tiene un formato JWT válido:", jwtToken);
-        return;
-      }
+      console.log("Datos del usuario desencriptados:", user);
+      console.log("Token JWT desencriptado:", jwtToken);
     } catch (error) {
-      console.error("Error al procesar el token:", error.message);
-    }
-
-    const user = decryptData(encryptedUserData);
-
-    if (!user) {
-      console.error("Datos de usuario desencriptados inválidos o vacíos.");
-      return;
-    }
-
-    setUserData(user);
-
-    if (user.rol === "tutor") {
-      if (jwtToken) {
-        getNotifications(jwtToken)
-          .then((data) => setNotifications(data))
-          .catch((error) =>
-            console.error("Error al cargar notificaciones:", error)
-          );
-      } else {
-        console.error("Token JWT no encontrado");
-      }
+      console.error("Error al procesar los datos del usuario:", error.message);
+      setError("Error al cargar los datos del usuario");
+      setIsLoading(false);
     }
   }, []);
 
-  const handleDropdownToggle = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
 
-  const handleNotificationToggle = () => {
-    setIsNotificationOpen(!isNotificationOpen);
-  };
+  const handleToggle = (setter) => () => setter((prev) => !prev);
 
   const markAsRead = async (notification) => {
     const notificationId = notification.id;
@@ -81,32 +71,23 @@ function Navbar() {
       await markAsReadNotification(notificationId);
 
       setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) =>
-          notification.id === notificationId
+        prevNotifications.map((notif) =>
+          notif.id === notificationId
             ? {
-                ...notification,
-                attributes: { ...notification.attributes, isRead: true },
+                ...notif,
+                attributes: { ...notif.attributes, isRead: true },
               }
-            : notification
+            : notif
         )
       );
+
       if (documentData) {
-        const documentId = documentData.id;
-        navigate(`/document/${documentId}`);
-      } else {
-        console.warn("No hay documento asociado a la notificación");
+        navigate(`/document/${documentData.id}`);
       }
     } catch (error) {
-      console.error(
-        "Error al marcar la notificación como leída:",
-        error.response || error.message
-      );
+      console.error("Error al marcar la notificación como leída:", error);
     }
   };
-
-  const unreadNotificationsCount = notifications.filter(
-    (notification) => !notification.attributes.isRead
-  ).length;
 
   const handleLogout = () => {
     localStorage.removeItem("jwtToken");
@@ -114,24 +95,49 @@ function Navbar() {
     navigate("/", { replace: true });
   };
 
+
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[64px] bg-white dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-400">Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="flex justify-center items-center min-h-[64px] bg-white dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-400">No hay datos de usuario disponibles</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-[64px] bg-white dark:bg-gray-900">
+        <div className="text-red-600 dark:text-red-400">{error}</div>
+      </div>
+    );
+  }
+
+
+  const unreadNotificationsCount = notifications.filter(
+    (notification) => !notification.attributes.isRead
+  ).length;
+
   const menuVariants = {
     closed: {
       opacity: 0,
       height: 0,
       y: -20,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.3, ease: "easeInOut" },
     },
     open: {
       opacity: 1,
       height: "auto",
       y: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.3, ease: "easeInOut" },
     },
   };
 
@@ -140,84 +146,84 @@ function Navbar() {
       opacity: 0,
       y: -10,
       scale: 0.95,
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.2, ease: "easeInOut" },
     },
     open: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.2, ease: "easeInOut" },
     },
   };
 
   return (
     <div className="relative">
-      {/* Barra de navegación principal */}
       <nav className="bg-white border-gray-200 dark:bg-gray-900">
         <div className="max-w-screen-xl flex items-center justify-between mx-auto p-4">
           <div className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-            {/* Texto abreviado en dispositivos pequeños */}
             <span className="block sm:hidden">DocM</span>
-
-            {/* Texto completo en pantallas medianas o mayores */}
             <span className="hidden sm:block">DocMentor</span>
           </div>
 
-          {/* Menú de escritorio */}
-          <div className="hidden md:flex md:items-center ">
-            <ul className="font-medium flex items-center space-x-8 ">
-              {userData?.rol === "tutor" && (
+          <div className="hidden md:flex md:items-center">
+            <ul className="font-medium flex items-center space-x-8">
+              {userData ? (
                 <>
-                  <motion.li whileHover={{ scale: 1.05 }}>
-                    <Link
-                      to="/tutor/dashboard"
-                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
-                    >
-                      <span className="font-medium">Inicio</span>
-                    </Link>
-                  </motion.li>
-                  <motion.li whileHover={{ scale: 1.05 }}>
-                    <Link
-                      to="/tutor/assigned-projects"
-                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
-                    >
-                      <span className="font-medium">Ver proyectos asignados</span>
-                    </Link>
-                  </motion.li>
-                </>
-              )}
+                  {userData?.rol === "tutor" && (
+                    <>
+                      <motion.li whileHover={{ scale: 1.05 }}>
+                        <Link
+                          to="/tutor/dashboard"
+                          className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                        >
+                          <span className="font-medium">Inicio</span>
+                        </Link>
+                      </motion.li>
+                      <motion.li whileHover={{ scale: 1.05 }}>
+                        <Link
+                          to="/tutor/assigned-projects"
+                          className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                        >
+                          <span className="font-medium">
+                            Ver proyectos asignados
+                          </span>
+                        </Link>
+                      </motion.li>
+                    </>
+                  )}
 
-              {userData?.rol === "estudiante" && (
-                <>
-                  <motion.li whileHover={{ scale: 1.05 }}>
-                    <Link
-                      to="/student/dashboard"
-                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
-                    >
-                      <span className="font-medium">Inicio</span>
-                    </Link>
-                  </motion.li>
-                  <motion.li whileHover={{ scale: 1.05 }}>
-                    <Link
-                      to="/student/projects/view"
-                      className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
-                    >
-                      <span className="font-medium">Ver mis proyectos</span>
-                    </Link>
-                  </motion.li>
+                  {userData?.rol === "estudiante" && (
+                    <>
+                      <motion.li whileHover={{ scale: 1.05 }}>
+                        <Link
+                          to="/student/dashboard"
+                          className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                        >
+                          <span className="font-medium">Inicio</span>
+                        </Link>
+                      </motion.li>
+                      <motion.li whileHover={{ scale: 1.05 }}>
+                        <Link
+                          to="/student/projects/view"
+                          className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                        >
+                          <span className="font-medium">Ver mis proyectos</span>
+                        </Link>
+                      </motion.li>
+                    </>
+                  )}
                 </>
+              ) : (
+                <motion.li whileHover={{ scale: 1.05 }}>
+                  <span className="text-gray-900 dark:text-white">
+                    Cargando...
+                  </span>
+                </motion.li>
               )}
             </ul>
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* Botón de menú móvil */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsNavOpen(!isNavOpen)}
@@ -226,7 +232,6 @@ function Navbar() {
               {isNavOpen ? <FaTimes /> : <FaBars />}
             </motion.button>
 
-            {/* Notificaciones y perfil */}
             <div className="flex items-center space-x-3">
               {userData?.rol === "tutor" && (
                 <div className="relative">
@@ -234,7 +239,7 @@ function Navbar() {
                     whileTap={{ scale: 0.95 }}
                     type="button"
                     className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                    onClick={handleNotificationToggle}
+                    onClick={handleToggle(setIsNotificationOpen)}
                   >
                     <FaBell className="text-yellow-500" />
                     {unreadNotificationsCount > 0 && (
@@ -292,9 +297,9 @@ function Navbar() {
                   whileTap={{ scale: 0.95 }}
                   type="button"
                   className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                  onClick={handleDropdownToggle}
+                  onClick={handleToggle(setIsDropdownOpen)}
                 >
-                  <span className="text-white">{userData.username}</span>
+                  <span className="text-white">{userData?.username}</span>
                   <motion.div
                     animate={{ rotate: isDropdownOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
@@ -314,10 +319,10 @@ function Navbar() {
                     >
                       <div className="px-4 py-3">
                         <span className="block text-sm text-gray-900 dark:text-white">
-                          {userData.username}
+                          {userData?.username}
                         </span>
                         <span className="block text-sm text-gray-500 dark:text-gray-400">
-                          {userData.email}
+                          {userData?.email}
                         </span>
                       </div>
                       <ul className="py-2">
@@ -339,7 +344,6 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* Menú móvil */}
       <AnimatePresence>
         {isNavOpen && (
           <motion.div
@@ -374,8 +378,10 @@ function Navbar() {
                       className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
                       onClick={() => setIsNavOpen(false)}
                     >
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-3" />
-                      <span className="font-medium">Proyectos asignados</span>
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-3" />
+                      <span className="font-medium">
+                        Ver proyectos asignados
+                      </span>
                     </Link>
                   </motion.li>
                 </>
@@ -405,24 +411,19 @@ function Navbar() {
                       className="flex items-center p-3 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md"
                       onClick={() => setIsNavOpen(false)}
                     >
-                      <div className="w-2 h-2 rounded-full bg-green-500 mr-3" />
-                      <span className="font-medium">Ver mis Proyectos</span>
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-3" />
+                      <span className="font-medium">Ver mis proyectos</span>
                     </Link>
                   </motion.li>
                 </>
               )}
             </ul>
-
-            <motion.div
-              className="w-16 h-1 bg-gray-600 rounded-full mx-auto mb-2"
-              initial={{ width: "2rem" }}
-              animate={{ width: "4rem" }}
-              transition={{ duration: 0.3 }}
-            />
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-}
+};
+
 export default Navbar;
+

@@ -17,7 +17,7 @@ const ProjectsAsignedTutor = () => {
 
   if (encryptedUserData) {
     // Desencriptar los datos
-    const decryptedUserData = decryptData(encryptedUserData);
+    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
 
     // Acceder al rol desde los datos desencriptados
 
@@ -118,7 +118,7 @@ const ProjectsAsignedTutor = () => {
   return (
     <div>
       <Navbar />
-      <Header /> 
+      <Header />
       <div className="container mx-auto p-4">
         {error && <p className="text-red-500">{error}</p>}
 

@@ -20,7 +20,7 @@ const ViewProjectsStudents = () => {
 
   if (encryptedUserData) {
     // Desencriptar los datos
-    const decryptedUserData = decryptData(encryptedUserData);
+    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
 
     // Acceder al rol desde los datos desencriptados
 
