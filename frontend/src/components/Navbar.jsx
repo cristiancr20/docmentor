@@ -50,9 +50,6 @@ const Navbar = () => {
       setUserData(user);
       setToken(jwtToken);
       setIsLoading(false);
-
-      console.log("Datos del usuario desencriptados:", user);
-      console.log("Token JWT desencriptado:", jwtToken);
     } catch (error) {
       console.error("Error al procesar los datos del usuario:", error.message);
       setError("Error al cargar los datos del usuario");

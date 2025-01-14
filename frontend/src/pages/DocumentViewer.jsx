@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CommentsPanel from "../components/CommentsPanel";
 import { getDocumentById } from "../core/Document";
@@ -14,6 +14,8 @@ import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample
 import { API_URL } from "../core/config.js";
 import { decryptData } from "../utils/encryption.js";
 import Header from "../components/Header";
+import { IoArrowBack } from "react-icons/io5";
+
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -22,6 +24,9 @@ const DocumentoViewer = () => {
   const [comments, setComments] = useState([]);
   const [notes, setNotes] = useState([]);
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+
   let tutorId = null;
   let rol = null;
 
@@ -43,6 +48,7 @@ const DocumentoViewer = () => {
     fetchComments();
   }, [documentId]);
 
+
   const fetchDocument = async () => {
     try {
       const data = await getDocumentById(documentId);
@@ -50,6 +56,10 @@ const DocumentoViewer = () => {
     } catch (error) {
       setError("Error fetching document details");
     }
+  };
+
+  const handleBackClick = () => {
+    navigate(-1);
   };
 
   const handleCommentClick = (comment) => {
@@ -104,18 +114,21 @@ const DocumentoViewer = () => {
   };
 
   const handleRevisadoClick = async () => {
+    setIsSubmitting(true);
+
     try {
       await updateDocumentStatusRevisado(documentId);
       fetchDocument();
     } catch (error) {
       console.error("Error updating document status:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAddNote = (note) => {
     handleAddComment(note.content, note.highlightAreas, note.quote);
   };
-
 
   if (error) {
     return <p className="text-red-500 mb-4">{error}</p>;
@@ -159,11 +172,21 @@ const DocumentoViewer = () => {
       <Header />
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="mb-2">
+          <motion.button
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+
+            className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            <IoArrowBack className="text-white text-xl mr-2" />
+            <span className="text-lg font-bold" onClick={handleBackClick}>Volver a los detalles del proyecto</span>
+          </motion.button>
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-3xl font-bold mb-2 pb-3 border-b border-gray-200"
+            className="text-3xl font-bold mb-2 pb-3 border-b border-gray-200 mt-2"
           >
             {title}
           </motion.h1>
@@ -226,26 +249,28 @@ const DocumentoViewer = () => {
                 </p>
               </div>
             </motion.div>
-
-            
           </div>
 
           {/* Botón para tutor */}
           {rol === "tutor" && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="col-span-3 flex justify-end m-2"
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="col-span-3 flex justify-end m-2"
+            >
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={handleRevisadoClick}
               >
-                <button
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                  onClick={handleRevisadoClick}
-                >
-                  Marcar como Revisado
-                </button>
-              </motion.div>
-            )}
+                {isSubmitting
+                  ? "Actualizando estado..."
+                  : "Marcar como Revisado"}
+              </button>
+            </motion.div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 ">

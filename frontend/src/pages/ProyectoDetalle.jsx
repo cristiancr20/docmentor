@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useEffect, useState  } from "react";
+import { Link, useParams} from "react-router-dom";
 import { getDocumentsByProjectId } from "../core/Document";
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
@@ -61,6 +61,7 @@ const ProyectoDetalle = () => {
       console.error("Error fetching project details:", error);
     }
   };
+
 
   const handleCompareClick = () => {
     if (documents.length > 1) {
@@ -154,16 +155,7 @@ const ProyectoDetalle = () => {
       <Header />
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         {error && <p className="text-red-500 mb-4">{error}</p>}
-        <div className="flex flex-col md:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
-          {/* Sección de información del proyecto */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-          >
-            <div className="flex items-center border-b pb-4 mb-4">
-              <div className="flex items-center space-x-3 m-2">
+        <div className="flex items-center space-x-3 m-2">
                 {rol === "estudiante" && (
                   <Link
                     to="/student/projects/view"
@@ -184,6 +176,17 @@ const ProyectoDetalle = () => {
                   </Link>
                 )}
               </div>
+        <div className="flex flex-col md:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
+          {/* Sección de información del proyecto */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+          >
+            
+            <div className="flex items-center border-b pb-4 mb-4">
+             
 
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}

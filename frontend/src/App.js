@@ -23,7 +23,7 @@ import ProjectDetalle from "./pages/ProyectoDetalle";
 import TutorDashboard from "./pages/TutorDashboard";
 import ProjectsAsignedTutor from "./pages/ProjectsAsignedTutor";
 import DocumentoViewer from "./pages/DocumentViewer";
-import { decryptData } from "./utils/encryption";
+
 
 const NotFound = () => {
   return (
@@ -57,19 +57,23 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/sign-up" element={<SignUp />} />
+        {/* ROL TUTOR-ESTUDIANTE */}
+        <Route path="/document/:documentId" element={<DocumentoViewer />} />
+        <Route path="/project/:projectId" element={<ProjectDetalle />} />
+
 
         {/* Rutas protegidas */}
+        {/* ROL TUTOR */}
         <Route element={<ProtectedRoute requiredRole="tutor" />}>
           <Route path="/tutor/dashboard" element={<TutorDashboard />} />
           <Route path="/tutor/assigned-projects" element={<ProjectsAsignedTutor />} />
-          <Route path="/document/:documentId" element={<DocumentoViewer />} />
         </Route>
-
+        {/* ROL ESTUIANE*/}
         <Route element={<ProtectedRoute requiredRole="estudiante" />}>
           <Route path="/student/dashboard" element={<StudentsDashboard />} />
           <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
-          <Route path="/project/:projectId" element={<ProjectDetalle />} />
         </Route>
+
 
         {/* Ruta 404 */}
         <Route path="*" element={<NotFound />} />
