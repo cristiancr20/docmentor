@@ -9,6 +9,7 @@ import {
 import { useAuth, AuthProvider } from "./context/AuthContext";
 
 import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/ErrorNotFound";
 
 /* AUTENTICACION */
 import Login from "./pages/Login";
@@ -24,15 +25,6 @@ import TutorDashboard from "./pages/TutorDashboard";
 import ProjectsAsignedTutor from "./pages/ProjectsAsignedTutor";
 import DocumentoViewer from "./pages/DocumentViewer";
 
-
-const NotFound = () => {
-  return (
-    <div>
-      <h1>404</h1>
-      <p>Not Found</p>
-    </div>
-  );
-};
 
 /* COMPONENTE RUTAS PROTEGIDAS */
 const ProtectedRoute = ({ requiredRole }) => {
