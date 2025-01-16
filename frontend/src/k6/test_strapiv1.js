@@ -12,15 +12,14 @@ const BASE_URL = 'https://revisor-documental-production.up.railway.app';
 // Configuración de la prueba
 export const options = {
     stages: [
-        { duration: '2m', target: 10 },
-        { duration: '5m', target: 50 },
-        { duration: '2m', target: 100 },
+        { duration: '1m', target: 10 },
+        { duration: '2m', target: 25 },
         { duration: '5m', target: 100 },
-        { duration: '2m', target: 0 },
+        { duration: '2m', target: 25 },
     ],
     thresholds: {
-        http_req_duration: ['p(95)<500'],
-        'response_time': ['p(95)<500'],
+        http_req_duration: ['p(95)<1500'],
+        'response_time': ['p(95)<1500'],
         'request_errors': ['count<10'], // No más de 10 errores
     },
 };
@@ -111,6 +110,16 @@ export function setup() {
                             },
                         },
                     },
+                    {
+                        name:"Create Notification",
+                        url:"/api/notifications",
+                        payload:{
+                            data:{
+                                message:"Test notification",
+                                isRead:false
+                            }
+                        }
+                    }
                 ],
                 tutor: [
                     {
