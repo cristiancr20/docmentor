@@ -7,6 +7,8 @@ on:
       - '**/*.txt'
   workflow_dispatch:
 
+
+# Otorgamos los permisos globalmente
 permissions:
   contents: read
   issues: read
@@ -17,42 +19,31 @@ permissions:
   packages: write
 
 jobs:
-  build:
-    name: Construction
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Group: Construction"
-  
+
+  # 02 - Build Frontend Application
   build_frontend:
-    needs: build
     name: Build Frontend Application
     uses: ./.github/workflows/build_frontend.yml
     secrets: inherit
 
-  analysis:
-    name: Analysis
-    runs-on: ubuntu-latest
-    needs: build_frontend
-    steps:
-      - run: echo "Group: Analysis"
 
+     # 04 - SAST - Static Application Security Testing
   sast:
-    needs: analysis
+    needs: build_frontend
     name: SAST
     uses: ./.github/workflows/sast.yml
     secrets: inherit
 
+  # 07 - Lint React Code
   slint:
-    needs: analysis
+    needs: build_frontend
     name: Lint React Code
     uses: ./.github/workflows/slint.yml
     secrets: inherit
 
+  # 08 - License Compliance
   license_compliance:
-    needs: analysis
+    needs: build_frontend
     name: License Compliance
     uses: ./.github/workflows/license_compliance.yml
     secrets: inherit
-
-  
-
