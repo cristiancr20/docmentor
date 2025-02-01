@@ -1,4 +1,4 @@
-name: 07 - Lint React Code
+name: 08 - Lint React Code
 
 on:
     workflow_dispatch:

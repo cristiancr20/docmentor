@@ -1,4 +1,4 @@
-name: 08 - License Compliance
+name: 09 - License Compliance
 
 on:
     workflow_dispatch:
