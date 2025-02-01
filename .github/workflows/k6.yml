@@ -15,24 +15,20 @@ jobs:
         uses: actions/checkout@v4
 
       # Configurar k6
-      # Instalar k6 desde el repositorio oficial
-      - name: Install k6
-        run: | 
-          wget https://github.com/grafana/k6/releases/download/v0.43.0/k6-v0.43.0-linux-amd64.tar.gz
-          tar -xvzf k6-v0.43.0-linux-amd64.tar.gz
-          sudo mv k6-v0.43.0-linux-amd64/k6 /usr/local/bin/
+      - name: Setup K6
+        uses: grafana/setup-k6-action@v1
 
-      # Ejecutar las pruebas de k6
-      - name: Run k6 Test
-        env:
-          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }} # Token para usar k6 Cloud (opcional)
-          GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }} # URL de tu Loki (Grafana)
-        run: |
-          k6 run --out loki=$GRAFANA_LOKI_URL --tag test=load-test frontend/src/k6/proyecto.js
-
-      # Subir los resultados como artefacto
-      - name: Upload k6 Results
-        uses: actions/upload-artifact@v3
+      # EJECUCIÓN LOCAL DE PRUEBAS DE CARGA
+      - name: Run local k6 test
+        uses: grafana/run-k6-action@v1
         with:
-          name: k6-results
-          path: ./k6-results.json
+          path: frontend/src/k6/tests_load_k6.js
+
+      # EJECUCIÓN DE PRUEBAS DE CARGA CON GRAFANA
+#      - name: Run nube k6 test
+#        uses: grafana/run-k6-action@v1
+#        env:
+#          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }} # Token para usar k6 Cloud (opcional)
+#          K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
+#        with:
+#          path: frontend/src/k6/tests_load_k6.js

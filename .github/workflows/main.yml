@@ -32,12 +32,18 @@ jobs:
     uses: ./.github/workflows/build_backend.yml
     secrets: inherit
 
-
-     # 04 - SAST - Static Application Security Testing
+  # 04 - SAST - Static Application Security Testing
   sast:
     needs: build_frontend
     name: SAST
     uses: ./.github/workflows/sast.yml
+    secrets: inherit
+
+  # 06 - k6 Load Test
+  k6:
+    needs: build_frontend
+    name: k6 Load Test
+    uses: ./.github/workflows/k6.yml
     secrets: inherit
 
   # 07 - Lint React Code
