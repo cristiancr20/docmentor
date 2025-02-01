@@ -26,6 +26,12 @@ jobs:
     uses: ./.github/workflows/build_frontend.yml
     secrets: inherit
 
+  # 03 - Build Backend Application
+  build_backend:
+    name: Build Backend Application
+    uses: ./.github/workflows/build_backend.yml
+    secrets: inherit
+
 
      # 04 - SAST - Static Application Security Testing
   sast:
@@ -43,7 +49,7 @@ jobs:
 
   # 08 - License Compliance
   license_compliance:
-    needs: build_frontend
+    needs: [build_frontend, build_backend]
     name: License Compliance
     uses: ./.github/workflows/license_compliance.yml
     secrets: inherit

@@ -1,6 +1,6 @@
 # This file is used to build the baackend application. Aplication is Strapi CMS.
 
-name: 01 - Build Backend Application
+name: 03 - Build Backend Application
 
 on:
   workflow_dispatch:
