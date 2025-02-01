@@ -30,7 +30,7 @@ jobs:
 
       - name: Upload Frontend License Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-license-report
           path: frontend/license_finder_report.xml
@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload Backend License Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-license-report
           path: backend/license_finder_report.xml

@@ -18,8 +18,8 @@ export const options = {
         { duration: '2m', target: 25 },
     ],
     thresholds: {
-        http_req_duration: ['p(95)<1500'],
-        'response_time': ['p(95)<1500'],
+        http_req_duration: ['p(95)<500'],
+        'response_time': ['p(95)<500'],
         'request_errors': ['count<10'], // No más de 10 errores
     },
 };
@@ -27,11 +27,11 @@ export const options = {
 // Aquí debes agregar los tokens generados en Postman
 const sessions = {
     estudiante: {
-        jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzM2ODg5MDQ4LCJleHAiOjE3Mzk0ODEwNDh9.Td_WvMeU8FZK8fspQ0RaByQo5abHzxFm2xNSeuY651w',  // Token generado en Postman para el estudiante
+        jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzM3MTMyMzgwLCJleHAiOjE3Mzk3MjQzODB9.pdZvGVTMa-FvsS5zB3u89ntFNe_LUpbS7fDMjEkbkKg',
         rol: 'estudiante',
     },
     tutor: {
-        jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzM2ODg5MTA4LCJleHAiOjE3Mzk0ODExMDh9.3lGXMRwejW5S1tqA8I-uhILbdp4J_XiPum4CjlvDzTs',  // Token generado en Postman para el tutor
+        jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzM3MTMyMjY3LCJleHAiOjE3Mzk3MjQyNjd9.-PM6qwY7nOJcp4Z-R0CRR1Ero-9M8GUNSLf0CNvsF1I',
         rol: 'tutor',
     },
 };

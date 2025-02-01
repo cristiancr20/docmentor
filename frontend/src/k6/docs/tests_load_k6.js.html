@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: tests_load_k6.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: tests_load_k6.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import http from 'k6/http';
+import { check, group, sleep } from 'k6';
+import { Counter, Trend, Rate } from 'k6/metrics';
+import exec from 'k6/execution';
+
+// Métricas personalizadas
+const responseTime = new Trend('response_time'); // Métrica global de tiempos de respuesta
+const requestErrors = new Counter('request_errors'); // Conteo de errores
+const successRate = new Rate('success_rate'); // Métrica de tasa de éxito
+const responseTimeByEndpoint = {}; // Almacenará tiempos de respuesta por endpoint
+const dataTransferred = new Trend('data_transferred'); // Métrica para la cantidad de datos transferidos
+
+
+/**
+ * The base URL for the API endpoints.
+ * @constant {string}
+ */
+const BASE_URL = 'https://revisor-documental-production.up.railway.app';
+
+// Configuración de la prueba
+
+/**
+ * Configuration options for the k6 load test.
+ * 
+ * @property {Object} options - The main configuration object.
+ * @property {Array&lt;Object>} options.stages - Defines the stages of the load test.
+ * @property {string} options.stages[].duration - Duration of each stage.
+ * @property {number} options.stages[].target - Target number of virtual users for each stage.
+ * @property {Object} options.thresholds - Performance thresholds for the load test.
+ * @property {Array&lt;string>} options.thresholds.http_req_duration - Threshold for HTTP request duration.
+ * @property {Array&lt;string>} options.thresholds.response_time - Threshold for global response time.
+ * @property {Array&lt;string>} options.thresholds.request_errors - Threshold for the number of request errors.
+ * @property {Array&lt;string>} options.thresholds.success_rate - Threshold for the success rate.
+ * @property {Array&lt;string>} options.thresholds.data_transferred - Threshold for the average data transferred.
+ */
+export const options = {
+    stages: [
+        { duration: '1m', target: 10 }, // Inicio gradual
+        { duration: '2m', target: 25 }, // Carga media
+        { duration: '5m', target: 100 }, // Carga máxima
+        { duration: '2m', target: 25 }, // Reducción gradual
+    ],
+    thresholds: {
+        http_req_duration: ['p(95)&lt;500'], // 95% de las solicitudes deben tardar menos de 1500 ms
+        'response_time': ['p(95)&lt;500'], // Tiempo de respuesta global
+        'request_errors': ['count&lt;10'], // No debe haber más de 10 errores
+        'success_rate': ['rate>0.95'], // La tasa de éxito debe ser superior al 95%
+        'data_transferred': ['avg>100'], // Promedio de datos transferidos debe ser mayor a 100 bytes
+    },
+};
+
+// Tokens JWT para autenticación
+/**
+ * An object containing session information for different user roles.
+ * 
+ * @typedef {Object} Session
+ * @property {string} jwt - The JSON Web Token for authentication.
+ * @property {string} rol - The role of the user (e.g., 'estudiante', 'tutor').
+ * 
+ * @type {Object.&lt;string, Session>}
+ * @property {Session} estudiante - Session information for a student.
+ * @property {Session} tutor - Session information for a tutor.
+ */
+const sessions = {
+    estudiante: {
+        jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzM2ODg5MDQ4LCJleHAiOjE3Mzk0ODEwNDh9.Td_WvMeU8FZK8fspQ0RaByQo5abHzxFm2xNSeuY651w',
+        rol: 'estudiante',
+    },
+    tutor: {
+        jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNzM2ODg5MTA4LCJleHAiOjE3Mzk0ODExMDh9.3lGXMRwejW5S1tqA8I-uhILbdp4J_XiPum4CjlvDzTs',
+        rol: 'tutor',
+    },
+};
+
+// Configuración inicial de datos
+/**
+ * Setup function for initializing test data and endpoints.
+ * 
+ * @throws {Error} If JWT tokens for estudiante and/or tutor are not found.
+ * 
+ * @returns {Object} An object containing session data, IDs, and endpoints.
+ * @returns {Object} return.sessions - The session data.
+ * @returns {Object} return.ids - The IDs for projects, documents, and comments.
+ * @returns {number[]} return.ids.projects - Array of project IDs.
+ * @returns {number[]} return.ids.documents - Array of document IDs.
+ * @returns {number[]} return.ids.comments - Array of comment IDs.
+ * @returns {Object} return.endpoints - The endpoints for various API calls.
+ * @returns {Object[]} return.endpoints.get - Array of GET endpoints.
+ * @returns {string} return.endpoints.get[].name - The name of the endpoint.
+ * @returns {string} return.endpoints.get[].url - The URL of the endpoint.
+ */
+
+export function setup() {
+    if (!sessions.estudiante?.jwt || !sessions.tutor?.jwt) {
+        throw new Error('No se encontraron tokens JWT válidos para estudiante y/o tutor');
+    }
+
+    return {
+        sessions: sessions,
+        ids: {
+            projects: [2, 3], // IDs de proyectos
+            documents: [1, 2], // IDs de documentos
+            comments: [1, 2], // IDs de comentarios
+        },
+        endpoints: {
+            get: [
+                { name: 'List Projects', url: '/api/projects' },
+                { name: 'List Documents', url: '/api/documents' },
+                { name: 'View Document with Comments', url: '/api/documents?populate=comments' },
+                { name: 'View Notifications', url: '/api/notifications' },
+            ],
+        },
+    };
+}
+
+
+
+// Escenario principal
+export default function (data) {
+    const rol = exec.scenario.iterationInInstance % 2 === 0 ? 'estudiante' : 'tutor'; // Alternar roles
+    /**
+     * Headers for the HTTP request.
+     * 
+     * @constant {Object} headers - The headers object.
+     * @property {string} headers.Authorization - The authorization token in the format `Bearer &lt;token>`.
+     * @property {string} headers['Content-Type'] - The content type of the request, set to 'application/json'.
+     */
+    const headers = {
+        Authorization: `Bearer ${data.sessions[rol].jwt}`,
+        'Content-Type': 'application/json',
+    };
+
+
+    // GET Requests
+    group('Get Requests', function () {
+        data.endpoints.get.forEach((endpoint) => {
+            const response = http.get(`${BASE_URL}${endpoint.url}`, { headers });
+
+            // Métrica: Tiempo de respuesta global y por endpoint
+            responseTime.add(response.timings.duration);
+            if (!responseTimeByEndpoint[endpoint.name]) {
+                responseTimeByEndpoint[endpoint.name] = new Trend(`response_time_${endpoint.name}`);
+            }
+            responseTimeByEndpoint[endpoint.name].add(response.timings.duration);
+
+            // Métrica: Tasa de éxito
+            const success = response.status === 200;
+            successRate.add(success);
+
+            // Validación y conteo de errores
+            check(response, {
+                [`${endpoint.name} status 200`]: () => success,
+            }) || requestErrors.add(1);
+
+            // Métrica: Transferencia de datos
+            dataTransferred.add(response.body.length);
+        });
+    });
+
+    sleep(1);
+
+    // POST Requests
+    group('Post Requests', function () {
+        /**
+         * An object containing endpoint configurations for different user roles.
+         * Each role has an array of endpoint objects with details for making POST requests.
+         *
+         * @type {Object}
+         * @property {Object[]} estudiante - Array of endpoints for the 'estudiante' role.
+         * @property {string} estudiante[].name - The name of the endpoint action.
+         * @property {string} estudiante[].url - The URL of the endpoint.
+         * @property {Object} estudiante[].payload - The payload to be sent with the POST request.
+         * @property {Object} estudiante[].payload.data - The data object containing the payload details.
+         * @property {string} estudiante[].payload.data.title - The title of the project or document.
+         * @property {string} estudiante[].payload.data.description - The description of the project.
+         * @property {string} estudiante[].payload.data.projectType - The type of the project.
+         * @property {string} estudiante[].payload.data.itinerary - The itinerary of the project.
+         * @property {number} estudiante[].payload.data.project - The project ID for the document.
+         * @property {boolean} estudiante[].payload.data.isRevised - The revision status of the document.
+         *
+         * @property {Object[]} tutor - Array of endpoints for the 'tutor' role.
+         * @property {string} tutor[].name - The name of the endpoint action.
+         * @property {string} tutor[].url - The URL of the endpoint.
+         * @property {Object} tutor[].payload - The payload to be sent with the POST request.
+         * @property {Object} tutor[].payload.data - The data object containing the payload details.
+         * @property {string} tutor[].payload.data.correction - The correction comment.
+         */
+        const postEndpoints = {
+            estudiante: [
+                {
+                    name: 'Create Project',
+                    url: '/api/projects',
+                    payload: {
+                        data: {
+                            title: 'Nuevo Proyecto',
+                            description: 'Descripción de prueba del proyecto',
+                            projectType: 'Desarrollo',
+                            itinerary: 'Desarrollo de Software',
+                        },
+                    },
+                },
+                {
+                    name: 'Create Document',
+                    url: '/api/documents',
+                    payload: {
+                        data: {
+                            title: 'test document',
+                            project: 20,
+                            isRevised: false,
+                        },
+                    },
+                },
+            ],
+            tutor: [
+                {
+                    name: 'Add Comment',
+                    url: '/api/comments',
+                    payload: {
+                        data: {
+                            correction: 'Test comment',
+                        },
+                    },
+                },
+            ],
+        };
+
+        postEndpoints[rol]?.forEach((endpoint) => {
+            const response = http.post(
+                `${BASE_URL}${endpoint.url}`,
+                JSON.stringify(endpoint.payload),
+                { headers }
+            );
+
+            // Registrar métricas y validaciones
+            responseTime.add(response.timings.duration);
+            successRate.add(response.status === 200);
+            dataTransferred.add(response.body.length);
+        });
+    });
+
+    sleep(1);
+
+    // PUT Requests
+    group('Put Requests', function () {
+        const putEndpoints = {
+            estudiante: [
+                {
+                    name: 'Update Project',
+                    url: `/api/projects/${data.ids.projects[0]}`,
+                    payload: {
+                        data: {
+                            title: 'Proyecto Actualizado',
+                            description: 'Descripción actualizada del proyecto',
+                        },
+                    },
+                },
+            ],
+            tutor: [
+                {
+                    name: 'Update Comment',
+                    url: `/api/comments/${data.ids.comments[0]}`,
+                    payload: {
+                        data: {
+                            correction: 'Comentario actualizado',
+                        },
+                    },
+                },
+            ],
+        };
+
+        putEndpoints[rol]?.forEach((endpoint) => {
+            const response = http.put(
+                `${BASE_URL}${endpoint.url}`,
+                JSON.stringify(endpoint.payload),
+                { headers }
+            );
+
+            // Registrar métricas y validaciones
+            responseTime.add(response.timings.duration);
+            successRate.add(response.status === 200);
+            dataTransferred.add(response.body.length);
+        });
+    });
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#BASE_URL">BASE_URL</a></li><li><a href="global.html#headers">headers</a></li><li><a href="global.html#options">options</a></li><li><a href="global.html#setup">setup</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jan 17 2025 10:57:01 GMT-0500 (hora estándar de Perú)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
