@@ -47,6 +47,3 @@ jobs:
     name: License Compliance
     uses: ./.github/workflows/license_compliance.yml
     secrets: inherit
-
-  
-
