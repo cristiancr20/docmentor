@@ -3,37 +3,95 @@ import { check, group, sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
 import exec from 'k6/execution';
 
-// Métricas personalizadas
-const responseTime = new Trend('response_time'); // Métrica global de tiempos de respuesta
-const requestErrors = new Counter('request_errors'); // Conteo de errores
-const successRate = new Rate('success_rate'); // Métrica de tasa de éxito
-const responseTimeByEndpoint = {}; // Almacenará tiempos de respuesta por endpoint
-const dataTransferred = new Trend('data_transferred'); // Métrica para la cantidad de datos transferidos
+const responseTime = new Trend('response_time');
+const requestErrors = new Counter('request_errors');
+const successRate = new Rate('success_rate');
+const dataTransferred = new Trend('data_transferred');
 
+const responseTimeByEndpoint = {};
+
+const endpoints = [
+    //GET
+    'List Projects',
+    'List Documents',
+    'View Document with Comments',
+    'View Notifications',
+    //POST
+    'Create Project',
+    'Create Document',
+    'Add Comment',
+    //PUT
+    'Update Project',
+    'Update Comment',
+
+];
+
+endpoints.forEach(endpoint => {
+    const metricName = endpoint.replace(/\s+/g, '_');
+    responseTimeByEndpoint[endpoint] = new Trend(`response_time_${metricName}`);
+});
 
 const BASE_URL = 'https://revisor-documental-production.up.railway.app';
 
-// Configuración de la prueba
-
-
 export const options = {
-    stages: [
-        { duration: '1m', target: 10 }, // Inicio gradual
-        { duration: '2m', target: 25 }, // Carga media
-        { duration: '5m', target: 100 }, // Carga máxima
-        { duration: '2m', target: 25 }, // Reducción gradual
+    // TEST 1
+    /* stages: [
+        { duration: '1m', target: 10 },
+        { duration: '2m', target: 25 },
+        { duration: '5m', target: 100 },
+        { duration: '2m', target: 25 },
     ],
     thresholds: {
-        http_req_duration: ['p(95)<500'], // 95% de las solicitudes deben tardar menos de 1500 ms
-        'response_time': ['p(95)<500'], // Tiempo de respuesta global
-        'request_errors': ['count<10'], // No debe haber más de 10 errores
-        'success_rate': ['rate>0.95'], // La tasa de éxito debe ser superior al 95%
-        'data_transferred': ['avg>100'], // Promedio de datos transferidos debe ser mayor a 100 bytes
-        
+        http_req_duration: ['p(95)<500'],
+        'response_time': ['p(95)<500'],
+        'request_errors': ['count<10'],
+        'success_rate': ['rate>0.95'],
+        'data_transferred': ['avg>100'],
+    }, */
+    // TEST 2
+    /* stages: [
+        { duration: '1m', target: 25 },
+        { duration: '2m', target: 50 },
+        { duration: '5m', target: 100 },
+        { duration: '2m', target: 25 },
+    ],
+    thresholds: {
+        http_req_duration: ['p(95)<1000'],
+        'response_time': ['p(95)<1000'],
+        'request_errors': ['count<20'],
+        'success_rate': ['rate>0.95'],
+        'data_transferred': ['avg>100'],
+    }, */
+    // TEST 3
+    /* stages: [
+        { duration: '1m', target: 25 },
+        { duration: '2m', target: 60 },
+        { duration: '5m', target: 100 },
+        { duration: '2m', target: 15 },
+    ],
+    thresholds: {
+        http_req_duration: ['p(95)<1500'],
+        'response_time': ['p(95)<1500'],
+        'request_errors': ['count<30'],
+        'success_rate': ['rate>0.95'],
+        'data_transferred': ['avg>100'],
+    }, */
+
+    // TEST 4
+    stages: [
+        { duration: '1m', target: 30 },
+        { duration: '2m', target: 70 },
+        { duration: '5m', target: 100 },
+        { duration: '2m', target: 35 },
+    ],
+    thresholds: {
+        http_req_duration: ['p(95)<2000'],
+        'response_time': ['p(95)<2000'],
+        'request_errors': ['count<30'],
+        'success_rate': ['rate>0.95'],
+        'data_transferred': ['avg>100'],
     },
 };
-
-// Tokens JWT para autenticación
 
 const sessions = {
     estudiante: {
@@ -46,8 +104,6 @@ const sessions = {
     },
 };
 
-// Configuración inicial de datos
-
 export function setup() {
     if (!sessions.estudiante?.jwt || !sessions.tutor?.jwt) {
         throw new Error('No se encontraron tokens JWT válidos para estudiante y/o tutor');
@@ -56,9 +112,9 @@ export function setup() {
     return {
         sessions: sessions,
         ids: {
-            projects: [2, 3], // IDs de proyectos
-            documents: [1, 2], // IDs de documentos
-            comments: [1, 2], // IDs de comentarios
+            projects: [2, 3],
+            documents: [1, 2],
+            comments: [1, 2],
         },
         endpoints: {
             get: [
@@ -71,49 +127,34 @@ export function setup() {
     };
 }
 
-
-
-// Escenario principal
 export default function (data) {
-    const rol = exec.scenario.iterationInInstance % 2 === 0 ? 'estudiante' : 'tutor'; // Alternar roles
-
+    const rol = exec.scenario.iterationInInstance % 2 === 0 ? 'estudiante' : 'tutor';
     const headers = {
         Authorization: `Bearer ${data.sessions[rol].jwt}`,
         'Content-Type': 'application/json',
     };
 
-
-    // GET Requests
     group('Get Requests', function () {
         data.endpoints.get.forEach((endpoint) => {
             const response = http.get(`${BASE_URL}${endpoint.url}`, { headers });
 
-            // Métrica: Tiempo de respuesta global y por endpoint
             responseTime.add(response.timings.duration);
-            if (!responseTimeByEndpoint[endpoint.name]) {
-                responseTimeByEndpoint[endpoint.name] = new Trend(`response_time_${endpoint.name}`);
-            }
             responseTimeByEndpoint[endpoint.name].add(response.timings.duration);
 
-            // Métrica: Tasa de éxito
             const success = response.status === 200;
             successRate.add(success);
 
-            // Validación y conteo de errores
             check(response, {
                 [`${endpoint.name} status 200`]: () => success,
             }) || requestErrors.add(1);
 
-            // Métrica: Transferencia de datos
             dataTransferred.add(response.body.length);
         });
     });
 
     sleep(1);
 
-    // POST Requests
     group('Post Requests', function () {
-       
         const postEndpoints = {
             estudiante: [
                 {
@@ -160,16 +201,18 @@ export default function (data) {
                 { headers }
             );
 
-            // Registrar métricas y validaciones
             responseTime.add(response.timings.duration);
             successRate.add(response.status === 200);
             dataTransferred.add(response.body.length);
+
+            check(response, {
+                [`${endpoint.name} status 200`]: () => response.status === 200,
+            }) || requestErrors.add(1);
         });
     });
 
     sleep(1);
 
-    // PUT Requests
     group('Put Requests', function () {
         const putEndpoints = {
             estudiante: [
@@ -204,10 +247,13 @@ export default function (data) {
                 { headers }
             );
 
-            // Registrar métricas y validaciones
             responseTime.add(response.timings.duration);
             successRate.add(response.status === 200);
             dataTransferred.add(response.body.length);
+
+            check(response, {
+                [`${endpoint.name} status 200`]: () => response.status === 200,
+            }) || requestErrors.add(1);
         });
     });
 }
