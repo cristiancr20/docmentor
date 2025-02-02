@@ -5,13 +5,6 @@ FROM node:18.20.4
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Instala las dependencias necesarias para compilar mejor-sqlite3
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copia los archivos package.json y package-lock.json (si existe)
 COPY package*.json ./
 
@@ -22,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Reconstruye los módulos nativos para asegurarse de que sean compatibles con la versión de Node.js del contenedor
-RUN npm rebuild
+RUN npm run build
 
 # Expone el puerto en el que se ejecutará Strapi
 EXPOSE 1337
