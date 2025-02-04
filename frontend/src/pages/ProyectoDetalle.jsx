@@ -1,6 +1,6 @@
 import React, { useEffect, useState  } from "react";
 import { Link, useParams} from "react-router-dom";
-import { getDocumentsByProjectId } from "../core/Document";
+import { copyDocumentAsNewVersion, getDocumentsByProjectId } from "../core/Document";
 import { getProjectById } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import SubirDocumento from "../components/SubirDocumento";
@@ -97,12 +97,46 @@ const ProyectoDetalle = () => {
     fetchProject();
   };
 
+  const copyDocumentNewVersion = async (projectId) => {
+    await copyDocumentAsNewVersion(projectId);
+    fetchProject();
+  }
+
   const columns = [
     {
       key: "title",
       label: "Documento",
       render: (doc) => doc.attributes.title,
     },
+    {
+      key: "version",
+      label: "Versión",
+      render: (doc) => {
+        const version = doc.attributes.version;
+        const previousVersion = doc.attributes.previous_version?.data?.attributes?.version;
+    
+        return previousVersion ? (
+          <span>
+            v{version} <br />
+            <span className="text-gray-500 text-sm">(Copia de v{previousVersion})</span>
+          </span>
+        ) : (
+          <span>v{version} <br /> <span className="text-blue-500">(Documento nuevo)</span></span>
+        );
+      },
+    },
+    
+    {
+      key: "isCurrent",
+      label: "Actual",
+      render: (doc) =>
+        doc.attributes.isCurrent ? (
+          <span className="text-green-600 font-bold">Versión Actual</span>
+        ) : (
+          <span className="text-red-500">-----</span>
+        ),
+    },
+
     {
       key: "isRevised",
       label: "Estado",
@@ -133,19 +167,30 @@ const ProyectoDetalle = () => {
     },
     {
       key: "acciones",
-      label: "",
-      render: (doc) =>
-        doc.attributes.documentFile?.data?.length > 0 &&
-        doc.attributes.documentFile.data[0]?.attributes?.url ? (
-          <a
-            href={`/document/${doc.id}`}
-            className="text-blue-600 hover:underline"
+      label: "Acciones",
+      render: (doc) => (
+        <div className="flex gap-2">
+          {/* Ver documento */}
+          {doc.attributes.documentFile?.data?.length > 0 ? (
+            <a
+              href={`/document/${doc.id}`}
+              className="text-blue-600 hover:underline"
+            >
+              Ver Documento
+            </a>
+          ) : (
+            <span className="text-gray-500">No hay documento</span>
+          )}
+  
+          {/* Botón para crear nueva versión */}
+          <button
+            onClick={() => copyDocumentNewVersion(doc.id)}
+            className="bg-red-800 text-white px-3 py-1 rounded hover:bg-red-700"
           >
-            Ver Documento
-          </a>
-        ) : (
-          <span className="text-gray-500">No hay documento</span>
-        ),
+            Nueva Versión
+          </button>
+        </div>
+      ),
     },
   ];
 

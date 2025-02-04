@@ -1,4 +1,4 @@
-'use strict';
+/* 'use strict';
 
 const { transporter } = require('../../../../mailer/mailer');
 const fs = require('fs');
@@ -173,4 +173,4 @@ module.exports = {
         }
     },
 
-}; 
+};  */

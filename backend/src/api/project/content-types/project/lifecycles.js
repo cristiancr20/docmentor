@@ -1,4 +1,4 @@
-'use strict';
+/* 'use strict';
 
 const { transporter } = require('../../../../mailer/mailer'); // Configuración de Nodemailer
 const fs = require('fs');
@@ -75,3 +75,4 @@ module.exports = {
         }
     },
 };
+ */

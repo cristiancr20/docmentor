@@ -37,15 +37,33 @@
     },
     "comments": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::comment.comment",
-      "mappedBy": "document"
+      "mappedBy": "documents"
     },
-    "notification": {
+    "notifications": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::notification.notification",
+      "inversedBy": "documents"
+    },
+    "version": {
+      "type": "integer"
+    },
+    "isCurrent": {
+      "type": "boolean"
+    },
+    "previous_version": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::notification.notification",
-      "mappedBy": "document"
+      "target": "api::document.document",
+      "inversedBy": "next_version"
+    },
+    "next_version": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::document.document",
+      "inversedBy": "previous_version"
     }
   }
 }

@@ -18,17 +18,17 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "notifications"
     },
-    "document": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::document.document",
-      "inversedBy": "notification"
-    },
     "message": {
       "type": "string"
     },
     "isRead": {
       "type": "boolean"
+    },
+    "documents": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::document.document",
+      "mappedBy": "notifications"
     }
   }
 }

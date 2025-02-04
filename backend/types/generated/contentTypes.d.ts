@@ -387,9 +387,9 @@ export interface ApiCommentComment extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
-    document: Attribute.Relation<
+    documents: Attribute.Relation<
       'api::comment.comment',
-      'manyToOne',
+      'manyToMany',
       'api::document.document'
     >;
     highlightAreas: Attribute.Text;
@@ -419,7 +419,7 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
   attributes: {
     comments: Attribute.Relation<
       'api::document.document',
-      'oneToMany',
+      'manyToMany',
       'api::comment.comment'
     >;
     createdAt: Attribute.DateTime;
@@ -433,11 +433,22 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
+    isCurrent: Attribute.Boolean;
     isRevised: Attribute.Boolean;
-    notification: Attribute.Relation<
+    next_version: Attribute.Relation<
       'api::document.document',
       'oneToOne',
+      'api::document.document'
+    >;
+    notifications: Attribute.Relation<
+      'api::document.document',
+      'manyToMany',
       'api::notification.notification'
+    >;
+    previous_version: Attribute.Relation<
+      'api::document.document',
+      'oneToOne',
+      'api::document.document'
     >;
     project: Attribute.Relation<
       'api::document.document',
@@ -453,6 +464,7 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
+    version: Attribute.Integer;
   };
 }
 
@@ -475,9 +487,9 @@ export interface ApiNotificationNotification extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
-    document: Attribute.Relation<
+    documents: Attribute.Relation<
       'api::notification.notification',
-      'oneToOne',
+      'manyToMany',
       'api::document.document'
     >;
     isRead: Attribute.Boolean;

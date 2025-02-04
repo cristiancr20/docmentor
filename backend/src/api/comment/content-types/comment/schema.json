@@ -21,17 +21,17 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "comments"
     },
-    "document": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::document.document",
-      "inversedBy": "comments"
-    },
     "highlightAreas": {
       "type": "text"
     },
     "quote": {
       "type": "text"
+    },
+    "documents": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::document.document",
+      "inversedBy": "comments"
     }
   }
 }

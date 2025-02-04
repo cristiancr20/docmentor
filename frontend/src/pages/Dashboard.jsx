@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import {motion} from "framer-motion";
+import { motion } from "framer-motion";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -16,18 +16,19 @@ const Dashboard = () => {
               duration: 0.5, // Duración de la animación en segundos
               ease: "easeInOut", // Tipo de suavizado
             }}
-          className="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+            className="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white"
+          >
             Bienvenido a DocMentor
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.5, // Duración de la animación en segundos
               ease: "easeInOut", // Tipo de suavizado
             }}
-
-          className="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400">
+            className="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400"
+          >
             DocMentor es el sistema de versionado documental que transforma la
             forma en que gestionas tus documentos. Con un enfoque en la
             colaboración entre estudiantes y tutores, DocMentor te permite
@@ -37,47 +38,85 @@ const Dashboard = () => {
             proyecto. Simplifica la gestión documental y maximiza tu
             productividad con DocMentor
           </motion.p>
-          <div className="flex flex-col space-y-4 sm:flex-row sm:justify-center sm:space-y-0">
-            <motion.button
-
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5, // Duración de la animación en segundos
-                ease: "easeInOut", // Tipo de suavizado
-              }}
-              onClick={() => navigate("/login")}
-              className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
-            >
-              Iniciar Sesión
-              <svg
-                className="w-3.5 h-3.5 ml-2 rtl:rotate-180"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 14 10"
+          <div className=" space-y-4 sm:flex-row sm:justify-center sm:space-y-0">
+            <div className="rouded-lg  p-4 rounded-lg shadow-lg m-5">
+              <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white ">
+                Usuario Invitado 
+              </h1>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5, // Duración de la animación en segundos
+                  ease: "easeInOut", // Tipo de suavizado
+                }}
+                onClick={() => navigate("/login")}
+                className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
               >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M1 5h12m0 0L9 1m4 4L9 9"
-                />
-              </svg>
-            </motion.button>
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5, // Duración de la animación en segundos
-                ease: "easeInOut", // Tipo de suavizado
-              }}
-              onClick={() => navigate("/sign-up")}
-              className="py-3 px-5 sm:ml-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                Iniciar Sesión
+                <svg
+                  className="w-3.5 h-3.5 ml-2 rtl:rotate-180"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 14 10"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M1 5h12m0 0L9 1m4 4L9 9"
+                  />
+                </svg>
+              </motion.button>
+
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5, // Duración de la animación en segundos
+                  ease: "easeInOut", // Tipo de suavizado
+                }}
+                onClick={() => navigate("/sign-up")}
+                className="py-3 px-5 sm:ml-4 text-sm font-medium text-white focus:outline-none bg-gray-800 rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+              >
+                Registrarse
+              </motion.button>
+            </div>
+
+            <div
+              className="rouded-lg dark:text-gray-400 p-4 rounded-lg shadow-lg m-5"
+              s
             >
-              Registrarse
-            </motion.button>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5, // Duración de la animación en segundos
+                  ease: "easeInOut", // Tipo de suavizado
+                }}
+                onClick={() => navigate("/login-institucional")}
+                className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
+              >
+                Iniciar Sesión como usuario institucional
+                <svg
+                  className="w-3.5 h-3.5 ml-2 rtl:rotate-180"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 14 10"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M1 5h12m0 0L9 1m4 4L9 9"
+                  />
+                </svg>
+              </motion.button>
+            </div>
           </div>
         </div>
       </div>
