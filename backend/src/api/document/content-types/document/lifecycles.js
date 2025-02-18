@@ -61,6 +61,16 @@ module.exports = {
 
             console.log("Nombres de los estudiantes:", studentListHTML);
 
+            // Obtener el correo configurado como `isActual`
+            const emailConfig = await strapi.db.query('api::setting.setting).findOne({
+                where: { isActual: true }
+            });
+
+            if (!emailConfig) {
+                strapi.log.error('No hay un correo de configuración marcado como actual.');
+                return;
+            }
+
             // Leer y actualizar el contenido del template
             const templatePath = path.resolve(__dirname, './email-template-document.html');
             let htmlContent = fs.readFileSync(templatePath, 'utf8');
@@ -74,7 +84,7 @@ module.exports = {
             const subject = `Nuevo Documento Subido: ${documentTitle}`;
 
             await transporter.sendMail({
-                from: process.env.SMTP_USER,
+                from: emailConfig.email_notifications,
                 to: tutorEmail,
                 subject,
                 html: htmlContent,
@@ -117,6 +127,16 @@ module.exports = {
                     return;
                 }
 
+                            // Obtener el correo configurado como `isActual`
+            const emailConfig = await strapi.db.query('api::setting.setting).findOne({
+                where: { isActual: true }
+            });
+
+            if (!emailConfig) {
+                strapi.log.error('No hay un correo de configuración marcado como actual.');
+                return;
+            }
+
                 // Recorremos el arreglo de estudiantes
                 for (let student of students) {
                     const estudiante = student; // Los atributos del estudiante están dentro de 'attributes'
@@ -157,7 +177,7 @@ module.exports = {
 
                     // Enviar el correo al estudiante
                     await transporter.sendMail({
-                        from: process.env.SMTP_USER,  // Usamos la variable de entorno para el remitente
+                        from: emailConfig.email_notifications,  // Usamos la variable de entorno para el remitente
                         to: estudiante.email,
                         subject,
                         html: htmlContent,

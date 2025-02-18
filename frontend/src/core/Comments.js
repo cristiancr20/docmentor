@@ -19,6 +19,7 @@ export const addCommentToDocument = async (
       quote
     );
 
+
     // Actualiza el estado del documento a revisado
     const updateResponse = await updateDocumentStatusNoRevisado(documentId);
 
@@ -45,7 +46,7 @@ const postComment = async (
       data: {
         correction: newComment,
         correctionTutor: tutorId,
-        document: documentId,
+        documents: documentId,
         highlightAreas: JSON.stringify(
           Array.isArray(highlightAreas) ? highlightAreas : []
         ), // Asegúrate de que sea un array

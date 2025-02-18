@@ -65,9 +65,9 @@
       "inversedBy": "users",
       "configurable": false
     },
-    "rol": {
+    "rols": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::rol.rol",
       "inversedBy": "users"
     },
@@ -94,6 +94,9 @@
       "relation": "manyToMany",
       "target": "api::project.project",
       "inversedBy": "students"
+    },
+    "isInstitutional": {
+      "type": "boolean"
     }
   }
 }

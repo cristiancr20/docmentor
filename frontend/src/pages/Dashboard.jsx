@@ -1,126 +1,115 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { LiaUniversitySolid } from "react-icons/lia";
+import { CiUser } from "react-icons/ci";
+import { ArrowRight } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="bg-cover bg-center bg-no-repeat bg-gray-800 bg-blend-multiply  min-h-screen  bg-[url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')]  ">
-      <div className="container mx-auto py-16 container mx-auto py-8 w-4/5 ">
-        <div className="px-4 mx-auto max-w-screen-xl text-center py-24 lg:py-56 ">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.5, // Duración de la animación en segundos
-              ease: "easeInOut", // Tipo de suavizado
-            }}
-            className="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white"
-          >
-            Bienvenido a DocMentor
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.5, // Duración de la animación en segundos
-              ease: "easeInOut", // Tipo de suavizado
-            }}
-            className="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400"
-          >
-            DocMentor es el sistema de versionado documental que transforma la
-            forma en que gestionas tus documentos. Con un enfoque en la
-            colaboración entre estudiantes y tutores, DocMentor te permite
-            rastrear, revisar y mejorar documentos de manera eficiente. Mantén
-            un historial completo de versiones, accede a comentarios detallados
-            y sube nuevas versiones sin perder nunca de vista el progreso de tu
-            proyecto. Simplifica la gestión documental y maximiza tu
-            productividad con DocMentor
-          </motion.p>
-          <div className=" space-y-4 sm:flex-row sm:justify-center sm:space-y-0">
-            <div className="rouded-lg  p-4 rounded-lg shadow-lg m-5">
-              <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white ">
-                Usuario Invitado 
-              </h1>
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5, // Duración de la animación en segundos
-                  ease: "easeInOut", // Tipo de suavizado
-                }}
-                onClick={() => navigate("/login")}
-                className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
-              >
-                Iniciar Sesión
-                <svg
-                  className="w-3.5 h-3.5 ml-2 rtl:rotate-180"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 14 10"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M1 5h12m0 0L9 1m4 4L9 9"
-                  />
-                </svg>
-              </motion.button>
+    <section className="bg-cover bg-center bg-no-repeat bg-gray-900 bg-blend-multiply h-screen flex flex-col bg-[url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')]">
+      <div className="flex-grow flex flex-col justify-center items-center px-4 py-8">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="mb-4 text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-none text-white text-center"
+        >
+          Bienvenido a DocMentor
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="mb-8 text-sm md:text-base lg:text-lg font-normal text-gray-300 text-center max-w-3xl"
+        >
+          DocMentor es el sistema de versionado documental que transforma la
+          forma en que gestionas tus documentos. Con un enfoque en la
+          colaboración entre estudiantes y tutores, DocMentor te permite
+          rastrear, revisar y mejorar documentos de manera eficiente.
+        </motion.p>
 
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5, // Duración de la animación en segundos
-                  ease: "easeInOut", // Tipo de suavizado
-                }}
-                onClick={() => navigate("/sign-up")}
-                className="py-3 px-5 sm:ml-4 text-sm font-medium text-white focus:outline-none bg-gray-800 rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-              >
-                Registrarse
-              </motion.button>
-            </div>
-
-            <div
-              className="rouded-lg dark:text-gray-400 p-4 rounded-lg shadow-lg m-5"
-              s
-            >
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5, // Duración de la animación en segundos
-                  ease: "easeInOut", // Tipo de suavizado
-                }}
-                onClick={() => navigate("/login-institucional")}
-                className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
-              >
-                Iniciar Sesión como usuario institucional
-                <svg
-                  className="w-3.5 h-3.5 ml-2 rtl:rotate-180"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 14 10"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M1 5h12m0 0L9 1m4 4L9 9"
-                  />
-                </svg>
-              </motion.button>
-            </div>
-          </div>
-        </div>
+        <LoginOptions navigate={navigate} />
       </div>
     </section>
+  );
+};
+
+const LoginOptions = ({ navigate }) => {
+  return (
+    <div className="w-full max-w-4xl">
+      <motion.h2
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-xl md:text-2xl font-bold text-center mb-4 text-white"
+      >
+        Seleccione su tipo de cuenta
+      </motion.h2>
+      <div className="grid md:grid-cols-2 gap-4 md:gap-8">
+        <LoginCard
+          title="Usuario Regular"
+          description="Para estudiantes y público en general"
+          icon={<CiUser className="h-6 w-6" />}
+          loginPath="/login"
+          signUpPath="/sign-up"
+          navigate={navigate}
+        />
+        <LoginCard
+          title="Usuario Institucional"
+          description="Para personal de la institución"
+          icon={<LiaUniversitySolid className="h-6 w-6" />}
+          loginPath="/login-institucional"
+          navigate={navigate}
+        />
+      </div>
+    </div>
+  );
+};
+
+const LoginCard = ({
+  title,
+  description,
+  icon,
+  loginPath,
+  signUpPath,
+  navigate,
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4"
+    >
+      <div className="mb-2">
+        <h3 className="flex items-center justify-center gap-2 text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+          {icon}
+          {title}
+        </h3>
+        <p className="text-center text-sm text-gray-600 dark:text-gray-300 mt-1">
+          {description}
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => navigate(loginPath)}
+          className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded text-sm flex items-center justify-center"
+        >
+          Iniciar Sesión
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </button>
+        {signUpPath && (
+          <button
+            onClick={() => navigate(signUpPath)}
+            className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm"
+          >
+            Registrarse
+          </button>
+        )}
+      </div>
+    </motion.div>
   );
 };
 

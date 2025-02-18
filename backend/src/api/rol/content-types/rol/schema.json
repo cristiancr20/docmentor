@@ -16,9 +16,9 @@
     },
     "users": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
-      "mappedBy": "rol"
+      "mappedBy": "rols"
     }
   }
 }

@@ -5,11 +5,10 @@ import { FaArrowDown, FaPen } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
 
 const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
-
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [updatedContent, setUpdatedContent] = useState("");
   const [isDropdownOpenComments, setIsDropdownOpenComments] = useState(true);
@@ -23,7 +22,6 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
 
     // Acceder al rol desde los datos desencriptados
     rol = decryptedUserData.rol;
-
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -183,7 +181,8 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
                               </p>
                             </div>
                             <div className="option ">
-                              {rol === "tutor" && (
+                              {(rol.includes("tutor") ||
+                                rol.includes("superadmin")) && (
                                 <div className="flex justify-start gap-2 m-2">
                                   <button
                                     onClick={() => handleEditClick(comment)}

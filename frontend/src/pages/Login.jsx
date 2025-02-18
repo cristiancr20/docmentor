@@ -47,6 +47,7 @@ const Login = () => {
       const userData = {
         ...user,
         rol: userRole,
+        isInstutional:false
       };
 
       // 3. Llamar al método `login` del contexto
@@ -97,7 +98,7 @@ const Login = () => {
               type="email"
               id="email"
               className="w-full p-2.5 text-sm border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-white placeholder-gray-400"
-              placeholder="nombre@unl.edu.ec"
+              placeholder="nombre@gmail.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -132,6 +133,15 @@ const Login = () => {
             <Link to="/sign-up" className="text-blue-500 hover:underline">
               Regístrate
             </Link>
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate("/")}
+              className="text-blue-500 hover:underline"
+            >
+              Volver a la pagina principal principal
+            </button>
           </div>
         </motion.form>
       </div>

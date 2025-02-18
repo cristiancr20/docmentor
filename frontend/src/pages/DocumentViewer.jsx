@@ -15,6 +15,7 @@ import { API_URL } from "../core/config.js";
 import { decryptData } from "../utils/encryption.js";
 import Header from "../components/Header";
 import { IoArrowBack } from "react-icons/io5";
+import { getUserByEmail, getUserIdByEmail } from "../core/Autentication.js";
 
 
 const DocumentoViewer = () => {
@@ -25,9 +26,11 @@ const DocumentoViewer = () => {
   const [notes, setNotes] = useState([]);
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [strapiUserId, setStrapiUserId] = useState(null);
   const navigate = useNavigate();
 
-  let tutorId = null;
+
+  let tutorEmail = null;
   let rol = null;
 
   const encryptedUserData = localStorage.getItem("userData");
@@ -38,7 +41,8 @@ const DocumentoViewer = () => {
 
     // Acceder al rol desde los datos desencriptados
     rol = decryptedUserData.rol;
-    tutorId = decryptedUserData.id;
+    tutorEmail = decryptedUserData.email;
+
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -47,6 +51,20 @@ const DocumentoViewer = () => {
     fetchDocument();
     fetchComments();
   }, [documentId]);
+
+  useEffect(() => {
+    fetchStrapiUser();
+  }, [tutorEmail]);
+
+  const fetchStrapiUser = async () => {
+    if (tutorEmail) { 
+      const user = await getUserByEmail(tutorEmail);
+      if (user) {
+        setStrapiUserId(user.id);
+        localStorage.setItem("strapiUserId", user.id); // Guardarlo si es necesario
+      }
+    }
+  };
 
 
   const fetchDocument = async () => {
@@ -99,13 +117,14 @@ const DocumentoViewer = () => {
 
   const handleAddComment = async (newComment, highlightAreas, quote) => {
     try {
-      await addCommentToDocument(
+      const responseComment=await addCommentToDocument(
         documentId,
         newComment,
-        tutorId,
+        strapiUserId,
         highlightAreas,
         quote
       );
+
       fetchComments();
       fetchDocument();
     } catch (error) {
@@ -252,7 +271,7 @@ const DocumentoViewer = () => {
           </div>
 
           {/* Botón para tutor */}
-          {rol === "tutor" && (
+          {(rol.includes("tutor") || rol.includes("superadmin"))&& (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -290,7 +309,8 @@ const DocumentoViewer = () => {
               fileUrl={documentUrl}
               notes={notes}
               onAddNote={handleAddNote}
-              isTutor={rol === "tutor"}
+              canComment={(rol.includes("tutor") ||
+                rol.includes("superadmin"))}
               selectedHighlightId={selectedHighlightId}
             />
           </div>

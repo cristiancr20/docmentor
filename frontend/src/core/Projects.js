@@ -48,8 +48,6 @@ export const deleteProject = async (projectId) => {
     const response = await axios.delete(
       `${API_URL}/api/projects/${projectId}`
     );
-    console.log(response.data);
-    console.log("Proyecto eliminado", response);
     return response.data;
   } catch (error) {
     console.error("Error al eliminar el proyecto:", error);
@@ -83,18 +81,28 @@ export const getProjectById = async (projectId) => {
   }
 };
 
-//OBTENER LOS PROYECTOS POR TUTOR
-export const getProjectsByTutor = async (userId) => {
+export const getProjectsByTutor = async (userEmail) => {
   try {
     const response = await axios.get(
-      `${API_URL}/api/users/${userId}?populate=project_ts.tutor,project_ts.students`
+      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
     );
-    return response.data.project_ts;
+    // Verificar si la respuesta contiene datos
+    if (!response.data || response.data.length === 0) {
+      throw new Error("Tutor no encontrado o sin proyectos asignados");
+    }
+
+    // Extraer los proyectos correctamente
+    const tutorData = response.data[0]; // Accede al primer usuario encontrado
+    const projects = tutorData.project_ts || []; // Extraer proyectos
+
+    return projects;
   } catch (error) {
-    console.error("Error fetching user documents:", error);
+    console.error("Error fetching projects by tutor email:", error);
     throw error;
   }
 };
+
+
 
 
 export const getTutors = async () => {

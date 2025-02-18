@@ -37,18 +37,26 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
+
+
       if (!response.ok) {
         throw new Error(data.error_description || 'Error en la autenticación');
       }
 
       const tokenData = JSON.parse(atob(data.access_token.split('.')[1]));
+
+      const roles = tokenData.realm_access?.roles || [];
+
+      // Cambiar esta parte para obtener todos los roles relevantes
+      const userRoles = tokenData.realm_access?.roles?.filter(role =>
+        ['tutor', 'estudiante', 'superadmin'].includes(role)
+      ) ;
       
       const userData = {
+        id: tokenData.sub,
         name: tokenData.name || tokenData.preferred_username,
         email: tokenData.email,
-        rol: tokenData.realm_access?.roles?.find(role => 
-          ['tutor', 'estudiante', 'admin'].includes(role)
-        ) || 'estudiante',
+        rol: userRoles.length > 0 ? userRoles : ['estudiante'], // Guardar array de roles
         token: data.access_token,
         isInstitutional: true
       };
@@ -91,16 +99,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("userData", encryptData(JSON.stringify(userData)));
     localStorage.setItem("jwtToken", encryptData(token));
   };
-  
+
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loginAsGuest, 
+    <AuthContext.Provider value={{
+      user,
+      loginAsGuest,
       loginInstitutional,
-      logout, 
+      logout,
       login,
-      loading 
+      loading
     }}>
       {children}
     </AuthContext.Provider>

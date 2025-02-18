@@ -34,7 +34,7 @@ interface HighlightExampleProps {
   fileUrl: string;
   notes: Note[];
   onAddNote: (note: Note) => void;
-  isTutor: boolean;
+  canComment: boolean;
   selectedHighlightId?: number | null;
 }
 
@@ -42,7 +42,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   fileUrl,
   notes,
   onAddNote,
-  isTutor,
+  canComment,
   selectedHighlightId,
 }) => {
   const [message, setMessage] = React.useState("");
@@ -152,11 +152,11 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   }, [selectedHighlightId, notes, scrollToHighlight]);
 
   const renderHighlightTarget = (props: RenderHighlightTargetProps) => (
+
     <div
       style={{
         background: "cyan",
-        display: isTutor ? "flex" : "none",
-
+        display: canComment ? "flex" : "none", 
         position: "absolute",
         left: `${props.selectionRegion.left}%`,
         top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
@@ -174,9 +174,11 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
         content={() => <div style={{ width: "100px" }}>Agregar comentario</div>}
         offset={{ left: 0, top: -8 }}
       />
+
+      
     </div>
   );
-
+  
   const renderHighlightContent = (props: RenderHighlightContentProps) => {
     const addNote = () => {
       if (message !== "") {
@@ -191,7 +193,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       }
     };
 
-    return isTutor ? (
+    return canComment ? (
       <div
         style={{
           background: "#fff",
@@ -227,6 +229,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
         </div>
       </div>
     ) : null;
+    
   };
 
   const renderHighlights = (props: RenderHighlightsProps) => (
@@ -278,58 +281,58 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       }}
     >
       <div
-      style={{
-        alignItems: "center",
-        backgroundColor: "#f3f4f6",
-        borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
-        display: "flex",
-        padding: "4px",
-      }}
-    >
-      <Toolbar>
-        {(slots) => {
-          const {
-            ShowSearchPopover,
-            ZoomOut,
-            Zoom,
-            ZoomIn,
-            CurrentPageInput,
-            GoToPreviousPage,
-            GoToNextPage,
-            NumberOfPages,
-          } = slots;
-
-          return (
-            <>
-              <div style={{ padding: "0px 2px" }}>
-                <GoToPreviousPage />
-              </div>
-              <div style={{ padding: "0px 2px", width: "50px" }}>
-                <CurrentPageInput />
-              </div>
-              <div style={{ padding: "0px 2px" }}>
-                / <NumberOfPages />
-              </div>
-              <div style={{ padding: "0px 2px" }}>
-                <GoToNextPage />
-              </div>
-              <div style={{ marginLeft: "auto", padding: "0px 2px" }}>
-                <ShowSearchPopover />
-              </div>
-              <div style={{ padding: "0px 2px" }}>
-                <ZoomOut />
-              </div>
-              <div style={{ padding: "0px 2px" }}>
-                <Zoom />
-              </div>
-              <div style={{ padding: "0px 2px" }}>
-                <ZoomIn />
-              </div>
-            </>
-          );
+        style={{
+          alignItems: "center",
+          backgroundColor: "#f3f4f6",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+          display: "flex",
+          padding: "4px",
         }}
-      </Toolbar>
-    </div>
+      >
+        <Toolbar>
+          {(slots) => {
+            const {
+              ShowSearchPopover,
+              ZoomOut,
+              Zoom,
+              ZoomIn,
+              CurrentPageInput,
+              GoToPreviousPage,
+              GoToNextPage,
+              NumberOfPages,
+            } = slots;
+
+            return (
+              <>
+                <div style={{ padding: "0px 2px" }}>
+                  <GoToPreviousPage />
+                </div>
+                <div style={{ padding: "0px 2px", width: "50px" }}>
+                  <CurrentPageInput />
+                </div>
+                <div style={{ padding: "0px 2px" }}>
+                  / <NumberOfPages />
+                </div>
+                <div style={{ padding: "0px 2px" }}>
+                  <GoToNextPage />
+                </div>
+                <div style={{ marginLeft: "auto", padding: "0px 2px" }}>
+                  <ShowSearchPopover />
+                </div>
+                <div style={{ padding: "0px 2px" }}>
+                  <ZoomOut />
+                </div>
+                <div style={{ padding: "0px 2px" }}>
+                  <Zoom />
+                </div>
+                <div style={{ padding: "0px 2px" }}>
+                  <ZoomIn />
+                </div>
+              </>
+            );
+          }}
+        </Toolbar>
+      </div>
       <div
         ref={containerRef}
         style={{

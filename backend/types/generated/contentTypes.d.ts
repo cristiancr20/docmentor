@@ -580,9 +580,41 @@ export interface ApiRolRol extends Schema.CollectionType {
       Attribute.Private;
     users: Attribute.Relation<
       'api::rol.rol',
-      'oneToMany',
+      'manyToMany',
       'plugin::users-permissions.user'
     >;
+  };
+}
+
+export interface ApiSettingSetting extends Schema.CollectionType {
+  collectionName: 'settings';
+  info: {
+    description: '';
+    displayName: 'setting';
+    pluralName: 'settings';
+    singularName: 'setting';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::setting.setting',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    email_notifications: Attribute.Email;
+    isActual: Attribute.Boolean;
+    publishedAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::setting.setting',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
   };
 }
 
@@ -988,6 +1020,7 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    isInstitutional: Attribute.Boolean;
     notifications: Attribute.Relation<
       'plugin::users-permissions.user',
       'oneToMany',
@@ -1010,15 +1043,15 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
     >;
     provider: Attribute.String;
     resetPasswordToken: Attribute.String & Attribute.Private;
-    rol: Attribute.Relation<
-      'plugin::users-permissions.user',
-      'manyToOne',
-      'api::rol.rol'
-    >;
     role: Attribute.Relation<
       'plugin::users-permissions.user',
       'manyToOne',
       'plugin::users-permissions.role'
+    >;
+    rols: Attribute.Relation<
+      'plugin::users-permissions.user',
+      'manyToMany',
+      'api::rol.rol'
     >;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
@@ -1051,6 +1084,7 @@ declare module '@strapi/types' {
       'api::notification.notification': ApiNotificationNotification;
       'api::project.project': ApiProjectProject;
       'api::rol.rol': ApiRolRol;
+      'api::setting.setting': ApiSettingSetting;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

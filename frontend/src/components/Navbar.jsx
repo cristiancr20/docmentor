@@ -15,24 +15,7 @@ const Navbar = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
-  // Efecto para cargar las notificaciones (solo para tutores)
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (userData?.rol === "tutor") {
-        try {
-          const response = await getNotifications(token);
-          setNotifications(response.data || []);
-        } catch (error) {
-          console.error("Error al cargar notificaciones:", error);
-        }
-      }
-    };
-
-    if (userData) {
-      loadNotifications();
-    }
-  }, [userData]);
+  
 
   useEffect(() => {
     const encryptedToken = localStorage.getItem("jwtToken");
@@ -50,6 +33,7 @@ const Navbar = () => {
       setUserData(user);
       setToken(jwtToken);
       setIsLoading(false);
+      loadNotifications(jwtToken);
     } catch (error) {
       console.error("Error al procesar los datos del usuario:", error.message);
       setError("Error al cargar los datos del usuario");
@@ -57,6 +41,27 @@ const Navbar = () => {
     }
   }, []);
 
+  const loadNotifications = async (token) => {
+    if (
+      userData?.rol &&
+      (Array.isArray(userData.rol)
+        ? userData.rol.includes("tutor") // Si es array
+        : userData.rol.split(",").map(r => r.trim()).includes("tutor") // Si es string separado por comas
+      )
+    ) {
+      try {
+        if (!token) {
+          console.error("No se encontró token de autenticación.");
+          return;
+        }
+        
+        const response = await getNotifications(token);
+        setNotifications(response.data || []);
+      } catch (error) {
+        console.error("Error al cargar notificaciones:", error);
+      }
+    }
+  };
 
   const handleToggle = (setter) => () => setter((prev) => !prev);
 
@@ -92,8 +97,6 @@ const Navbar = () => {
     navigate("/", { replace: true });
   };
 
-
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[64px] bg-white dark:bg-gray-900">
@@ -105,7 +108,9 @@ const Navbar = () => {
   if (!userData) {
     return (
       <div className="flex justify-center items-center min-h-[64px] bg-white dark:bg-gray-900">
-        <div className="text-gray-600 dark:text-gray-400">No hay datos de usuario disponibles</div>
+        <div className="text-gray-600 dark:text-gray-400">
+          No hay datos de usuario disponibles
+        </div>
       </div>
     );
   }
@@ -117,7 +122,6 @@ const Navbar = () => {
       </div>
     );
   }
-
 
   const unreadNotificationsCount = notifications.filter(
     (notification) => !notification.attributes.isRead
@@ -166,28 +170,34 @@ const Navbar = () => {
             <ul className="font-medium flex items-center space-x-8">
               {userData ? (
                 <>
-                  {userData?.rol === "tutor" && (
-                    <>
-                      <motion.li whileHover={{ scale: 1.05 }}>
-                        <Link
-                          to="/tutor/dashboard"
-                          className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
-                        >
-                          <span className="font-medium">Inicio</span>
-                        </Link>
-                      </motion.li>
-                      <motion.li whileHover={{ scale: 1.05 }}>
-                        <Link
-                          to="/tutor/assigned-projects"
-                          className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
-                        >
-                          <span className="font-medium">
-                            Ver proyectos asignados
-                          </span>
-                        </Link>
-                      </motion.li>
-                    </>
-                  )}
+                  {userData.rol &&
+                    (Array.isArray(userData.rol)
+                      ? userData.rol.includes("tutor")
+                      : userData.rol
+                          .split(",")
+                          .map((r) => r.trim())
+                          .includes("tutor")) && (
+                      <>
+                        <motion.li whileHover={{ scale: 1.05 }}>
+                          <Link
+                            to="/tutor/dashboard"
+                            className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                          >
+                            <span className="font-medium">Inicio</span>
+                          </Link>
+                        </motion.li>
+                        <motion.li whileHover={{ scale: 1.05 }}>
+                          <Link
+                            to="/tutor/projects/view"
+                            className="text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-500"
+                          >
+                            <span className="font-medium">
+                              Ver proyectos asignados
+                            </span>
+                          </Link>
+                        </motion.li>
+                      </>
+                    )}
 
                   {userData?.rol === "estudiante" && (
                     <>
@@ -230,64 +240,70 @@ const Navbar = () => {
             </motion.button>
 
             <div className="flex items-center space-x-3">
-              {userData?.rol === "tutor" && (
-                <div className="relative">
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    type="button"
-                    className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                    onClick={handleToggle(setIsNotificationOpen)}
-                  >
-                    <FaBell className="text-yellow-500" />
-                    {unreadNotificationsCount > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full"
-                      >
-                        {unreadNotificationsCount}
-                      </motion.span>
-                    )}
-                  </motion.button>
+              {userData?.rol &&
+                (Array.isArray(userData.rol)
+                  ? userData.rol.includes("tutor") // Si es array
+                  : userData.rol
+                      .split(",")
+                      .map((r) => r.trim())
+                      .includes("tutor")) && ( // Si es string
+                  <div className="relative">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                      onClick={handleToggle(setIsNotificationOpen)}
+                    >
+                      <FaBell className="text-yellow-500" />
+                      {unreadNotificationsCount > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full"
+                        >
+                          {unreadNotificationsCount}
+                        </motion.span>
+                      )}
+                    </motion.button>
 
-                  <AnimatePresence>
-                    {isNotificationOpen && (
-                      <motion.div
-                        initial="closed"
-                        animate="open"
-                        exit="closed"
-                        variants={dropdownVariants}
-                        className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700 z-50"
-                      >
-                        {notifications.length > 0 ? (
-                          notifications.map((notification) => (
-                            <motion.div
-                              key={notification.id}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              whileHover={{ scale: 1.02 }}
-                              className={`p-3 rounded-lg mt-2 cursor-pointer ${
-                                notification.attributes.isRead
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-blue-100 text-gray-900"
-                              }`}
-                              onClick={() => markAsRead(notification)}
-                            >
-                              <p className="text-sm">
-                                {notification.attributes.message}
-                              </p>
-                            </motion.div>
-                          ))
-                        ) : (
-                          <p className="p-3 text-sm text-gray-700 dark:text-gray-400">
-                            No hay notificaciones.
-                          </p>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+                    <AnimatePresence>
+                      {isNotificationOpen && (
+                        <motion.div
+                          initial="closed"
+                          animate="open"
+                          exit="closed"
+                          variants={dropdownVariants}
+                          className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700 z-50"
+                        >
+                          {notifications.length > 0 ? (
+                            notifications.map((notification) => (
+                              <motion.div
+                                key={notification.id}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                whileHover={{ scale: 1.02 }}
+                                className={`p-3 rounded-lg mt-2 cursor-pointer ${
+                                  notification.attributes.isRead
+                                    ? "bg-gray-900 text-white"
+                                    : "bg-blue-100 text-gray-900"
+                                }`}
+                                onClick={() => markAsRead(notification)}
+                              >
+                                <p className="text-sm">
+                                  {notification.attributes.message}
+                                </p>
+                              </motion.div>
+                            ))
+                          ) : (
+                            <p className="p-3 text-sm text-gray-700 dark:text-gray-400">
+                              No hay notificaciones.
+                            </p>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
               <div className="relative">
                 <motion.button
@@ -296,7 +312,9 @@ const Navbar = () => {
                   className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
                   onClick={handleToggle(setIsDropdownOpen)}
                 >
-                  <span className="text-white">{userData?.username}</span>
+                  <span className="text-white">
+                    {userData?.username || userData?.name}
+                  </span>
                   <motion.div
                     animate={{ rotate: isDropdownOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
@@ -316,17 +334,35 @@ const Navbar = () => {
                     >
                       <div className="px-4 py-3">
                         <span className="block text-sm text-gray-900 dark:text-white">
-                          {userData?.username}
+                          {userData?.username || userData?.name}
                         </span>
-                        <span className="block text-sm text-gray-500 dark:text-gray-400">
+                        <span className="block text-sm text-gray-900 dark:text-gray-200">
                           {userData?.email}
                         </span>
                       </div>
+
+                      {/* seccion administrativa */}
+                      {userData?.rol.includes("superadmin") && (
+                        <ul className="py-2">
+                          <motion.li whileHover={{ scale: 1.02 }}>
+                            <Link
+                              to="/admin/dashboard"
+                              className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                              Administración
+                            </Link>
+                          </motion.li>
+                        </ul>
+                      )}
+
+                      {/* seccion de tutor */}
+
+
                       <ul className="py-2">
                         <motion.li whileHover={{ scale: 1.02 }}>
                           <button
                             onClick={handleLogout}
-                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 bg-gray-100 dark:bg-gray-600"
                           >
                             Cerrar sesión
                           </button>
@@ -423,4 +459,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

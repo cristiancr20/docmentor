@@ -69,14 +69,8 @@ function SignUp() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gray-900 bg-cover bg-center bg-no-repeat bg-blend-multiply"
-      style={{
-        backgroundImage:
-          "url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')",
-      }}
-    >
-      <div className="flex items-center justify-center px-4 py-24 mx-auto max-w-screen-md lg:py-56">
+    <div className="bg-cover bg-center bg-no-repeat bg-gray-900 bg-blend-multiply h-screen flex flex-col bg-[url('https://i.pinimg.com/736x/d9/31/5e/d9315e4c788771c8cba5406db9791d75.jpg')]">
+      <div className="flex-grow flex flex-col justify-center items-center px-4 py-8">
         <motion.form
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -177,6 +171,15 @@ function SignUp() {
             <Link to="/login" className="text-blue-500 hover:underline">
               Inicia Sesión
             </Link>
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate("/")}
+              className="text-blue-500 hover:underline"
+            >
+              Volver a la pagina principal principal
+            </button>
           </div>
         </motion.form>
       </div>

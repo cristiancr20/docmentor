@@ -26,6 +26,9 @@ import TutorDashboard from "./pages/TutorDashboard";
 import ProjectsAsignedTutor from "./pages/ProjectsAsignedTutor";
 import DocumentoViewer from "./pages/DocumentViewer";
 
+/* ADMIN */
+import AdminDashboard from "./pages/Administration";
+
 
 /* COMPONENTE RUTAS PROTEGIDAS */
 const ProtectedRoute = ({ requiredRole }) => {
@@ -35,9 +38,10 @@ const ProtectedRoute = ({ requiredRole }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (requiredRole && user.rol !== requiredRole) {
-    return <Navigate to="/" replace />; // Redirige si no tiene el rol adecuado
+  if (requiredRole && !user.rol.some(role => requiredRole.includes(role))) {
+    return <Navigate to="/" replace />;
   }
+  
 
   return <Outlet />;
 };
@@ -57,15 +61,20 @@ function App() {
 
 
         {/* Rutas protegidas */}
-        {/* ROL TUTOR */}
-        <Route element={<ProtectedRoute requiredRole="tutor" />}>
+        {/* ROL TUTOR y SUPERADMIN */}
+        <Route element={<ProtectedRoute requiredRole={["superadmin","tutor"]} />}>
           <Route path="/tutor/dashboard" element={<TutorDashboard />} />
-          <Route path="/tutor/assigned-projects" element={<ProjectsAsignedTutor />} />
+          <Route path="/tutor/projects/view" element={<ProjectsAsignedTutor />} />
         </Route>
         {/* ROL ESTUIANE*/}
         <Route element={<ProtectedRoute requiredRole="estudiante" />}>
           <Route path="/student/dashboard" element={<StudentsDashboard />} />
           <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
+        </Route>
+
+        {/* ROL SUPERADMIN */}
+        <Route element={<ProtectedRoute requiredRole="superadmin" />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Route>
 
 

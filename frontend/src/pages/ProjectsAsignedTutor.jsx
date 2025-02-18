@@ -11,7 +11,7 @@ const ProjectsAsignedTutor = () => {
   const [error, setError] = useState(null);
   const [authorFilter, setAuthorFilter] = useState("");
   const [itineraryFilter, setItineraryFilter] = useState("");
-  let userId = null;
+  let userEmail = null;
 
   const encryptedUserData = localStorage.getItem("userData");
 
@@ -21,7 +21,7 @@ const ProjectsAsignedTutor = () => {
 
     // Acceder al rol desde los datos desencriptados
 
-    userId = decryptedUserData.id;
+    userEmail = decryptedUserData.email;
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -29,21 +29,22 @@ const ProjectsAsignedTutor = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        if (userId) {
-          const userProjects = await getProjectsByTutor(userId);
+        if (userEmail) {
+          const userProjects = await getProjectsByTutor(userEmail);
           setProjects(userProjects);
           setFilteredProjects(userProjects);
         } else {
-          setError("User ID is not available");
+          setError("User email is not available");
         }
       } catch (error) {
-        setError("Error fetching projects");
-        console.error("Error fetching projects:", error);
+        setError(error.message || "Error fetching projects");
       }
     };
-
+  
     fetchProjects();
-  }, [userId]);
+  }, [userEmail]);
+  
+  
 
   useEffect(() => {
     handleFilterChange();

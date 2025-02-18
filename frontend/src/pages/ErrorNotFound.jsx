@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function ErrorNotFound() {
@@ -28,7 +28,7 @@ function ErrorNotFound() {
           Oops! Parece que te has perdido.
         </p>
         <Link
-          href="/"
+          to="/"
           className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-all duration-300 ease-in-out ${
             isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}

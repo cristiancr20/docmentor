@@ -14,32 +14,37 @@ const ViewProjectsStudents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  let userId = null;
-
-  const encryptedUserData = localStorage.getItem("userData");
-
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-
-    userId = decryptedUserData.id;
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    if (userId) {
+    const encryptedUserData = localStorage.getItem("userData");
+  
+    if (encryptedUserData) {
+      try {
+        // Desencriptar los datos
+        const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+        setUserData(decryptedUserData); // Actualiza el estado de manera segura
+      } catch (error) {
+        console.error("Error al desencriptar los datos:", error);
+        setError("Error al procesar los datos de usuario.");
+      }
+    } else {
+      console.log("No se encontró el userData en localStorage");
+    }
+  }, []); // Solo se ejecuta una vez al montar el componente
+  
+  useEffect(() => {
+    if (userData?.id) {
       fetchProjects();
     } else {
       setError("User ID is not available");
     }
-  }, [userId]);
+  }, [userData]); // Se ejecuta cuando userData cambia
+  
 
   const fetchProjects = async () => {
     try {
-      const userProjects = await getProjectsByStudents(userId);
+      const userProjects = await getProjectsByStudents(userData.id);
       setProjects(userProjects);
     } catch (error) {
       console.error("Error fetching projects:", error);
