@@ -34,9 +34,13 @@ const Login = () => {
       // Extraer datos y guardar JWT
       const { jwt, user } = authResponse;
 
+      console.log("🔑 Usuario :", user.id)
+
       // Obtener rol del usuario
       const userWithRole = await getUserWithRole(user.id);
-      const userRole = userWithRole.rol?.rolType;
+      console.log("🔑 Usuario con rol:", userWithRole);
+      const userRole = userWithRole.rols?.[0]?.rolType;
+      console.log("🔑 Rol del usuario:", userRole);
 
       if (!userRole) {
         throw new Error("No se pudo obtener el rol del usuario");

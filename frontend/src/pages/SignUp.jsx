@@ -8,7 +8,7 @@ function SignUp() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rol, setRol] = useState("");
+  const [rols, setRols] = useState("");
   const [roles, setRoles] = useState([]);
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,14 +38,14 @@ function SignUp() {
     setIsSubmitting(true);
 
     try {
-      const data = { username, email, password, rol };
+      const data = { username, email, password, rols };
       await registerUser(data);
       successAlert();
 
       setUsername("");
       setEmail("");
       setPassword("");
-      setRol("");
+      setRols("");
       navigate("/login");
     } catch (error) {
       if (error.response) {
@@ -140,11 +140,11 @@ function SignUp() {
               Rol
             </label>
             <select
-              id="rol"
+              id="rols"
               className="w-full p-2.5 text-sm border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-white placeholder-gray-400"
               required
-              value={rol}
-              onChange={(e) => setRol(e.target.value)}
+              value={rols}
+              onChange={(e) => setRols(e.target.value)}
             >
               <option value="">Seleccione una opción</option>
               {roles && roles.length > 0 ? (

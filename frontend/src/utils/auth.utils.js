@@ -8,13 +8,12 @@ export const ROLE_PRIORITY = {
   estudiante: 1
 };
 
-// Añadir esta nueva función
+// Actualizar getPrimaryRole para manejar consistentemente los roles
 export const getPrimaryRole = (roles) => {
   if (!Array.isArray(roles)) {
     return roles;
   }
 
-  // Ordenar roles por prioridad y tomar el primero
   return roles.sort((a, b) => ROLE_PRIORITY[b] - ROLE_PRIORITY[a])[0];
 };
 
@@ -26,9 +25,9 @@ export const ROLE_ROUTES = {
 
 export const USER_STORAGE_KEYS = ["rol", "username", "email", "userId"];
 
-export const saveUserData = (user, userRole) => {
+export const saveUserData = (user, userRoles) => {
   const userData = {
-    rol: userRole, // Puede ser un array o un solo rol
+    rols: Array.isArray(userRoles) ? userRoles : [userRoles], // Asegurar que siempre sea un array
     username: user.username,
     email: user.email,
     userId: user.id,

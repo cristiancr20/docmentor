@@ -19,31 +19,40 @@ const LoginInstitucional = () => {
   const handleAerobaseLogin = async (event) => {
     event.preventDefault();
     setIsSubmitting(true);
-  
+
     try {
       // Obtener datos del usuario
       const userData = await loginInstitutional(email, password);
-  
+
+      console.log("🔑 Datos del usuario:", userData);
+
       // Sincronizar con Strapi
       await handleVerifyUser(userData.token);
-      
+
       // Mostrar alerta de éxito
       loginSuccessAlert(userData.name);
-      
+
       // Procesar roles y redirigir
-      const userRoles = Array.isArray(userData.rol) ? userData.rol : [userData.rol];
-      
-      const priorityRole = userRoles.includes('superadmin') ? 'superadmin' : 
-                          userRoles.includes('tutor') ? 'tutor' : 
-                          'estudiante';
-  
+      const userRoles = Array.isArray(userData.rols)
+        ? userData.rols
+        : [userData.rols];
+
+      console.log("🔑 Roles del usuario:", userRoles);
+
+      const priorityRole = userRoles.includes("superadmin")
+        ? "superadmin"
+        : userRoles.includes("tutor")
+          ? "tutor"
+          : "estudiante";
+
+      console.log("🔑 Rol prioritario:", priorityRole);
+
       setTimeout(() => {
         navigate(ROLE_ROUTES[priorityRole], { replace: true });
       }, 500);
-      
+
       // Forzar la redirección
       navigate(ROLE_ROUTES[priorityRole], { replace: true });
-      
     } catch (error) {
       console.error("Error en login de Aerobase:", error);
       loginErrorAlert(

@@ -38,13 +38,17 @@ const ProtectedRoute = ({ requiredRole }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (requiredRole && !user.rol.some(role => requiredRole.includes(role))) {
-    return <Navigate to="/" replace />;
+  // Verificar si requiredRole es un array o string y si user.rols existe
+  if (requiredRole && user.rols) {
+    const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!user.rols.some(role => requiredRoles.includes(role))) {
+      return <Navigate to="/" replace />;
+    }
   }
-  
 
   return <Outlet />;
 };
+
 
 function App() {
   return (

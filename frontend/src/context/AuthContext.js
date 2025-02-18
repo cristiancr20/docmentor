@@ -34,46 +34,60 @@ export const AuthProvider = ({ children }) => {
           password: password,
         }),
       });
-
+  
       const data = await response.json();
-
-
-
+  
       if (!response.ok) {
         throw new Error(data.error_description || 'Error en la autenticación');
       }
-
+  
       const tokenData = JSON.parse(atob(data.access_token.split('.')[1]));
-
+  
+      console.log("🔑 Token data:", tokenData);
+  
       const roles = tokenData.realm_access?.roles || [];
+  
+      console.log("🔑 Roles:", roles);
 
-      // Cambiar esta parte para obtener todos los roles relevantes
-      const userRoles = tokenData.realm_access?.roles?.filter(role =>
+      // Identificar si es un usuario institucional
+      const isInstitutional = roles.some(role => ['tutor', 'estudiante', 'superadmin'].includes(role));
+
+      console.log("🔑 Es institucional:", isInstitutional);
+  
+      const userRoles = isInstitutional ? roles.filter(role =>
         ['tutor', 'estudiante', 'superadmin'].includes(role)
-      ) ;
-      
+      ) : ['estudiante']; // Si no tiene roles específicos, se asume 'estudiante'
+
+      console.log("🔑 Roles de usuario:", userRoles);
+  
+      // Procesar datos del usuario basado en si es institucional o no
       const userData = {
         id: tokenData.sub,
-        name: tokenData.name || tokenData.preferred_username,
+        name: isInstitutional ? tokenData.name : tokenData.preferred_username,
         email: tokenData.email,
-        rol: userRoles.length > 0 ? userRoles : ['estudiante'], // Guardar array de roles
+        rols: userRoles,
         token: data.access_token,
-        isInstitutional: true
+        isInstitutional
       };
 
+      console.log("🔑 Datos de usuario:", userData);
+  
       setUser(userData);
       localStorage.setItem("userData", encryptData(JSON.stringify(userData)));
       localStorage.setItem("jwtToken", encryptData(userData.token));
-
+  
       return userData;
     } catch (error) {
       console.error('Error en login institucional:', error);
       throw error;
     }
   };
+  
 
   const loginAsGuest = (userData) => {
-    const guestUser = { ...userData, isGuest: true, isInstitutional: false };
+    const guestUser = {
+      ...userData, isGuest: true, isInstitutional: false, rols: userData.rols || ["estudiante"]
+    };
     setUser(guestUser);
     localStorage.setItem("userData", encryptData(JSON.stringify(guestUser)));
     if (userData.token) {
