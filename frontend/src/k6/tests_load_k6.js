@@ -35,7 +35,7 @@ const BASE_URL = 'https://revisor-documental-production.up.railway.app';
 
 export const options = {
     // TEST 1
-    /* stages: [
+    stages: [
         { duration: '1m', target: 10 },
         { duration: '2m', target: 25 },
         { duration: '5m', target: 100 },
@@ -47,7 +47,7 @@ export const options = {
         'request_errors': ['count<10'],
         'success_rate': ['rate>0.95'],
         'data_transferred': ['avg>100'],
-    }, */
+    },
     // TEST 2
     /* stages: [
         { duration: '1m', target: 25 },
@@ -78,7 +78,7 @@ export const options = {
     }, */
 
     // TEST 4
-    stages: [
+/*     stages: [
         { duration: '1m', target: 30 },
         { duration: '2m', target: 70 },
         { duration: '5m', target: 100 },
@@ -90,7 +90,7 @@ export const options = {
         'request_errors': ['count<30'],
         'success_rate': ['rate>0.95'],
         'data_transferred': ['avg>100'],
-    },
+    }, */
 };
 
 const sessions = {
