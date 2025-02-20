@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getProjectsByStudents } from "../core/Projects";
+import { getProjectsByEmail, getProjectsByStudents } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";
@@ -14,43 +14,37 @@ const ViewProjectsStudents = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [userData, setUserData] = useState(null);
+  let userEmail = null;
 
-  useEffect(() => {
-    const encryptedUserData = localStorage.getItem("userData");
-  
-    if (encryptedUserData) {
-      try {
-        // Desencriptar los datos
-        const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-        setUserData(decryptedUserData); // Actualiza el estado de manera segura
-      } catch (error) {
-        console.error("Error al desencriptar los datos:", error);
-        setError("Error al procesar los datos de usuario.");
-      }
-    } else {
-      console.log("No se encontró el userData en localStorage");
-    }
-  }, []); // Solo se ejecuta una vez al montar el componente
+  const encryptedUserData = localStorage.getItem("userData");
+
+  if (encryptedUserData) {
+    // Desencriptar los datos
+    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+
+
+    userEmail = decryptedUserData.email;
+  } else {
+    console.log("No se encontró el userData en localStorage");
+  }
   
   useEffect(() => {
-    if (userData?.id) {
       fetchProjects();
-    } else {
-      setError("User ID is not available");
-    }
-  }, [userData]); // Se ejecuta cuando userData cambia
+  }, []); 
   
 
-  const fetchProjects = async () => {
-    try {
-      const userProjects = await getProjectsByStudents(userData.id);
-      setProjects(userProjects);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      setError("Error fetching projects");
-    }
-  };
+const fetchProjects = async () => {
+      try {
+        if (userEmail) {
+          const userProjects = await getProjectsByEmail(userEmail);
+          setProjects(userProjects);
+        } else {
+          setError("User email is not available");
+        }
+      } catch (error) {
+        setError(error.message || "Error fetching projects");
+      }
+    };
 
   const handleEdit = (projectId) => {
     const project = projects.find((project) => project.id === projectId);

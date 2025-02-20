@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getProjectsByTutor } from "../core/Projects";
+import { getProjectsByEmail, getProjectsByTutor } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
 import { decryptData } from "../utils/encryption";
@@ -19,7 +19,6 @@ const ProjectsAsignedTutor = () => {
     // Desencriptar los datos
     const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
 
-    // Acceder al rol desde los datos desencriptados
 
     userEmail = decryptedUserData.email;
   } else {
@@ -30,7 +29,7 @@ const ProjectsAsignedTutor = () => {
     const fetchProjects = async () => {
       try {
         if (userEmail) {
-          const userProjects = await getProjectsByTutor(userEmail);
+          const userProjects = await getProjectsByEmail(userEmail);
           setProjects(userProjects);
           setFilteredProjects(userProjects);
         } else {

@@ -38,7 +38,7 @@ function SignUp() {
     setIsSubmitting(true);
 
     try {
-      const data = { username, email, password, rols };
+      const data = { username, email, password, rols , isInstitutional: false};
       await registerUser(data);
       successAlert();
 

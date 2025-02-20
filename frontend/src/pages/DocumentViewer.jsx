@@ -40,12 +40,14 @@ const DocumentoViewer = () => {
     const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
 
     // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rol;
+    rol = decryptedUserData.rols || decryptedUserData.rol;
     tutorEmail = decryptedUserData.email;
 
   } else {
     console.log("No se encontró el userData en localStorage");
   }
+
+  console.log("Rol: ", rol);
 
   useEffect(() => {
     fetchDocument();
@@ -184,6 +186,7 @@ const DocumentoViewer = () => {
   if (!documentUrl) {
     return <p>No se encontró el archivo del documento.</p>;
   }
+
 
   return (
     <div>

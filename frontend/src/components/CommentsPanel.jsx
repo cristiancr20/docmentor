@@ -21,7 +21,7 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
     const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
 
     // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rol;
+    rol = decryptedUserData.rols || decryptedUserData.rol;
   } else {
     console.log("No se encontró el userData en localStorage");
   }

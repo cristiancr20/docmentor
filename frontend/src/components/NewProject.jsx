@@ -25,10 +25,12 @@ const NewProject = ({ onClose, fetchProjects }) => {
 
   const encryptedUserData = localStorage.getItem("userData");
   let userId = null;
+  let userData= null;
 
   if (encryptedUserData) {
     // Desencriptar los datos
     const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+    userData = decryptedUserData;
 
     // Acceder al rol desde los datos desencriptados
     userId = decryptedUserData.id;
@@ -39,19 +41,22 @@ const NewProject = ({ onClose, fetchProjects }) => {
   useEffect(() => {
     const obtenerTutors = async () => {
       try {
-        const response = await getTutors();
+        if (!userData) return; // Aseguramos que userData está definido
+        const response = await getTutors(userData.isInstitutional);
         setTutores(response);
       } catch (error) {
         console.error("Error al obtener los tutores:", error);
       }
     };
     obtenerTutors();
-  }, []);
+  }, [userData]);
+  
 
   // Función para obtener el id del compañero por correo electrónico
   const getPartnerIdByEmail = async (email) => {
     try {
       const response = await getUserByEmail(email);
+      console.log("usuerio retornado", response);
 
       if (response && Array.isArray(response) && response.length > 0) {
         return response[0].id;
@@ -68,16 +73,15 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const handlePartnerEmailChange = async (e) => {
     const email = e.target.value;
     setPartnerEmail(email);
-
-    // Buscar el compañero por el correo ingresado
-    const getPartnerId = await getPartnerIdByEmail(email);
-
-    if (getPartnerId) {
+  
+    const partnerData = await getPartnerIdByEmail(email);
+  
+    if (partnerData) {
       try {
-        const response = await getUserById(getPartnerId);
+        const response = await getUserById(partnerData.id);
         if (response) {
-          const partner = response;
-          setPartnerData(partner);
+          setPartnerData(response);
+          console.log("El usuario es institucional:", partnerData.isInstitutional);
         } else {
           console.error("No se encontró la información del compañero.");
           setPartnerData(null);
@@ -90,6 +94,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
       setPartnerData(null);
     }
   };
+  
 
   const handleAddPartner = () => {
     if (

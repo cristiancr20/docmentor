@@ -14,6 +14,7 @@ import { decryptData } from "../utils/encryption";
 import ProjectsTable from "../components/ProjectsTable";
 import Header from "../components/Header";
 import { IoArrowBack } from "react-icons/io5";
+import { useAuth } from "../context/AuthContext"; 
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -25,6 +26,12 @@ const ProyectoDetalle = () => {
   let rol = null;
   const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(documents.length - 2);
+  const { user } = useAuth(); // Obtiene el usuario autenticado
+
+  // Función para verificar si el usuario tiene el rol adecuado
+  const hasPermission = (roles) => {
+    return roles?.includes("tutor") || roles?.includes("superadmin");
+  };
 
   const encryptedUserData = localStorage.getItem("userData");
 
@@ -183,12 +190,14 @@ const ProyectoDetalle = () => {
           )}
   
           {/* Botón para crear nueva versión */}
-          <button
-            onClick={() => copyDocumentNewVersion(doc.id)}
-            className="bg-red-800 text-white px-3 py-1 rounded hover:bg-red-700"
-          >
-            Nueva Versión
-          </button>
+          {hasPermission(user?.rols) && (
+            <button
+              onClick={() => copyDocumentNewVersion(doc.id)}
+              className="bg-red-800 text-white px-3 py-1 rounded hover:bg-red-700"
+            >
+              Nueva Versión
+            </button>
+          )}
         </div>
       ),
     },
@@ -213,7 +222,7 @@ const ProyectoDetalle = () => {
 
                 {rol === "tutor" && (
                   <Link
-                    to="/tutor/assigned-projects"
+                    to="/tutor/projects/view"
                     className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
                     <IoArrowBack className="text-white text-xl mr-2" />

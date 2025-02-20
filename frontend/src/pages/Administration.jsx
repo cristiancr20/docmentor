@@ -121,7 +121,6 @@ function Administration() {
           >
             <thead>
               <tr className="bg-gray-700">
-                <th className="py-2 px-4 border-b">ID</th>
                 <th className="py-2 px-4 border-b">Correo Electrónico</th>
                 <th className="py-2 px-4 border-b">Estado</th>
                 <th className="py-2 px-4 border-b">Acción</th>
@@ -137,7 +136,6 @@ function Administration() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    <td className="py-2 px-4 text-center">{email.id}</td>
                     <td className="py-2 px-4 text-center">
                       {email.attributes.email_notifications}
                     </td>
