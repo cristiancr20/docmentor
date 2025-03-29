@@ -1,6 +1,6 @@
 # DOCKERFILE BACKEND
 # Usa la versión específica de Node.js que estás usando en tu entorno de desarrollo
-FROM node:18.20.4
+FROM node:18.20.8
 
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app
