@@ -1,3 +1,4 @@
+const { connect } = require('http2');
 const path = require('path');
 
 module.exports = ({ env }) => {
@@ -49,20 +50,26 @@ module.exports = ({ env }) => {
     },
 
     postgres: {
+      /* connection: { */
+      /*  client: env('DATABASE_CLIENT', 'postgres'), */
       connection: {
-        connectionString: process.env.DATABASE_URL, // Si estás utilizando un URL completo para la conexión
-        host: process.env.DATABASE_HOST || 'localhost',  // Usa la variable de entorno DATABASE_HOST
-        port: parseInt(process.env.DATABASE_PORT) || 5434, // Usa el puerto de la variable de entorno (5434 en tu caso)
-        database: process.env.DATABASE_NAME || 'strapi', // Nombre de la base de datos
-        user: process.env.DATABASE_USERNAME || 'postgres', // Usuario de la base de datos
-        password: process.env.DATABASE_PASSWORD || 'admin', // Contraseña de la base de datos
-        ssl: process.env.DATABASE_SSL === 'true',  // Si SSL está activado, dependiendo de tu configuración
+        connectionString: env("DATABASE_URL"),
+        host: env('DATABASE_HOST', 'localhost'),
+        port: env.int('DATABASE_PORT', 5432),
+        database: env('DATABASE_NAME', "postgres"),
+        user: env('DATABASE_USERNAME', "postgres"),
+        password: env('DATABASE_PASSWORD'),
+        ssl: env.bool('DATABASE_SSL', false) && {
+          rejectUnauthorized: env.bool('DATABASE_SSL_REJECT_UNAUTHORIZED', true),
+        },
+        schema: env('DATABASE_SCHEMA', 'public'),
       },
       pool: {
-        min: parseInt(process.env.DATABASE_POOL_MIN) || 2,
-        max: parseInt(process.env.DATABASE_POOL_MAX) || 10
+        min: env.int('DATABASE_POOL_MIN', 2),
+        max: env.int('DATABASE_POOL_MAX', 10)
       },
     },
+
     /* postgres: {
      connection: {
        connectionString: env('DATABASE_URL'),

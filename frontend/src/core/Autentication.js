@@ -22,7 +22,6 @@ export const registerUser = async (data) => {
 export const login = async (data) => {
   try {
     const response = await axios.post(`${API_URL}/api/auth/local`, data);
-    console.log("🔑 Usuario logueado:", response.data);
     return response.data;
   } catch (error) {
     // Captura y muestra detalles del error
@@ -35,7 +34,6 @@ export const login = async (data) => {
 export const getUserWithRole = async (userId) => {
   try {
     const response = await axios.get(`${API_URL}/api/users/${userId}?populate=rols`);
-    console.log("🔑 Usuario con rol core:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error al obtener el usuario con rol:", error);
@@ -53,6 +51,7 @@ export const getRoles = async () => {
     return []; // Devuelve un array vacío en caso de error
   }
 };
+
 // Sincronizar usuario con Strapi
 export const syncUserWithStrapi = async (token) => {
   try {
