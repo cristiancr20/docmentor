@@ -81,7 +81,7 @@ export const getProjectById = async (projectId) => {
   }
 };
 
-/* export const getProjectsByTutor = async (userEmail) => {
+export const getProjectsByTutor = async (userEmail) => {
   try {
     const response = await axios.get(
       `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
@@ -100,7 +100,7 @@ export const getProjectById = async (projectId) => {
     console.error("Error fetching projects by tutor email:", error);
     throw error;
   }
-}; */
+};
 
 
 
