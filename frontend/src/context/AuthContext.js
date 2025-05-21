@@ -14,7 +14,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const encryptedUserData = localStorage.getItem("userData");
     if (encryptedUserData) {
-      const userData = JSON.parse(decryptData(encryptedUserData));
+      /* const userData = JSON.parse(decryptData(encryptedUserData)); */
+      const userData = decryptData(encryptedUserData);
+
       setUser(userData);
     }
     setLoading(false);
