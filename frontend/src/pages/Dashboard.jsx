@@ -38,19 +38,19 @@ const Dashboard = () => {
 
 const LoginOptions = ({ navigate }) => {
   return (
-    <div className="w-full max-w-4xl">
-      <motion.h2
+    <div className="w-full max-w-4xl flex items-center justify-center">
+      {/* <motion.h2
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="text-xl md:text-2xl font-bold text-center mb-4 text-white"
       >
         Seleccione su tipo de cuenta
-      </motion.h2>
-      <div className="flex justify-center items-center ">
+      </motion.h2> */}
+      <div className="grid md:grid-cols-1 gap-4 md:gap-8 w-1/2">
         <LoginCard
-          title="Usuario Regular"
-          description="Para estudiantes y público en general"
+          title="Usuarios"
+          description="Bienvenido, puedes iniciar sesión o registrarte"
           icon={<CiUser className="h-6 w-6" />}
           loginPath="/login"
           signUpPath="/sign-up"

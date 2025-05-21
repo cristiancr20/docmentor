@@ -53,7 +53,8 @@ export const getUserData = () => {
   try {
     // Obtener y desencriptar los datos
     const encryptedUserData = localStorage.getItem("userData");
-    const userData = JSON.parse(decryptData(encryptedUserData));
+    const userData = decryptData(encryptedUserData);
+
 
     return userData; // Devolver el objeto con los datos
   } catch (error) {

@@ -19,6 +19,25 @@ export const decryptData = (encryptedData) => {
     console.error("La clave secreta no está definida");
     return null;
   }
-  const bytes = CryptoJS.AES.decrypt(encryptedData, SECRET_KEY);
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+
+  if (!encryptedData || typeof encryptedData !== "string") {
+    console.error("Datos encriptados inválidos:", encryptedData);
+    return null;
+  }
+
+  try {
+    const bytes = CryptoJS.AES.decrypt(encryptedData, SECRET_KEY);
+    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+
+    if (!decryptedString) {
+      console.warn("No se pudo desencriptar el dato. ¿Clave incorrecta o datos corruptos?");
+      return null;
+    }
+
+    return JSON.parse(decryptedString);
+  } catch (err) {
+    console.error("Error al desencriptar los datos:", err);
+    return null;
+  }
 };
+

@@ -124,6 +124,50 @@ export const getProjectsByEmail = async (userEmail) => {
   }
 };
 
+export const getProjectsByStudents = async (userEmail) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_es.tutor,project_es.students`
+    );
+    // Verificar si la respuesta contiene datos
+    if (!response.data || response.data.length === 0) {
+      throw new Error("Tutor no encontrado o sin proyectos asignados");
+    }
+
+    // Extraer los proyectos correctamente
+    const studentsData = response.data[0]; // Accede al primer usuario encontrado
+    const projects = studentsData.project_ts || []; // Extraer proyectos
+
+    return projects;
+  } catch (error) {
+    console.error("Error fetching projects by tutor email:", error);
+    throw error;
+  }
+};
+
+
+
+/* export const getProjectsByEmail = async (userEmail) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
+    );
+    // Verificar si la respuesta contiene datos
+    if (!response.data || response.data.length === 0) {
+      throw new Error("Tutor no encontrado o sin proyectos asignados");
+    }
+
+    // Extraer los proyectos correctamente
+    const tutorData = response.data[0]; // Accede al primer usuario encontrado
+    const projects = tutorData.project_ts || []; // Extraer proyectos
+
+    return projects;
+  } catch (error) {
+    console.error("Error fetching projects by tutor email:", error);
+    throw error;
+  }
+}; */
+
 
 export const getTutors = async (isInstitutional) => {
   try {
