@@ -36,7 +36,7 @@ const ViewProjectsStudents = () => {
 const fetchProjects = async () => {
       try {
         if (userEmail) {
-          const userProjects = await getProjectsByEmail(userEmail);
+          const userProjects = await getProjectsByStudents(userEmail);
           setProjects(userProjects);
         } else {
           setError("User email is not available");
