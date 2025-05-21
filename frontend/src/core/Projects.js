@@ -136,7 +136,7 @@ export const getProjectsByStudents = async (userEmail) => {
 
     // Extraer los proyectos correctamente
     const studentsData = response.data[0]; // Accede al primer usuario encontrado
-    const projects = studentsData.project_ts || []; // Extraer proyectos
+    const projects = studentsData.project_es || []; // Extraer proyectos
 
     return projects;
   } catch (error) {
