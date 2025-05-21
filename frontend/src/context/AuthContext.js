@@ -16,8 +16,9 @@ export const AuthProvider = ({ children }) => {
     if (encryptedUserData) {
       /* const userData = JSON.parse(decryptData(encryptedUserData)); */
       const userData = decryptData(encryptedUserData);
-
-      setUser(userData);
+      if (userData) {
+        setUser(userData);
+      }
     }
     setLoading(false);
   }, []);
@@ -36,32 +37,32 @@ export const AuthProvider = ({ children }) => {
           password: password,
         }),
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.error_description || 'Error en la autenticación');
       }
-  
+
       const tokenData = JSON.parse(atob(data.access_token.split('.')[1]));
-  
+
       console.log("🔑 Token data:", tokenData);
-  
+
       const roles = tokenData.realm_access?.roles || [];
-  
+
       console.log("🔑 Roles:", roles);
 
       // Identificar si es un usuario institucional
       const isInstitutional = roles.some(role => ['tutor', 'estudiante', 'superadmin'].includes(role));
 
       console.log("🔑 Es institucional:", isInstitutional);
-  
+
       const userRoles = isInstitutional ? roles.filter(role =>
         ['tutor', 'estudiante', 'superadmin'].includes(role)
       ) : ['estudiante']; // Si no tiene roles específicos, se asume 'estudiante'
 
       console.log("🔑 Roles de usuario:", userRoles);
-  
+
       // Procesar datos del usuario basado en si es institucional o no
       const userData = {
         id: tokenData.sub,
@@ -73,18 +74,18 @@ export const AuthProvider = ({ children }) => {
       };
 
       console.log("🔑 Datos de usuario:", userData);
-  
+
       setUser(userData);
       localStorage.setItem("userData", encryptData(JSON.stringify(userData)));
       localStorage.setItem("jwtToken", encryptData(userData.token));
-  
+
       return userData;
     } catch (error) {
       console.error('Error en login institucional:', error);
       throw error;
     }
   };
-  
+
 
   const loginAsGuest = (userData) => {
     const guestUser = {
