@@ -38,7 +38,7 @@ const Dashboard = () => {
 
 const LoginOptions = ({ navigate }) => {
   return (
-    <div className="w-full max-w-4xl">
+    <div className="w-full max-w-4xl flex items-center justify-center">
       {/* <motion.h2
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -47,7 +47,7 @@ const LoginOptions = ({ navigate }) => {
       >
         Seleccione su tipo de cuenta
       </motion.h2> */}
-      <div className="grid md:grid-cols-2 gap-4 md:gap-8">
+      <div className="grid md:grid-cols-1 gap-4 md:gap-8 w-1/2">
         <LoginCard
           title="Usuarios"
           description="Bienvenido, puedes iniciar sesión o registrarte"
