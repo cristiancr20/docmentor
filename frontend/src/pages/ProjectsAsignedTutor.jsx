@@ -28,8 +28,8 @@ const ProjectsAsignedTutor = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        if (userId) {
-          const userProjects = await getProjectsByTutor(userId);
+        if (userEmail) {
+          const userProjects = await getProjectsByTutor(userEmail);
           setProjects(userProjects);
           setFilteredProjects(userProjects);
         } else {
@@ -42,7 +42,7 @@ const ProjectsAsignedTutor = () => {
     };
 
     fetchProjects();
-  }, [userId]);
+  }, [userEmail]);
   
   
 
