@@ -28,20 +28,21 @@ const ProjectsAsignedTutor = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        if (userEmail) {
-          const userProjects = await getProjectsByEmail(userEmail);
+        if (userId) {
+          const userProjects = await getProjectsByTutor(userId);
           setProjects(userProjects);
           setFilteredProjects(userProjects);
         } else {
-          setError("User email is not available");
+          setError("User ID is not available");
         }
       } catch (error) {
-        setError(error.message || "Error fetching projects");
+        setError("Error fetching projects");
+        console.error("Error fetching projects:", error);
       }
     };
-  
+
     fetchProjects();
-  }, [userEmail]);
+  }, [userId]);
   
   
 
