@@ -122,7 +122,6 @@ export const getUserByEmail = async (email) => {
     const response = await fetch(`${API_URL}/api/users?filters[email][$eq]=${email}`);
     const users = await response.json();
 
-    console.log("👤 Usuario encontrado por email:", users[0]);
 
     if (users && users.length > 0) {
       return users[0]; // Retorna el primer usuario encontrado

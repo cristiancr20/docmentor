@@ -18,6 +18,65 @@ const Navbar = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const checkUserRole = (userData, roleToCheck) => {
+    if (!userData) return false;
+
+    // Verificar en userData.rols (plural)
+    if (userData.rols) {
+      // Si es array
+      if (Array.isArray(userData.rols)) {
+        return userData.rols.includes(roleToCheck);
+      }
+      // Si es string
+      if (typeof userData.rols === "string") {
+        return userData.rols
+          .split(",")
+          .map((r) => r.trim())
+          .includes(roleToCheck);
+      }
+    }
+
+    // Verificar en userData.rol (singular)
+    if (userData.rol) {
+      // Si es array
+      if (Array.isArray(userData.rol)) {
+        return userData.rol.includes(roleToCheck);
+      }
+      // Si es string
+      if (typeof userData.rol === "string") {
+        return userData.rol
+          .split(",")
+          .map((r) => r.trim())
+          .includes(roleToCheck);
+      }
+    }
+
+    return false;
+  };
+
+  const loadNotifications = async (token) => {
+    try {
+      if (!token) {
+        console.error("No se encontró token de autenticación.");
+        return;
+      }
+
+      const response = await getNotifications(token);
+      
+      if (response && Array.isArray(response)) {
+        setNotifications(response);
+      } else if (response && response.data && Array.isArray(response.data)) {
+        setNotifications(response.data);
+      } else {
+        console.warn("Formato de notificaciones no reconocido:", response);
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error("Error al cargar notificaciones:", error);
+      setNotifications([]);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const encryptedToken = localStorage.getItem("jwtToken");
@@ -37,7 +96,10 @@ const Navbar = () => {
         setUserData(user);
         setToken(jwtToken);
 
-        await loadNotifications(jwtToken); // Esperar la carga de notificaciones
+        // Verificar si el usuario es tutor antes de cargar notificaciones
+        if (checkUserRole(user, "tutor")) {
+          await loadNotifications(jwtToken);
+        }
       } catch (error) {
         console.error(
           "Error al procesar los datos del usuario:",
@@ -51,30 +113,6 @@ const Navbar = () => {
 
     fetchData();
   }, []);
-
-  const loadNotifications = async (token) => {
-    if (
-      userData?.rols &&
-      (Array.isArray(userData.rols)
-        ? userData.rols.includes("tutor") // Si es array
-        : userData.rols
-            .split(",")
-            .map((r) => r.trim())
-            .includes("tutor")) // Si es string separado por comas
-    ) {
-      try {
-        if (!token) {
-          console.error("No se encontró token de autenticación.");
-          return;
-        }
-
-        const response = await getNotifications(token);
-        setNotifications(response.data || []);
-      } catch (error) {
-        console.error("Error al cargar notificaciones:", error);
-      }
-    }
-  };
 
   const handleToggle = (setter) => () => setter((prev) => !prev);
 
@@ -90,8 +128,15 @@ const Navbar = () => {
         )
       );
 
-      if (notification.attributes.document?.data?.id) {
-        navigate(`/document/${notification.attributes.document.data.id}`);
+      // Cerrar el dropdown de notificaciones
+      setIsNotificationOpen(false);
+
+      // Redirigir al documento si existe
+      if (notification.attributes?.documents?.data?.[0]?.id) {
+        const documentId = notification.attributes.documents.data[0].id;
+        navigate(`/document/${documentId}`);
+      } else if (notification.attributes?.project?.data?.id) {
+        navigate(`/project/${notification.attributes.project.data.id}`);
       }
     } catch (error) {
       console.error("Error al marcar la notificación como leída:", error);
@@ -131,7 +176,7 @@ const Navbar = () => {
   }
 
   const unreadNotificationsCount = notifications.filter(
-    (notification) => !notification.attributes.isRead
+    (notification) => !notification.attributes?.isRead
   ).length;
 
   const menuVariants = {
@@ -162,42 +207,6 @@ const Navbar = () => {
       scale: 1,
       transition: { duration: 0.2, ease: "easeInOut" },
     },
-  };
-
-  const checkUserRole = (userData, roleToCheck) => {
-    if (!userData) return false;
-
-    // Verificar en userData.rols (plural)
-    if (userData.rols) {
-      // Si es array
-      if (Array.isArray(userData.rols)) {
-        return userData.rols.includes(roleToCheck);
-      }
-      // Si es string
-      if (typeof userData.rols === "string") {
-        return userData.rols
-          .split(",")
-          .map((r) => r.trim())
-          .includes(roleToCheck);
-      }
-    }
-
-    // Verificar en userData.rol (singular)
-    if (userData.rol) {
-      // Si es array
-      if (Array.isArray(userData.rol)) {
-        return userData.rol.includes(roleToCheck);
-      }
-      // Si es string
-      if (typeof userData.rol === "string") {
-        return userData.rol
-          .split(",")
-          .map((r) => r.trim())
-          .includes(roleToCheck);
-      }
-    }
-
-    return false;
   };
 
   return (
@@ -279,7 +288,7 @@ const Navbar = () => {
             </motion.button>
 
             <div className="flex items-center space-x-3">
-              {checkUserRole(userData, "tutor") && ( // Si es string
+              {checkUserRole(userData, "tutor") && (
                 <div className="relative">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -316,14 +325,17 @@ const Navbar = () => {
                               animate={{ opacity: 1, y: 0 }}
                               whileHover={{ scale: 1.02 }}
                               className={`p-3 rounded-lg mt-2 cursor-pointer ${
-                                notification.attributes.isRead
+                                notification.attributes?.isRead
                                   ? "bg-gray-900 text-white"
                                   : "bg-blue-100 text-gray-900"
                               }`}
                               onClick={() => markAsRead(notification)}
                             >
                               <p className="text-sm">
-                                {notification.attributes.message}
+                                {notification.attributes?.message}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(notification.attributes?.createdAt).toLocaleString()}
                               </p>
                             </motion.div>
                           ))

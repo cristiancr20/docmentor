@@ -56,15 +56,32 @@ const NewProject = ({ onClose, fetchProjects }) => {
   const getPartnerIdByEmail = async (email) => {
     try {
       const response = await getUserByEmail(email);
-      console.log("usuerio retornado", response);
 
       if (response && Array.isArray(response) && response.length > 0) {
-        return response[0].id;
+        // Verificar que el usuario tenga el rol de estudiante
+        const user = response[0];
+        const isStudent = user.rols && user.rols.some(rol => 
+          rol.rolType === 'estudiante' || 
+          (typeof rol === 'string' && rol.toLowerCase() === 'estudiante')
+        );
+
+        if (!isStudent) {
+          errorAlert("El usuario debe ser un estudiante");
+          return null;
+        }
+
+        return {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          isInstitutional: user.isInstitutional
+        };
       } else {
         return null;
       }
     } catch (error) {
       console.error("Error al obtener el ID del usuario:", error);
+      errorAlert("Error al buscar el usuario");
       return null;
     }
   };
@@ -74,20 +91,31 @@ const NewProject = ({ onClose, fetchProjects }) => {
     const email = e.target.value;
     setPartnerEmail(email);
   
+    if (email === "") {
+      setPartnerData(null);
+      return;
+    }
+
     const partnerData = await getPartnerIdByEmail(email);
   
     if (partnerData) {
       try {
-        const response = await getUserById(partnerData.id);
-        if (response) {
-          setPartnerData(response);
-          console.log("El usuario es institucional:", partnerData.isInstitutional);
-        } else {
-          console.error("No se encontró la información del compañero.");
+        // Ya tenemos los datos del usuario, no necesitamos hacer otra llamada
+        // Verificar que no sea el mismo usuario
+        if (partnerData.id === userId) {
           setPartnerData(null);
+          
+          return;
         }
+        // Verificar que no esté ya en la lista
+        if (selectedPartners.some(partner => partner.id === partnerData.id)) {
+          setPartnerData(null);
+          
+          return;
+        }
+        setPartnerData(partnerData);
       } catch (error) {
-        console.error("Error al obtener los datos del compañero:", error);
+        console.error("Error al procesar los datos del compañero:", error);
         setPartnerData(null);
       }
     } else {
@@ -264,56 +292,43 @@ const NewProject = ({ onClose, fetchProjects }) => {
 
               {partnerData ? (
                 <motion.div
-                  className=" flex items-center justify-between mt-4 p-4 border rounded-lg bg-green-50 shadow-lg flex items-center space-x-4"
+                  className="mt-4 p-4 border rounded-lg bg-green-50 shadow-lg"
                   initial={{ opacity: 0, x: -50 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <motion.div
-                    className="space-y-2 flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.3 }}
-                  >
-                    <motion.div
-                      className="bg-gray-900 text-white rounded-full w-16 h-16 mb-4 shadow-xl flex items-center justify-center"
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <User className="w-12 h-12" />
-                    </motion.div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <motion.div
+                        className="bg-gray-900 text-white rounded-full w-16 h-16 shadow-xl flex items-center justify-center"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <User className="w-12 h-12" />
+                      </motion.div>
 
-                    <motion.div
-                      className="ml-2"
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <p className="text-sm font-semibold text-gray-700">
-                        <strong>Nombre:</strong> {partnerData.username}
-                      </p>
-                      <p className="text-sm font-semibold text-gray-700">
-                        <strong>Correo:</strong> {partnerData.email}
-                      </p>
-                    </motion.div>
-                  </motion.div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-700">
+                          <strong>Nombre:</strong> {partnerData.username}
+                        </p>
+                        <p className="text-sm font-semibold text-gray-700">
+                          <strong>Correo:</strong> {partnerData.email}
+                        </p>
+                      </div>
+                    </div>
 
-                  <motion.div
-                    className="mt-4 flex justify-end"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <button
+                    <motion.button
                       onClick={handleAddPartner}
                       className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-all duration-200"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
                       Agregar Compañero
-                    </button>
-                  </motion.div>
+                    </motion.button>
+                  </div>
                 </motion.div>
-              ) : (
+              ) : partnerEmail && (
                 <motion.div
                   className="mt-4 p-4 border rounded-lg bg-red-50 shadow-lg flex items-center justify-center"
                   initial={{ opacity: 0, y: 20 }}

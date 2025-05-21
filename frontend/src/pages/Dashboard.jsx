@@ -47,7 +47,7 @@ const LoginOptions = ({ navigate }) => {
       >
         Seleccione su tipo de cuenta
       </motion.h2>
-      <div className="grid md:grid-cols-2 gap-4 md:gap-8">
+      <div className="flex justify-center items-center ">
         <LoginCard
           title="Usuario Regular"
           description="Para estudiantes y público en general"
@@ -56,13 +56,13 @@ const LoginOptions = ({ navigate }) => {
           signUpPath="/sign-up"
           navigate={navigate}
         />
-        <LoginCard
+        {/* <LoginCard
           title="Usuario Institucional"
           description="Para personal de la institución"
           icon={<LiaUniversitySolid className="h-6 w-6" />}
           loginPath="/login-institucional"
           navigate={navigate}
-        />
+        /> */}
       </div>
     </div>
   );
@@ -81,7 +81,7 @@ const LoginCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4"
+      className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-4 w-full max-w-sm"
     >
       <div className="mb-2">
         <h3 className="flex items-center justify-center gap-2 text-lg md:text-xl font-bold text-gray-900 dark:text-white">

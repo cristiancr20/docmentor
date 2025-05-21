@@ -5,6 +5,7 @@ import { getTutors } from "../core/Projects";
 import { motion } from "framer-motion";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
 import PropTypes from "prop-types";
+import { decryptData } from "../utils/encryption";
 
 const EditProject = ({ project, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,15 @@ const EditProject = ({ project, onClose, onUpdate }) => {
     tutor: "", // Asegúrate de que esto esté alineado con tus datos
   });
   const [tutores, setTutores] = useState([]);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const encryptedUserData = localStorage.getItem("userData");
+    if (encryptedUserData) {
+      const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+      setUserData(decryptedUserData);
+    }
+  }, []);
 
   useEffect(() => {
     if (project) {
@@ -23,15 +33,19 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       });
     }
 
-    obtenerTutors();
-  }, [project]);
+    if (userData) {
+      obtenerTutors();
+    }
+  }, [project, userData]);
 
   const obtenerTutors = async () => {
     try {
-      const response = await getTutors();
+      if (!userData) return;
+      const response = await getTutors(userData.isInstitutional);
       setTutores(response);
     } catch (error) {
       console.error("Error al obtener la lista de tutores:", error);
+      errorAlert("Error al cargar la lista de tutores");
     }
   };
 

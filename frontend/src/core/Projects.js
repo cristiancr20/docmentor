@@ -81,7 +81,7 @@ export const getProjectById = async (projectId) => {
   }
 };
 
-/* export const getProjectsByTutor = async (userEmail) => {
+export const getProjectsByTutor = async (userEmail) => {
   try {
     const response = await axios.get(
       `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
@@ -92,31 +92,30 @@ export const getProjectById = async (projectId) => {
     }
 
     // Extraer los proyectos correctamente
-    const tutorData = response.data[0]; // Accede al primer usuario encontrado
-    const projects = tutorData.project_ts || []; // Extraer proyectos
+    const data = response.data[0]; // Accede al primer usuario encontrado
+    const projects = data.project_ts || []; // Extraer proyectos
 
     return projects;
   } catch (error) {
     console.error("Error fetching projects by tutor email:", error);
     throw error;
   }
-}; */
+};
 
 
-
+/* OBTENER LOS PROYECTOS POR ESTUDIANTE */
 export const getProjectsByEmail = async (userEmail) => {
   try {
     const response = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
+      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_es.tutor,project_es.students`
     );
     // Verificar si la respuesta contiene datos
     if (!response.data || response.data.length === 0) {
       throw new Error("Tutor no encontrado o sin proyectos asignados");
     }
-
     // Extraer los proyectos correctamente
-    const tutorData = response.data[0]; // Accede al primer usuario encontrado
-    const projects = tutorData.project_ts || []; // Extraer proyectos
+    const data = response.data[0]; // Accede al primer usuario encontrado
+    const projects = data.project_es || []; // Extraer proyectos
 
     return projects;
   } catch (error) {
@@ -147,13 +146,9 @@ export const getUserByEmail = async (email) => {
     );
 
     const users = response.data;
-    console.log("users", users);
 
     if (users.length > 0) {
-      return {
-        id: users[0].id,
-        isInstitutional: users[0].isInstitutional || false, // Asegurar que tenga valor
-      };
+      return (users)
     }
 
     return null;

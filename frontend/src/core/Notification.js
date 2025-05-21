@@ -11,6 +11,7 @@ export const getNotifications = async (token) => {
     });
     
     if (response.status === 200) {
+
       return response.data.data; // Devuelve los datos de las notificaciones
     } else {
       console.warn(`Error en la respuesta del servidor: ${response.status} ${response.statusText}`);

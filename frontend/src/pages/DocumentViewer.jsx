@@ -47,8 +47,6 @@ const DocumentoViewer = () => {
     console.log("No se encontró el userData en localStorage");
   }
 
-  console.log("Rol: ", rol);
-
   useEffect(() => {
     fetchDocument();
     fetchComments();
