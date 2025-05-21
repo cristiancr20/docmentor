@@ -136,10 +136,14 @@ const Navbar = () => {
         const documentId = notification.attributes.documents.data[0].id;
         navigate(`/document/${documentId}`);
       } else if (notification.attributes?.project?.data?.id) {
-        navigate(`/project/${notification.attributes.project.data.id}`);
+        const projectId = notification.attributes.project.data.id;
+        navigate(`/project/${projectId}`);
+      } else {
+        console.log("No se encontró documento o proyecto para redirigir");
       }
     } catch (error) {
       console.error("Error al marcar la notificación como leída:", error);
+      errorAlert("Error al procesar la notificación");
     }
   };
 
