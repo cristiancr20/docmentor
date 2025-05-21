@@ -16,7 +16,7 @@ module.exports = [
     name: 'strapi::cors',
     config: {
       origin: process.env.NODE_ENV === 'production'
-        ? ['https://docmentor-ten.vercel.app/']
+        ? ['https://docmentor-ten.vercel.app']
         : ['http://localhost:3000'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
