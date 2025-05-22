@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { API_URL } from "../core/config.js";
+import { compareDocumentsAlert } from "./Alerts/Alerts";
 
 import { diffWords } from "diff";
 import * as pdfjsLib from "pdfjs-dist";
@@ -39,6 +40,7 @@ const DocumentComparePopup = ({
 
   useEffect(() => {
     getHighlightedAreas();
+    console.log(nameDocumento1, nameDocumento2);
   }, [documento1, documento2]);
 
   const handlePrevious = () => {
@@ -108,9 +110,18 @@ const DocumentComparePopup = ({
       const text1 = await extractTextAndPositions(documento1);
       const text2 = await extractTextAndPositions(documento2);
 
-      // Combinar el texto en un solo string por documento
-      const text1Str = text1.map((item) => item.text).join(" ");
-      const text2Str = text2.map((item) => item.text).join(" ");
+      // Función para normalizar el texto (eliminar guiones y espacios extra)
+      const normalizeText = (text) => {
+        return text
+          .replace(/(\w+)-\s*(\w+)/g, '$1$2') // Elimina guiones entre palabras
+          .replace(/\s*-\s*/g, '') // Elimina guiones sueltos
+          .replace(/\s+/g, ' ') // Reemplaza múltiples espacios por uno solo
+          .trim();
+      };
+
+      // Combinar el texto en un solo string por documento y normalizarlo
+      const text1Str = normalizeText(text1.map((item) => item.text).join(" "));
+      const text2Str = normalizeText(text2.map((item) => item.text).join(" "));
 
       // Encuentra las diferencias entre los documentos
       const differences = diffWords(text1Str, text2Str);
@@ -122,21 +133,30 @@ const DocumentComparePopup = ({
           result.push({
             type: "added",
             value: part.value.trim(),
-            document: nameDocumento2, // Este texto fue agregado en el Documento 2
+            document: nameDocumento2,
           });
         } else if (part.removed) {
           result.push({
             type: "removed",
             value: part.value.trim(),
-            document: nameDocumento1, // Este texto fue eliminado del Documento 2
+            document: nameDocumento1,
           });
         }
       });
 
       // Actualizar el estado con las diferencias procesadas
       setDifferences(result);
+
+      // Mostrar alerta según si se encontraron diferencias o no
+      if (result.length > 0) {
+        compareDocumentsAlert("Se encontraron diferencias entre los documentos", true);
+      } else {
+        compareDocumentsAlert("No se encontraron diferencias entre los documentos", false);
+      }
+
     } catch (error) {
       console.error("Error comparando documentos:", error);
+      compareDocumentsAlert("Error al comparar los documentos", false);
     } finally {
       setIsComparing(false);
     }
@@ -301,25 +321,37 @@ const DocumentComparePopup = ({
             </p>
 
             {/* Sección de instrucciones */}
-            <div className="bg-gray-700 p-4 rounded-lg border border-red-300">
+            <div className="bg-gray-700 p-3 rounded-lg border border-red-300">
               <h4 className="text-md font-semibold mb-2 text-yellow-600">
                 Instrucciones
               </h4>
-              <ul className="list-disc list-inside text-sm text-white">
-                <li className="flex items-center mb-2">
-                  <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
-                  Secciones señaladas para corrección.
-                </li>
-                <li className="flex items-center mb-2">
-                  <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
-                  Texto eliminado.
-                </li>
-                <li className="flex items-center">
-                  <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
-                  Texto agregado.
-                </li>
-              </ul>
+              <div className="grid grid-cols-2 gap-2">
+                <ul className="list-disc list-inside text-sm text-white">
+                  <li className="flex items-center mb-1">
+                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                    Secciones señaladas para corrección.
+                  </li>
+                  <li className="flex items-center mb-1">
+                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    Texto eliminado.
+                  </li>
+                  <li className="flex items-center mb-1">
+                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    Texto agregado.
+                  </li>
+                </ul>
+                <div className="text-sm text-white">
+                  <p className="mb-1">
+                    <span className="text-green-400">Verde (Agregado):</span> Texto que está en el documento más reciente (derecha) pero no en el anterior (izquierda).
+                  </p>
+                  <p className="mb-1">
+                    <span className="text-red-400">Rojo (Eliminado):</span> Texto que estaba en el documento anterior (izquierda) pero no en el más reciente (derecha).
+                  </p>
+                </div>
+              </div>
             </div>
+
+            
           </motion.div>
         </div>
 

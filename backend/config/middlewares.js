@@ -3,14 +3,14 @@ module.exports = [
   'strapi::errors',
   'strapi::security',
   /*  'strapi::cors', */
-  /* {
+  /*  {
     name: 'strapi::cors',
     config: {
       origin: ['http://localhost:3000'], // Cambia esto por la URL de tu frontend
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
     },
-  }, */
+  },  */
 
   {
     name: 'strapi::cors',
