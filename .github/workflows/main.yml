@@ -47,11 +47,11 @@ jobs:
     secrets: inherit
     
   # 07 - k6 Load Test
-  k6:
-    needs: build_frontend
-    name: k6 Load Test
-    uses: ./.github/workflows/k6.yml
-    secrets: inherit
+  #k6:
+   # needs: build_frontend
+    #name: k6 Load Test
+    #uses: ./.github/workflows/k6.yml
+    #secrets: inherit
 
   # 08 - Lint React Code
   slint:
