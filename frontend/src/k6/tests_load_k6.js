@@ -31,7 +31,7 @@ endpoints.forEach(endpoint => {
     responseTimeByEndpoint[endpoint] = new Trend(`response_time_${metricName}`);
 });
 
-const BASE_URL = 'https://revisor-documental-production.up.railway.app';
+const BASE_URL = 'https://docmentor-production.up.railway.app';
 
 export const options = {
     // TEST 1
