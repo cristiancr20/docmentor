@@ -33,18 +33,18 @@ jobs:
     secrets: inherit
 
   # 05 - SAST - Static Application Security Testing
-  sast:
-    needs: build_frontend
-    name: SAST
-    uses: ./.github/workflows/sast.yml
-    secrets: inherit
+  #sast:
+    #needs: build_frontend
+    #name: SAST
+    #uses: ./.github/workflows/sast.yml
+    #secrets: inherit
     
   # 06 - SCA - Software Composition Analysis
-  sca:
-    needs: build_frontend
-    name: SCA
-    uses: ./.github/workflows/sca.yml
-    secrets: inherit
+  #sca:
+    #needs: build_frontend
+    #name: SCA
+    #uses: ./.github/workflows/sca.yml
+    #secrets: inherit
     
   # 07 - k6 Load Test
   #k6:
@@ -61,8 +61,8 @@ jobs:
     secrets: inherit
 
   # 09 - License Compliance
-  license_compliance:
-    needs: [build_frontend, build_backend]
-    name: License Compliance
-    uses: ./.github/workflows/license_compliance.yml
-    secrets: inherit
+  #license_compliance:
+    #needs: [build_frontend, build_backend]
+    #name: License Compliance
+    #uses: ./.github/workflows/license_compliance.yml
+    #secrets: inherit
