@@ -3,10 +3,10 @@
   "sessionId": "e00f3f87-ccde-46e6-9784-2e62a20fd68c",
   "status": "running",
   "startedAt": "2026-07-11T14:25:16.597Z",
-  "updatedAt": "2026-07-11T14:28:42.909Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-07-11T14:30:46.761Z",
+  "currentIteration": 1,
   "maxIterations": 0,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -17,8 +17,8 @@
       {
         "id": "US-001",
         "title": "Crear modelo de Roles en Base de Datos",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-002",
@@ -118,7 +118,18 @@
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "US-001",
+      "taskTitle": "Crear modelo de Roles en Base de Datos",
+      "taskCompleted": true,
+      "durationMs": 129362,
+      "startedAt": "2026-07-11T14:26:33.545Z",
+      "endedAt": "2026-07-11T14:28:42.907Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/cristian/orca/docmentor",
   "activeTaskIds": [],

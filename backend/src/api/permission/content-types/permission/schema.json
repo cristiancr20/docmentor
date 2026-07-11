@@ -1,17 +1,17 @@
 {
   "kind": "collectionType",
-  "collectionName": "rols",
+  "collectionName": "permissions",
   "info": {
-    "singularName": "rol",
-    "pluralName": "rols",
-    "displayName": "Rol"
+    "singularName": "permission",
+    "pluralName": "permissions",
+    "displayName": "Permission"
   },
   "options": {
     "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
-    "name": {
+    "code": {
       "type": "string",
       "required": true,
       "unique": true
@@ -19,21 +19,18 @@
     "description": {
       "type": "text"
     },
+    "module": {
+      "type": "string"
+    },
     "isActive": {
       "type": "boolean",
       "default": true
     },
-    "users": {
+    "rols": {
       "type": "relation",
       "relation": "manyToMany",
-      "target": "plugin::users-permissions.user",
-      "mappedBy": "rols"
-    },
-    "permissions": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::permission.permission",
-      "inversedBy": "rols"
+      "target": "api::rol.rol",
+      "mappedBy": "permissions"
     }
   }
 }

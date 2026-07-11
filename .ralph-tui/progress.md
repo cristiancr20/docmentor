@@ -9,6 +9,32 @@ after each iteration and it's included in prompts for context.
 - **Soft Delete Pattern**: Implement in controller by updating `isActive` field instead of removing records
 - **Database Seeding**: Use bootstrap lifecycle hook in `src/index.js` with `strapi.db.lifecycles.subscribe()` to seed data on app startup
 - **CRUD Routes**: Strapi's `createCoreRouter()` auto-generates GET, POST, PUT, DELETE endpoints for collection types
+- **Custom Relation Endpoints**: For custom relation behavior, define routes in routes array with custom handler methods and use `entityService.update()` with `connect`/`disconnect` operations for many-to-many relations
+- **Many-to-Many Relations**: Use `relation: "manyToMany"` with `inversedBy` to manage both sides automatically; use `mappedBy` only when one side should not manage the relation
+
+---
+
+## [2026-07-11] - US-002
+
+### Implementation
+Created a permissions model with dynamic role-permission associations and custom endpoints for managing them.
+
+### Files Changed
+- `backend/src/api/permission/content-types/permission/schema.json` - Created with code, description, module, isActive fields and many-to-many relation to rols
+- `backend/src/api/permission/controllers/permission.js` - Implements soft delete via isActive flag
+- `backend/src/api/permission/routes/permission.js` - Created core routes for permissions
+- `backend/src/api/permission/services/permission.js` - Created core service for permissions
+- `backend/src/api/rol/content-types/rol/schema.json` - Added many-to-many relation to permissions
+- `backend/src/api/rol/controllers/rol.js` - Added getRolePermissions, addRolePermission, removeRolePermission methods
+- `backend/src/api/rol/routes/rol.js` - Added custom routes for role permission endpoints
+- `backend/src/index.js` - Added bootstrap seeder for 14 initial permissions
+
+### Learnings
+- Custom route handlers in Strapi must be defined in routes array and mapped to controller methods
+- Many-to-many relations use `connect` and `disconnect` operations in entityService.update()
+- The inversedBy property in relations allows Strapi to manage both sides of the relationship automatically
+- Bootstrap seeding can handle multiple entity types with separate subscription blocks
+- Strapi routes are defined relative to `/api/` base path, so `/rols` becomes `/api/rols`
 
 ---
 

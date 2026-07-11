@@ -35,5 +35,34 @@ module.exports = {
         }
       },
     });
+
+    strapi.db.lifecycles.subscribe({
+      models: ['api::permission.permission'],
+      async afterCreate() {
+        const existingPermissions = await strapi.entityService.findMany('api::permission.permission');
+        if (existingPermissions.length === 0) {
+          const initialPermissions = [
+            { code: 'view_project', description: 'Ver proyectos', module: 'projects', isActive: true },
+            { code: 'create_project', description: 'Crear proyectos', module: 'projects', isActive: true },
+            { code: 'edit_project', description: 'Editar proyectos', module: 'projects', isActive: true },
+            { code: 'delete_project', description: 'Eliminar proyectos', module: 'projects', isActive: true },
+            { code: 'view_document', description: 'Ver documentos', module: 'documents', isActive: true },
+            { code: 'create_document', description: 'Crear documentos', module: 'documents', isActive: true },
+            { code: 'edit_document', description: 'Editar documentos', module: 'documents', isActive: true },
+            { code: 'delete_document', description: 'Eliminar documentos', module: 'documents', isActive: true },
+            { code: 'comment_document', description: 'Comentar en documentos', module: 'documents', isActive: true },
+            { code: 'approve_document', description: 'Aprobar documentos', module: 'documents', isActive: true },
+            { code: 'view_users', description: 'Ver usuarios', module: 'users', isActive: true },
+            { code: 'manage_users', description: 'Gestionar usuarios', module: 'users', isActive: true },
+            { code: 'manage_roles', description: 'Gestionar roles', module: 'roles', isActive: true },
+            { code: 'manage_permissions', description: 'Gestionar permisos', module: 'roles', isActive: true },
+          ];
+
+          for (const permission of initialPermissions) {
+            await strapi.entityService.create('api::permission.permission', { data: permission });
+          }
+        }
+      },
+    });
   },
 };
