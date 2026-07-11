@@ -199,8 +199,6 @@ export const copyDocumentAsNewVersion = async (documentId) => {
       throw new Error("Error al crear la nueva versión.");
     }
 
-    const newDocumentId = newResponse.data.data.id;
-
     // Actualizar la versión anterior para que ya no sea la actual
     await axios.put(`${API_URL}/api/documents/${documentId}`, {
       data: { isCurrent: false },

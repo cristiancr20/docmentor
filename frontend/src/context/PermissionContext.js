@@ -91,8 +91,14 @@ export const PermissionProvider = ({ children }) => {
     }
   }, [user, authLoading, fetchPermissions]);
 
+  const hasPermission = useCallback(
+    (permissionCode) => permissions.includes(permissionCode),
+    [permissions]
+  );
+
   const value = {
     permissions,
+    hasPermission,
     loading,
     error,
     refresh: fetchPermissions,

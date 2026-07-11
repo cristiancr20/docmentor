@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import Keycloak from "keycloak-js";
+import PropTypes from "prop-types";
 import { decryptData, encryptData } from "../utils/encryption";
 
 const AuthContext = createContext();
@@ -7,7 +7,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [keycloak, setKeycloak] = useState(null);
+  const [keycloak] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -130,4 +130,8 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+AuthProvider.propTypes = {
+  children: PropTypes.node,
 };

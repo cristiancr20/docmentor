@@ -4,7 +4,6 @@ import {
   createProject,
   getTutors,
   getUserByEmail,
-  getUserById,
 } from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { motion } from "framer-motion";

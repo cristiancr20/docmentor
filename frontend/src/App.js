@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import {
   Routes,
   Route,
@@ -52,6 +53,13 @@ const ProtectedRoute = ({ requiredRole }) => {
   }
 
   return <Outlet />;
+};
+
+ProtectedRoute.propTypes = {
+  requiredRole: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.arrayOf(PropTypes.string),
+  ]),
 };
 
 

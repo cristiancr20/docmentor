@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LiaUniversitySolid } from "react-icons/lia";
+import PropTypes from "prop-types";
 import { CiUser } from "react-icons/ci";
 import { ArrowRight } from "lucide-react";
 
@@ -111,6 +111,19 @@ const LoginCard = ({
       </div>
     </motion.div>
   );
+};
+
+LoginOptions.propTypes = {
+  navigate: PropTypes.func,
+};
+
+LoginCard.propTypes = {
+  title: PropTypes.string,
+  description: PropTypes.string,
+  icon: PropTypes.node,
+  loginPath: PropTypes.string,
+  signUpPath: PropTypes.string,
+  navigate: PropTypes.func,
 };
 
 export default Dashboard;

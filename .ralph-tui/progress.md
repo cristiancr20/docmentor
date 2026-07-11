@@ -18,7 +18,38 @@ after each iteration and it's included in prompts for context.
 - **Admin CRUD over Plugin Users**: To manage users-permissions users with custom rules (soft delete, permission gates, audit), add controller methods in `backend/src/extensions/users-permissions/controllers/User.js` + routes in `extensions/users-permissions/routes/index.js` (config: { auth: false }, auth handled by the custom authenticate/authorize utils); sanitize output manually (entityService returns private fields like password)
 - **Authenticated Frontend API Calls**: JWT is stored AES-encrypted in localStorage under "jwtToken"; build a `getAuthHeaders()` helper that calls `decryptData()` from utils/encryption and returns `{ Authorization: Bearer <token> }` — required for any endpoint protected by the custom authenticate util (audit logs, settings mutations, admin user CRUD)
 - **File Download from Protected Endpoint**: axios GET with `responseType: "blob"` + auth headers, then create an object URL and a temporary `<a download>` link to trigger the browser download
+- **Dynamic Permission Checks in Components**: use `const { hasPermission } = usePermission()` and `{hasPermission("CODE") && <Btn/>}` for action buttons; `<PermissionGate permission="CODE">` for declarative blocks; `<AccessDenied/>` (components/AccessDenied.jsx) for consistent denied messages. Keep role checks ONLY for route-level protection (ProtectedRoute in App.js) and post-login routing (ROLE_ROUTES) — routes are role-scoped, capabilities are permission-scoped
+- **Testing Permission-Gated Components**: `jest.mock("../../context/PermissionContext", () => ({ usePermission: jest.fn() }))` then `usePermission.mockReturnValue({ permissions, hasPermission: c => permissions.includes(c), ... })` per test. CRA sets `resetMocks: true`, so mock implementations defined inside `jest.mock` factories (and jest-localstorage-mock impls) are wiped between tests — configure `mockImplementation`/`mockResolvedValue` inside `beforeEach`, not in the factory
 
+---
+
+## [2026-07-11] - US-014
+
+### Implementation
+Replaced all hardcoded role checks (`rol?.includes("tutor")`, `checkUserRole(userData, "superadmin")`, `rol === "estudiante"`, etc.) in frontend components with dynamic permission checks via `hasPermission(CODE)` from PermissionContext. Added a shared AccessDenied component for consistent denied messages, fixed a critical backend bug that made the permission endpoint always return empty, seeded Tutor/Estudiante role permissions, and added permission tests for critical components.
+
+### Files Changed
+- `backend/src/extensions/users-permissions/controllers/User.js` - **Bug fix**: getMyPermissions populated a nonexistent `rol` relation (user schema defines `rols` many-to-many), so it always returned `[]` and every frontend permission gate was silently hidden; now populates `rols` and merges unique active permission codes across all roles (same shape the authorize util uses)
+- `backend/src/index.js` - Seeder now assigns permissions to ALL roles via a role→codes map: Estudiante (VIEW/CREATE/UPDATE/DELETE_PROJECT, VIEW/CREATE_DOCUMENT), Tutor (VIEW_PROJECT, CHANGE_PROJECT_STATUS, VIEW/REVIEW/APPROVE/COMMENT_DOCUMENT, MANAGE_COMMENTS, MANAGE_NOTIFICATIONS), Coordinador (unchanged), Admin (all)
+- `frontend/src/context/PermissionContext.js` - Added `hasPermission(code)` callback to the context value (the `{hasPermission("X") && <Btn/>}` API)
+- `frontend/src/components/AccessDenied.jsx` - New shared component (exports ACCESS_DENIED_MESSAGE) for consistent "Acceso denegado" messaging
+- `frontend/src/pages/ProyectoDetalle.jsx` - Removed local role-based hasPermission fn + localStorage rol decrypt; "Nueva Versión" and PDF button gated by REVIEW_DOCUMENT, "Subir Nuevo Documento" by CREATE_DOCUMENT, back-link route and tutor/students info panel derived from REVIEW_DOCUMENT/CREATE_DOCUMENT
+- `frontend/src/pages/DocumentViewer.jsx` - "Marcar como Revisado" gated by APPROVE_DOCUMENT, canComment by COMMENT_DOCUMENT (was tutor||superadmin)
+- `frontend/src/components/CommentsPanel.jsx` - Comment edit/delete gated by MANAGE_COMMENTS (was tutor||superadmin)
+- `frontend/src/components/ProjectsTable.jsx` - Edit button gated by UPDATE_PROJECT, delete by DELETE_PROJECT (was rol === "estudiante")
+- `frontend/src/components/Navbar.jsx` - Removed checkUserRole; reviewer menu = REVIEW_DOCUMENT, student menu = CREATE_PROJECT && !REVIEW_DOCUMENT (preserves superadmin seeing only reviewer menu), notifications bell = MANAGE_NOTIFICATIONS, Administración link = MANAGE_USERS||MANAGE_ROLES||MANAGE_SETTINGS; notifications now load in an effect keyed on token+permission; fixed undefined errorAlert
+- `frontend/src/pages/AuditLogs.jsx` - Page-level VIEW_AUDIT_LOGS gate rendering AccessDenied (waits for permission loading to avoid flashing denied)
+- `frontend/src/components/__tests__/` - 15 passing tests: PermissionGate (single/OR/AND/fallback), AccessDenied (consistent message), ProjectsTable, CommentsPanel, Navbar permission gating
+- `frontend/eslint.config.mjs` - jest globals for test files, ignore vendored src/k6/**, jsx-runtime config (project uses automatic runtime), process global
+- Lint cleanup in App.js, AuthContext.js, Dashboard.jsx, DocumentComparePopup.jsx, NewProject.jsx, Document.js, LoginInstitucional.jsx, ViewProjectsStudents.jsx — `npm run lint` now passes with 0 errors (was 84 pre-existing)
+
+### Learnings
+- **Critical**: user schema has `rols` (manyToMany to api::rol.rol); any populate of `rol` silently yields nothing — getMyPermissions had this bug since US-009, meaning permission gates added in US-010..US-013 never showed for anyone
+- Administration.jsx was already fully permission-driven (usePermissionCheck + PermissionGate) — no role checks to replace there
+- Role checks intentionally KEPT: ProtectedRoute requiredRole in App.js (routes are role-scoped), LoginInstitucional post-login routing, NewProject student-list filtering by rolType (data filter, not access control)
+- Navbar menu parity trick: superadmin has ALL permissions, so student menu must be `CREATE_PROJECT && !REVIEW_DOCUMENT` to avoid showing both menus (matches old tutor||superadmin behavior)
+- CRA jest `resetMocks: true` (default) wipes implementations set in jest.mock factories AND jest-localstorage-mock — set implementations in beforeEach
+- eslint flat config: adding `pluginReact.configs.flat["jsx-runtime"]` makes `import React` flag as no-unused-vars; allow via `varsIgnorePattern: "^React$"` instead of touching 30 files
 ---
 
 ## [2026-07-11] - US-013

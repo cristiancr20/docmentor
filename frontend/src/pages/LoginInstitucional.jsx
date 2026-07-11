@@ -5,7 +5,7 @@ import {
   loginErrorAlert,
 } from "../components/Alerts/Alerts";
 import { motion } from "framer-motion";
-import { getPrimaryRole, ROLE_ROUTES } from "../utils/auth.utils";
+import { ROLE_ROUTES } from "../utils/auth.utils";
 import { useAuth } from "../context/AuthContext";
 import { syncUserWithStrapi } from "../core/Autentication";
 

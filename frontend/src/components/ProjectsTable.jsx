@@ -8,8 +8,8 @@ import { motion } from "framer-motion";
 import PropTypes from "prop-types";
 
 import Swal from "sweetalert2";
-import { decryptData } from "../utils/encryption";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
+import { usePermission } from "../context/PermissionContext";
 
 const ProjectsTable = ({
   projects,
@@ -34,18 +34,7 @@ const ProjectsTable = ({
     return dateB - dateA; // Orden descendente (más reciente primero)
   });
 
-  const encryptedUserData = localStorage.getItem("userData");
-  let rol = null;
-
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rol;
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
+  const { hasPermission } = usePermission();
 
   const handleDelete = async (projectId) => {
     // Muestra la alerta de confirmación antes de eliminar
@@ -161,24 +150,24 @@ const ProjectsTable = ({
                         <FaEye className="text-blue-600 text-lg" title="Ver" />
                       </Link>
 
-                      {rol === "estudiante" && (
-                        <>
-                          <button
-                            className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                            onClick={() => handleEdit(project.id)}
-                            title="Editar"
-                          >
-                            <FaPen className="text-yellow-600 text-lg" />
-                          </button>
+                      {hasPermission("UPDATE_PROJECT") && (
+                        <button
+                          className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                          onClick={() => handleEdit(project.id)}
+                          title="Editar"
+                        >
+                          <FaPen className="text-yellow-600 text-lg" />
+                        </button>
+                      )}
 
-                          <button
-                            className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                            onClick={() => handleDelete(project.id)}
-                            title="Eliminar"
-                          >
-                            <MdDelete className="text-red-600 text-lg" />
-                          </button>
-                        </>
+                      {hasPermission("DELETE_PROJECT") && (
+                        <button
+                          className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+                          onClick={() => handleDelete(project.id)}
+                          title="Eliminar"
+                        >
+                          <MdDelete className="text-red-600 text-lg" />
+                        </button>
                       )}
                     </td>
                   )}

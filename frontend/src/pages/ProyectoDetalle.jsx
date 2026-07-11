@@ -10,11 +10,10 @@ import { warningAlert } from "../components/Alerts/Alerts";
 import GeneratePdfButton from "../components/GeneratePdfButton";
 
 import DocumentComparePopup from "../components/DocumentComparePopup";
-import { decryptData } from "../utils/encryption";
 import ProjectsTable from "../components/ProjectsTable";
 import Header from "../components/Header";
 import { IoArrowBack } from "react-icons/io5";
-import { useAuth } from "../context/AuthContext"; 
+import { usePermission } from "../context/PermissionContext";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -23,27 +22,12 @@ const ProyectoDetalle = () => {
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
-  let rol = null;
   const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(documents.length - 2);
-  const { user } = useAuth(); // Obtiene el usuario autenticado
+  const { hasPermission } = usePermission();
 
-  // Función para verificar si el usuario tiene el rol adecuado
-  const hasPermission = (roles) => {
-    return roles?.includes("tutor") || roles?.includes("superadmin");
-  };
-
-  const encryptedUserData = localStorage.getItem("userData");
-
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rol;
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
+  const canReviewDocuments = hasPermission("REVIEW_DOCUMENT");
+  const canUploadDocuments = hasPermission("CREATE_DOCUMENT");
 
   useEffect(() => {
     fetchProject();
@@ -190,7 +174,7 @@ const ProyectoDetalle = () => {
           )}
   
           {/* Botón para crear nueva versión */}
-          {hasPermission(user?.rols) && (
+          {hasPermission("REVIEW_DOCUMENT") && (
             <button
               onClick={() => copyDocumentNewVersion(doc.id)}
               className="bg-red-800 text-white px-3 py-1 rounded hover:bg-red-700"
@@ -210,19 +194,9 @@ const ProyectoDetalle = () => {
       <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
         {error && <p className="text-red-500 mb-4">{error}</p>}
         <div className="flex items-center space-x-3 m-2">
-                {rol === "estudiante" && (
+                {(canReviewDocuments || canUploadDocuments) && (
                   <Link
-                    to="/student/projects/view"
-                    className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  >
-                    <IoArrowBack className="text-white text-xl mr-2" />
-                    <span className="text-lg font-bold">Volver a los proyectos</span>
-                  </Link>
-                )}
-
-                {rol === "tutor" && (
-                  <Link
-                    to="/tutor/projects/view"
+                    to={canReviewDocuments ? "/tutor/projects/view" : "/student/projects/view"}
                     className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
                     <IoArrowBack className="text-white text-xl mr-2" />
@@ -305,7 +279,7 @@ const ProyectoDetalle = () => {
 
           <div>
             {/* Sección del tutor o estudiante */}
-            {rol === "estudiante" && (
+            {!canReviewDocuments && (
               <>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -346,7 +320,7 @@ const ProyectoDetalle = () => {
               </>
             )}
 
-            {rol === "tutor" && (
+            {canReviewDocuments && (
               <>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -409,7 +383,7 @@ const ProyectoDetalle = () => {
             Historial de Versiones:
           </motion.h2>
 
-          {rol === "estudiante" && (
+          {hasPermission("CREATE_DOCUMENT") && (
             <>
               <motion.button
                 initial={{ opacity: 0, y: 20 }}
@@ -433,7 +407,9 @@ const ProyectoDetalle = () => {
             Comparar Versiones
           </motion.button>
 
-          {rol === "tutor" && <GeneratePdfButton userInfo={attributes} />}
+          {hasPermission("REVIEW_DOCUMENT") && (
+            <GeneratePdfButton userInfo={attributes} />
+          )}
 
           <AnimatePresence>
             {isShowComparePopupOpen && (

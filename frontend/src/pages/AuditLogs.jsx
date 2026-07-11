@@ -4,9 +4,12 @@ import Navbar from "../components/Navbar";
 import Header from "../components/Header";
 import { getAuditLogs } from "../core/Audit";
 import { motion } from "framer-motion";
+import { usePermission } from "../context/PermissionContext";
+import AccessDenied from "../components/AccessDenied";
 
 function AuditLogs() {
   const navigate = useNavigate();
+  const { hasPermission, loading: permissionsLoading } = usePermission();
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,6 +81,16 @@ function AuditLogs() {
             <p className="text-gray-600">Cargando registros de auditoría...</p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!permissionsLoading && !hasPermission("VIEW_AUDIT_LOGS")) {
+    return (
+      <div className="AuditLogs">
+        <Navbar />
+        <Header />
+        <AccessDenied />
       </div>
     );
   }

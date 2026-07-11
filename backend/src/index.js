@@ -72,27 +72,20 @@ module.exports = {
           const allRoles = await strapi.entityService.findMany('api::rol.rol');
           const allPermissions = await strapi.entityService.findMany('api::permission.permission');
 
-          const coordinatorRole = allRoles.find(r => r.name === 'Coordinador');
-          if (coordinatorRole && allPermissions.length > 0) {
-            const coordinatorPermissions = allPermissions.filter(p =>
-              ['VIEW_PROJECT', 'VIEW_AUDIT_LOGS', 'VIEW_USERS', 'VIEW_DOCUMENT'].includes(p.code)
-            );
+          const rolePermissionMap = {
+            Estudiante: ['VIEW_PROJECT', 'CREATE_PROJECT', 'UPDATE_PROJECT', 'DELETE_PROJECT', 'VIEW_DOCUMENT', 'CREATE_DOCUMENT'],
+            Tutor: ['VIEW_PROJECT', 'CHANGE_PROJECT_STATUS', 'VIEW_DOCUMENT', 'REVIEW_DOCUMENT', 'APPROVE_DOCUMENT', 'COMMENT_DOCUMENT', 'MANAGE_COMMENTS', 'MANAGE_NOTIFICATIONS'],
+            Coordinador: ['VIEW_PROJECT', 'VIEW_AUDIT_LOGS', 'VIEW_USERS', 'VIEW_DOCUMENT'],
+            Admin: allPermissions.map(p => p.code),
+          };
 
-            for (const permission of coordinatorPermissions) {
-              await strapi.entityService.update('api::rol.rol', coordinatorRole.id, {
-                data: {
-                  permissions: {
-                    connect: [permission.id],
-                  },
-                },
-              });
-            }
-          }
+          for (const [roleName, permissionCodes] of Object.entries(rolePermissionMap)) {
+            const role = allRoles.find(r => r.name === roleName);
+            if (!role) continue;
 
-          const adminRole = allRoles.find(r => r.name === 'Admin');
-          if (adminRole && allPermissions.length > 0) {
-            for (const permission of allPermissions) {
-              await strapi.entityService.update('api::rol.rol', adminRole.id, {
+            const rolePermissions = allPermissions.filter(p => permissionCodes.includes(p.code));
+            for (const permission of rolePermissions) {
+              await strapi.entityService.update('api::rol.rol', role.id, {
                 data: {
                   permissions: {
                     connect: [permission.id],

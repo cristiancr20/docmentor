@@ -5,9 +5,9 @@ module.exports = {
     const user = authenticate(ctx, strapi);
     if (!user) return;
 
-    const userWithRole = await strapi.entityService.findOne('plugin::users-permissions.user', user.id, {
+    const userWithRoles = await strapi.entityService.findOne('plugin::users-permissions.user', user.id, {
       populate: {
-        rol: {
+        rols: {
           populate: {
             permissions: true,
           },
@@ -15,18 +15,24 @@ module.exports = {
       },
     });
 
-    if (!userWithRole || !userWithRole.rol) {
+    if (!userWithRoles || !userWithRoles.rols || userWithRoles.rols.length === 0) {
       return ctx.send({ data: [] });
     }
 
-    const permissions = userWithRole.rol.permissions || [];
-    const permissionCodes = permissions
-      .filter(p => p.isActive)
-      .map(p => p.code);
+    const activePermissions = [];
+    const seenCodes = new Set();
+    for (const rol of userWithRoles.rols) {
+      for (const permission of rol.permissions || []) {
+        if (permission.isActive && !seenCodes.has(permission.code)) {
+          seenCodes.add(permission.code);
+          activePermissions.push(permission);
+        }
+      }
+    }
 
     ctx.send({
-      data: permissionCodes,
-      permissions: permissions.filter(p => p.isActive),
+      data: activePermissions.map(p => p.code),
+      permissions: activePermissions,
     });
   },
 

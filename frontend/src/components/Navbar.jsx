@@ -6,6 +6,8 @@ import { decryptData } from "../utils/encryption";
 import { AnimatePresence, motion } from "framer-motion";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { IoLogOut } from "react-icons/io5";
+import { usePermission } from "../context/PermissionContext";
+import { errorAlert } from "./Alerts/Alerts";
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -18,41 +20,19 @@ const Navbar = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const checkUserRole = (userData, roleToCheck) => {
-    if (!userData) return false;
+  const { hasPermission } = usePermission();
 
-    // Verificar en userData.rols (plural)
-    if (userData.rols) {
-      // Si es array
-      if (Array.isArray(userData.rols)) {
-        return userData.rols.includes(roleToCheck);
-      }
-      // Si es string
-      if (typeof userData.rols === "string") {
-        return userData.rols
-          .split(",")
-          .map((r) => r.trim())
-          .includes(roleToCheck);
-      }
-    }
-
-    // Verificar en userData.rol (singular)
-    if (userData.rol) {
-      // Si es array
-      if (Array.isArray(userData.rol)) {
-        return userData.rol.includes(roleToCheck);
-      }
-      // Si es string
-      if (typeof userData.rol === "string") {
-        return userData.rol
-          .split(",")
-          .map((r) => r.trim())
-          .includes(roleToCheck);
-      }
-    }
-
-    return false;
-  };
+  // Menú de revisión (tutores/administradores) vs menú de estudiante,
+  // derivado de permisos dinámicos en lugar de roles hardcodeados
+  const canReviewDocuments = hasPermission("REVIEW_DOCUMENT");
+  const canCreateProjects = hasPermission("CREATE_PROJECT");
+  const canManageNotifications = hasPermission("MANAGE_NOTIFICATIONS");
+  const canAccessAdministration =
+    hasPermission("MANAGE_USERS") ||
+    hasPermission("MANAGE_ROLES") ||
+    hasPermission("MANAGE_SETTINGS");
+  const showReviewerMenu = canReviewDocuments;
+  const showStudentMenu = canCreateProjects && !canReviewDocuments;
 
   const loadNotifications = async (token) => {
     try {
@@ -95,11 +75,6 @@ const Navbar = () => {
         const user = JSON.parse(decryptData(encryptedUserData));
         setUserData(user);
         setToken(jwtToken);
-
-        // Verificar si el usuario es tutor antes de cargar notificaciones
-        if (checkUserRole(user, "tutor")) {
-          await loadNotifications(jwtToken);
-        }
       } catch (error) {
         console.error(
           "Error al procesar los datos del usuario:",
@@ -113,6 +88,13 @@ const Navbar = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Cargar notificaciones solo para usuarios con permiso de gestionarlas
+    if (token && canManageNotifications) {
+      loadNotifications(token);
+    }
+  }, [token, canManageNotifications]);
 
   const handleToggle = (setter) => () => setter((prev) => !prev);
 
@@ -226,9 +208,8 @@ const Navbar = () => {
             <ul className="font-medium flex items-center space-x-8">
               {userData ? (
                 <>
-                  {/* Opciones para los tutores */}
-                  {(checkUserRole(userData, "tutor") ||
-                    checkUserRole(userData, "superadmin")) && (
+                  {/* Opciones para quienes revisan documentos */}
+                  {showReviewerMenu && (
                     <>
                       <motion.li whileHover={{ scale: 1.05 }}>
                         <Link
@@ -251,7 +232,7 @@ const Navbar = () => {
                     </>
                   )}
 
-                  {checkUserRole(userData, "estudiante") && (
+                  {showStudentMenu && (
                     <>
                       <motion.li whileHover={{ scale: 1.05 }}>
                         <Link
@@ -292,7 +273,7 @@ const Navbar = () => {
             </motion.button>
 
             <div className="flex items-center space-x-3">
-              {checkUserRole(userData, "tutor") && (
+              {canManageNotifications && (
                 <div className="relative">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -389,7 +370,7 @@ const Navbar = () => {
                         </span>
                       </div>
                       {/* seccion administrativa */}
-                      {checkUserRole(userData, "superadmin") && (
+                      {canAccessAdministration && (
                         <ul className="py-2">
                           <motion.li whileHover={{ scale: 1.02 }}>
                             <Link
@@ -433,7 +414,7 @@ const Navbar = () => {
             className="absolute w-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-xl md:hidden z-50 rounded-b-2xl border-b border-x border-gray-500 dark:border-gray-700"
           >
             <ul className="flex flex-col p-6 space-y-2">
-              {checkUserRole(userData, "tutor") && (
+              {showReviewerMenu && (
                 <>
                   <motion.li
                     whileHover={{ scale: 1.02, x: 10 }}
@@ -466,7 +447,7 @@ const Navbar = () => {
                 </>
               )}
 
-              {checkUserRole(userData, "estudiante") && (
+              {showStudentMenu && (
                 <>
                   <motion.li
                     whileHover={{ scale: 1.02, x: 10 }}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CommentsPanel from "../components/CommentsPanel";
 import { getDocumentById } from "../core/Document";
@@ -15,7 +15,8 @@ import { API_URL } from "../core/config.js";
 import { decryptData } from "../utils/encryption.js";
 import Header from "../components/Header";
 import { IoArrowBack } from "react-icons/io5";
-import { getUserByEmail, getUserIdByEmail } from "../core/Autentication.js";
+import { getUserByEmail } from "../core/Autentication.js";
+import { usePermission } from "../context/PermissionContext";
 
 
 const DocumentoViewer = () => {
@@ -28,21 +29,19 @@ const DocumentoViewer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [strapiUserId, setStrapiUserId] = useState(null);
   const navigate = useNavigate();
+  const { hasPermission } = usePermission();
 
+  const canApproveDocument = hasPermission("APPROVE_DOCUMENT");
+  const canComment = hasPermission("COMMENT_DOCUMENT");
 
   let tutorEmail = null;
-  let rol = null;
 
   const encryptedUserData = localStorage.getItem("userData");
 
   if (encryptedUserData) {
     // Desencriptar los datos
     const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rols || decryptedUserData.rol;
     tutorEmail = decryptedUserData.email;
-
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -117,7 +116,7 @@ const DocumentoViewer = () => {
 
   const handleAddComment = async (newComment, highlightAreas, quote) => {
     try {
-      const responseComment=await addCommentToDocument(
+      await addCommentToDocument(
         documentId,
         newComment,
         strapiUserId,
@@ -271,8 +270,8 @@ const DocumentoViewer = () => {
             </motion.div>
           </div>
 
-          {/* Botón para tutor */}
-          {(rol.includes("tutor") || rol.includes("superadmin"))&& (
+          {/* Botón para quienes pueden aprobar documentos */}
+          {canApproveDocument && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -310,8 +309,7 @@ const DocumentoViewer = () => {
               fileUrl={documentUrl}
               notes={notes}
               onAddNote={handleAddNote}
-              canComment={(rol.includes("tutor") ||
-                rol.includes("superadmin"))}
+              canComment={canComment}
               selectedHighlightId={selectedHighlightId}
             />
           </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getProjectsByEmail, getProjectsByStudents } from "../core/Projects";
+import { getProjectsByStudents } from "../core/Projects";
 import Navbar from "../components/Navbar";
 import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";

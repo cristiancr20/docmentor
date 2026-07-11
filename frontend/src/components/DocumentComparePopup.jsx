@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import { motion } from "framer-motion";
 import { API_URL } from "../core/config.js";
 import { compareDocumentsAlert } from "./Alerts/Alerts";
@@ -128,7 +129,7 @@ const DocumentComparePopup = ({
       const result = [];
 
       // Procesar diferencias con análisis más preciso
-      differences.forEach((part, index) => {
+      differences.forEach((part) => {
         if (part.added) {
           result.push({
             type: "added",
@@ -317,7 +318,7 @@ const DocumentComparePopup = ({
 
             {/* Mensaje centrado */}
             <p className="col-span-2 text-center text-gray-600">
-              Haz clic en "Comparar" para ver las diferencias.
+              Haz clic en &quot;Comparar&quot; para ver las diferencias.
             </p>
 
             {/* Sección de instrucciones */}
@@ -389,6 +390,13 @@ const DocumentComparePopup = ({
       </div>
     </motion.div>
   );
+};
+
+DocumentComparePopup.propTypes = {
+  documents: PropTypes.array.isRequired,
+  onClose: PropTypes.func,
+  currentIndex: PropTypes.number.isRequired,
+  setCurrentIndex: PropTypes.func,
 };
 
 export default DocumentComparePopup;
