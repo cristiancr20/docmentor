@@ -42,20 +42,23 @@ module.exports = {
         const existingPermissions = await strapi.entityService.findMany('api::permission.permission');
         if (existingPermissions.length === 0) {
           const initialPermissions = [
-            { code: 'view_project', description: 'Ver proyectos', module: 'projects', isActive: true },
-            { code: 'create_project', description: 'Crear proyectos', module: 'projects', isActive: true },
-            { code: 'edit_project', description: 'Editar proyectos', module: 'projects', isActive: true },
-            { code: 'delete_project', description: 'Eliminar proyectos', module: 'projects', isActive: true },
-            { code: 'view_document', description: 'Ver documentos', module: 'documents', isActive: true },
-            { code: 'create_document', description: 'Crear documentos', module: 'documents', isActive: true },
-            { code: 'edit_document', description: 'Editar documentos', module: 'documents', isActive: true },
-            { code: 'delete_document', description: 'Eliminar documentos', module: 'documents', isActive: true },
-            { code: 'comment_document', description: 'Comentar en documentos', module: 'documents', isActive: true },
-            { code: 'approve_document', description: 'Aprobar documentos', module: 'documents', isActive: true },
-            { code: 'view_users', description: 'Ver usuarios', module: 'users', isActive: true },
-            { code: 'manage_users', description: 'Gestionar usuarios', module: 'users', isActive: true },
-            { code: 'manage_roles', description: 'Gestionar roles', module: 'roles', isActive: true },
-            { code: 'manage_permissions', description: 'Gestionar permisos', module: 'roles', isActive: true },
+            { code: 'VIEW_PROJECT', description: 'Ver proyectos', module: 'projects', isActive: true },
+            { code: 'CREATE_PROJECT', description: 'Crear proyectos', module: 'projects', isActive: true },
+            { code: 'UPDATE_PROJECT', description: 'Actualizar proyectos', module: 'projects', isActive: true },
+            { code: 'DELETE_PROJECT', description: 'Eliminar proyectos', module: 'projects', isActive: true },
+            { code: 'VIEW_DOCUMENT', description: 'Ver documentos', module: 'documents', isActive: true },
+            { code: 'CREATE_DOCUMENT', description: 'Crear documentos', module: 'documents', isActive: true },
+            { code: 'UPDATE_DOCUMENT', description: 'Actualizar documentos', module: 'documents', isActive: true },
+            { code: 'DELETE_DOCUMENT', description: 'Eliminar documentos', module: 'documents', isActive: true },
+            { code: 'COMMENT_DOCUMENT', description: 'Comentar en documentos', module: 'documents', isActive: true },
+            { code: 'APPROVE_DOCUMENT', description: 'Aprobar documentos', module: 'documents', isActive: true },
+            { code: 'VIEW_USERS', description: 'Ver usuarios', module: 'users', isActive: true },
+            { code: 'MANAGE_USERS', description: 'Gestionar usuarios', module: 'users', isActive: true },
+            { code: 'MANAGE_ROLES', description: 'Gestionar roles', module: 'roles', isActive: true },
+            { code: 'MANAGE_PERMISSIONS', description: 'Gestionar permisos', module: 'roles', isActive: true },
+            { code: 'MANAGE_SETTINGS', description: 'Gestionar configuración', module: 'settings', isActive: true },
+            { code: 'MANAGE_NOTIFICATIONS', description: 'Gestionar notificaciones', module: 'notifications', isActive: true },
+            { code: 'MANAGE_COMMENTS', description: 'Gestionar comentarios', module: 'comments', isActive: true },
           ];
 
           for (const permission of initialPermissions) {

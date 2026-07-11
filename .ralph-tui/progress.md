@@ -14,6 +14,34 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-003
+
+### Implementation
+Implemented authentication and authorization middleware to validate JWT tokens and check user permissions before executing protected endpoints.
+
+### Files Changed
+- `backend/src/utils/protectedController.js` - Created utility functions for JWT verification and permission checking
+- `backend/src/middleware/authenticate.js` - Created authentication middleware (can be used for global auth)
+- `backend/src/middleware/authorize.js` - Created authorization middleware factory (can be used for policy-based auth)
+- `backend/src/api/project/controllers/project.js` - Added auth checks to create, update, delete methods
+- `backend/src/api/document/controllers/document.js` - Added auth checks to create, update, delete methods
+- `backend/src/api/rol/controllers/rol.js` - Added auth checks to create, update, delete methods and custom permission endpoints
+- `backend/src/api/permission/controllers/permission.js` - Added auth checks to create, update, delete methods
+- `backend/src/api/setting/controllers/setting.js` - Added auth checks to create, update, delete methods
+- `backend/src/api/notification/controllers/notification.js` - Added auth checks to create, update, delete methods
+- `backend/src/api/comment/controllers/comment.js` - Added auth checks to create, update, delete methods
+- `backend/src/index.js` - Updated permission seeder with uppercase permission codes matching middleware requirements
+
+### Learnings
+- Permission validation in Strapi is best implemented at the controller level by wrapping core controller methods
+- JWT verification uses strapi.plugins['users-permissions'].services.jwt.verify()
+- User roles and their permissions are fetched via entityService with populated relations
+- Each protected endpoint should verify JWT token and check required permission against user's role permissions
+- Logging denied access attempts helps with security auditing
+- Permission codes use uppercase convention (e.g., CREATE_PROJECT, UPDATE_PROJECT, MANAGE_ROLES)
+
+---
+
 ## [2026-07-11] - US-002
 
 ### Implementation

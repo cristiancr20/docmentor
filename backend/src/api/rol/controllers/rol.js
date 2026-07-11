@@ -1,9 +1,38 @@
 'use strict';
 
 const { createCoreController } = require('@strapi/strapi').factories;
+const { authenticate, authorize } = require('../../../utils/protectedController');
 
-module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
+const coreController = createCoreController('api::rol.rol');
+
+module.exports = coreController({
+  async create(ctx) {
+    const user = authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
+    if (!hasPermission) return;
+
+    return coreController.create(ctx);
+  },
+
+  async update(ctx) {
+    const user = authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
+    if (!hasPermission) return;
+
+    return coreController.update(ctx);
+  },
+
   async delete(ctx) {
+    const user = authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
+    if (!hasPermission) return;
+
     const { id } = ctx.params;
     await strapi.entityService.update('api::rol.rol', id, {
       data: { isActive: false },
@@ -23,6 +52,12 @@ module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
   },
 
   async addRolePermission(ctx) {
+    const user = authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
+    if (!hasPermission) return;
+
     const { id } = ctx.params;
     const { permissionId } = ctx.request.body;
 
@@ -51,6 +86,12 @@ module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
   },
 
   async removeRolePermission(ctx) {
+    const user = authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
+    if (!hasPermission) return;
+
     const { id, permissionId } = ctx.params;
 
     const rol = await strapi.entityService.findOne('api::rol.rol', id, {
@@ -76,4 +117,4 @@ module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
 
     ctx.body = { data: updatedRol.permissions };
   },
-}));
+});

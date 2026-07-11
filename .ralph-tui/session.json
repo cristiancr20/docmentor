@@ -3,10 +3,10 @@
   "sessionId": "e00f3f87-ccde-46e6-9784-2e62a20fd68c",
   "status": "running",
   "startedAt": "2026-07-11T14:25:16.597Z",
-  "updatedAt": "2026-07-11T14:30:46.761Z",
-  "currentIteration": 1,
+  "updatedAt": "2026-07-11T14:35:28.805Z",
+  "currentIteration": 2,
   "maxIterations": 0,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -23,8 +23,8 @@
       {
         "id": "US-002",
         "title": "Crear modelo de Permisos Dinámicos",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-003",
@@ -128,6 +128,16 @@
       "durationMs": 129362,
       "startedAt": "2026-07-11T14:26:33.545Z",
       "endedAt": "2026-07-11T14:28:42.907Z"
+    },
+    {
+      "iteration": 2,
+      "status": "completed",
+      "taskId": "US-002",
+      "taskTitle": "Crear modelo de Permisos Dinámicos",
+      "taskCompleted": true,
+      "durationMs": 122764,
+      "startedAt": "2026-07-11T14:28:43.996Z",
+      "endedAt": "2026-07-11T14:30:46.760Z"
     }
   ],
   "skippedTaskIds": [],
