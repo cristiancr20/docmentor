@@ -3,10 +3,10 @@
   "sessionId": "e00f3f87-ccde-46e6-9784-2e62a20fd68c",
   "status": "running",
   "startedAt": "2026-07-11T14:25:16.597Z",
-  "updatedAt": "2026-07-11T14:38:42.856Z",
-  "currentIteration": 4,
+  "updatedAt": "2026-07-11T14:41:08.456Z",
+  "currentIteration": 5,
   "maxIterations": 0,
-  "tasksCompleted": 4,
+  "tasksCompleted": 5,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -41,8 +41,8 @@
       {
         "id": "US-005",
         "title": "Agregar Estados de Workflow a Documentos",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-006",
@@ -158,6 +158,16 @@
       "durationMs": 111626,
       "startedAt": "2026-07-11T14:35:29.924Z",
       "endedAt": "2026-07-11T14:37:21.550Z"
+    },
+    {
+      "iteration": 5,
+      "status": "completed",
+      "taskId": "US-005",
+      "taskTitle": "Agregar Estados de Workflow a Documentos",
+      "taskCompleted": true,
+      "durationMs": 79903,
+      "startedAt": "2026-07-11T14:37:22.946Z",
+      "endedAt": "2026-07-11T14:38:42.849Z"
     }
   ],
   "skippedTaskIds": [],

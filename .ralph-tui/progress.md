@@ -14,6 +14,32 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-006
+
+### Implementation
+Created a comprehensive audit logging system that tracks all changes to projects and documents with filtering, pagination, and retention policies.
+
+### Files Changed
+- `backend/src/api/audit/content-types/audit/schema.json` - Added ipAddress field to audit schema
+- `backend/src/api/audit/services/audit.js` - Added logAudit method to log entries with IP capture and getAuditLogs method with filtering/pagination support
+- `backend/src/api/audit/controllers/audit.js` - Added custom find method with VIEW_AUDIT_LOGS permission check, pagination, and filtering by userId, entityType, entityId, startDate, endDate
+- `backend/src/api/project/controllers/project.js` - Added audit logging to create, update, delete, and changeStatus methods with IP address capture
+- `backend/src/api/document/controllers/document.js` - Added audit logging to create, update, delete, and changeStatus methods with IP address capture
+- `backend/src/api/setting/content-types/setting/schema.json` - Added audit_log_retention_days field with default 1825 days (5 years minimum)
+- `backend/src/index.js` - Added VIEW_AUDIT_LOGS permission to initial seeder
+
+### Learnings
+- IP address capture from Koa context: ctx.request.ip or fallback to x-forwarded-for header
+- Service methods can be extended with custom business logic alongside core service methods
+- Audit logging should capture both old and new values as JSON for complete change history
+- Filtering in Strapi queries uses where clauses with operators ($gte, $lte) for date range filtering
+- Permission-based access control extends to custom endpoints (audit logs queryable only by users with VIEW_AUDIT_LOGS)
+- Pagination pattern: use offset/limit (page-1)*pageSize for large result sets
+- Retention policies are configuration values stored in settings, not enforced at schema level (cleanup logic would be separate)
+- Creating audit entries should not fail the main operation, so audit logs are secondary concerns
+
+---
+
 ## [2026-07-11] - US-005
 
 ### Implementation

@@ -17,6 +17,11 @@
     },
     "isActual": {
       "type": "boolean"
+    },
+    "audit_log_retention_days": {
+      "type": "integer",
+      "default": 1825,
+      "min": 1825
     }
   }
 }

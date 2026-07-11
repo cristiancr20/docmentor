@@ -19,7 +19,21 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'CREATE_PROJECT', strapi);
     if (!hasPermission) return;
 
-    return coreController.create(ctx);
+    const result = await coreController.create(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'CREATE_PROJECT',
+      'project',
+      result.data.id,
+      user.id,
+      null,
+      result.data,
+      ipAddress
+    );
+
+    return result;
   },
 
   async update(ctx) {
@@ -29,7 +43,24 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'UPDATE_PROJECT', strapi);
     if (!hasPermission) return;
 
-    return coreController.update(ctx);
+    const { id } = ctx.params;
+    const oldProject = await strapi.entityService.findOne('api::project.project', id);
+
+    const result = await coreController.update(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'UPDATE_PROJECT',
+      'project',
+      id,
+      user.id,
+      oldProject,
+      result.data,
+      ipAddress
+    );
+
+    return result;
   },
 
   async delete(ctx) {
@@ -39,7 +70,24 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'DELETE_PROJECT', strapi);
     if (!hasPermission) return;
 
-    return coreController.delete(ctx);
+    const { id } = ctx.params;
+    const project = await strapi.entityService.findOne('api::project.project', id);
+
+    const result = await coreController.delete(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'DELETE_PROJECT',
+      'project',
+      id,
+      user.id,
+      project,
+      null,
+      ipAddress
+    );
+
+    return result;
   },
 
   async changeStatus(ctx) {
@@ -82,16 +130,17 @@ module.exports = {
       data: { status },
     });
 
-    await strapi.entityService.create('api::audit.audit', {
-      data: {
-        action: 'CHANGE_PROJECT_STATUS',
-        entityType: 'project',
-        entityId: parseInt(id),
-        userId: user.id,
-        oldValue: { status: oldStatus },
-        newValue: { status },
-      },
-    });
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'CHANGE_PROJECT_STATUS',
+      'project',
+      id,
+      user.id,
+      { status: oldStatus },
+      { status },
+      ipAddress
+    );
 
     ctx.body = updatedProject;
   },

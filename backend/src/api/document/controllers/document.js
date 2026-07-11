@@ -19,7 +19,21 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'CREATE_DOCUMENT', strapi);
     if (!hasPermission) return;
 
-    return coreController.create(ctx);
+    const result = await coreController.create(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'CREATE_DOCUMENT',
+      'document',
+      result.data.id,
+      user.id,
+      null,
+      result.data,
+      ipAddress
+    );
+
+    return result;
   },
 
   async update(ctx) {
@@ -29,7 +43,24 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'UPDATE_DOCUMENT', strapi);
     if (!hasPermission) return;
 
-    return coreController.update(ctx);
+    const { id } = ctx.params;
+    const oldDocument = await strapi.entityService.findOne('api::document.document', id);
+
+    const result = await coreController.update(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'UPDATE_DOCUMENT',
+      'document',
+      id,
+      user.id,
+      oldDocument,
+      result.data,
+      ipAddress
+    );
+
+    return result;
   },
 
   async delete(ctx) {
@@ -39,7 +70,24 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'DELETE_DOCUMENT', strapi);
     if (!hasPermission) return;
 
-    return coreController.delete(ctx);
+    const { id } = ctx.params;
+    const document = await strapi.entityService.findOne('api::document.document', id);
+
+    const result = await coreController.delete(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'DELETE_DOCUMENT',
+      'document',
+      id,
+      user.id,
+      document,
+      null,
+      ipAddress
+    );
+
+    return result;
   },
 
   async changeStatus(ctx) {
@@ -75,9 +123,22 @@ module.exports = {
       return ctx.badRequest(`Transición no permitida de ${currentStatus} a ${status}`);
     }
 
+    const oldStatus = document.status;
     const updatedDocument = await strapi.entityService.update('api::document.document', id, {
       data: { status },
     });
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'CHANGE_DOCUMENT_STATUS',
+      'document',
+      id,
+      user.id,
+      { status: oldStatus },
+      { status },
+      ipAddress
+    );
 
     ctx.send({ data: updatedDocument });
   },

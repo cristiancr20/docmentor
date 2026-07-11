@@ -37,6 +37,9 @@
     "timestamp": {
       "type": "datetime",
       "default": "$now"
+    },
+    "ipAddress": {
+      "type": "string"
     }
   }
 }

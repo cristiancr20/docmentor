@@ -61,6 +61,7 @@ module.exports = {
             { code: 'MANAGE_SETTINGS', description: 'Gestionar configuración', module: 'settings', isActive: true },
             { code: 'MANAGE_NOTIFICATIONS', description: 'Gestionar notificaciones', module: 'notifications', isActive: true },
             { code: 'MANAGE_COMMENTS', description: 'Gestionar comentarios', module: 'comments', isActive: true },
+            { code: 'VIEW_AUDIT_LOGS', description: 'Ver registros de auditoría', module: 'audit', isActive: true },
           ];
 
           for (const permission of initialPermissions) {
