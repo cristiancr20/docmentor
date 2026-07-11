@@ -97,6 +97,10 @@
     },
     "isInstitutional": {
       "type": "boolean"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

@@ -15,7 +15,33 @@ after each iteration and it's included in prompts for context.
 - **Dashboard Patterns**: Role-specific dashboards follow similar structure (fetch data based on role context, calculate metrics from fetched data, display metrics cards with Framer Motion animations, filter/sort tables, include action buttons for role-specific operations)
 - **Pagination/Filtering Pattern**: Filters stored in component state, applyFilters function transforms data based on multiple filter criteria, data re-fetched when filters change
 - **Permission Seeding**: Bootstrap seeder should assign permissions to roles using entityService.update with connect operation for many-to-many relations
+- **Admin CRUD over Plugin Users**: To manage users-permissions users with custom rules (soft delete, permission gates, audit), add controller methods in `backend/src/extensions/users-permissions/controllers/User.js` + routes in `extensions/users-permissions/routes/index.js` (config: { auth: false }, auth handled by the custom authenticate/authorize utils); sanitize output manually (entityService returns private fields like password)
+- **Authenticated Frontend API Calls**: JWT is stored AES-encrypted in localStorage under "jwtToken"; build a `getAuthHeaders()` helper that calls `decryptData()` from utils/encryption and returns `{ Authorization: Bearer <token> }` — required for any endpoint protected by the custom authenticate util (audit logs, settings mutations, admin user CRUD)
+- **File Download from Protected Endpoint**: axios GET with `responseType: "blob"` + auth headers, then create an object URL and a temporary `<a download>` link to trigger the browser download
 
+---
+
+## [2026-07-11] - US-013
+
+### Implementation
+Refactored the Admin dashboard (Administration.jsx) from a single SMTP email form into a full administration panel with four sections: Usuarios (CRUD with soft delete), Roles (view/edit role permissions), Auditoría (last 100 logs + PDF/XLSX export), and Configuración (SMTP, data retention, backup). Added backend admin user endpoints with permission checks and audit logging.
+
+### Files Changed
+- `backend/src/extensions/users-permissions/content-types/user/schema.json` - Added isActive boolean (default true) for user soft delete
+- `backend/src/extensions/users-permissions/controllers/User.js` - Added adminListUsers (VIEW_USERS), adminCreateUser, adminUpdateUser, adminDeleteUser (MANAGE_USERS); create/update/delete log audit entries (CREATE_USER/UPDATE_USER/DELETE_USER); delete is soft (isActive=false + blocked=true); responses return sanitized user fields only
+- `backend/src/extensions/users-permissions/routes/index.js` - Added GET/POST /admin/users and PUT/DELETE /admin/users/:id routes
+- `backend/src/api/setting/content-types/setting/schema.json` - Added backup_enabled (boolean) and backup_frequency (enum Diario/Semanal/Mensual) alongside existing audit_log_retention_days
+- `backend/src/index.js` - Seeder now connects ALL permissions to the Admin role (Permission Seeding pattern)
+- `frontend/src/core/Admin.js` - New admin API module with getAuthHeaders() (decrypts JWT from localStorage), user CRUD, role/permission management, authenticated audit log fetch (custom controller query params: userId/entityType/page/pageSize), blob-download export, and authenticated settings CRUD
+- `frontend/src/pages/Administration.jsx` - Rewritten as tabbed dashboard: metrics cards (total/active users, roles, recent logs), Usuarios section (search, create/edit modal with role checkboxes, soft-delete with confirm, PermissionGate MANAGE_USERS), Roles section (role list + permissions grouped by module with toggle checkboxes, read-only without MANAGE_ROLES), Auditoría section (last 100 logs, entityType filter, PDF/XLSX export buttons), Configuración section (SMTP email management, retention days with 1825 min, backup toggle + frequency, PermissionGate MANAGE_SETTINGS)
+
+### Learnings
+- The existing frontend Setting.js/Audit.js modules do NOT send Authorization headers, but the backend controllers require them (MANAGE_SETTINGS, VIEW_AUDIT_LOGS) — new admin module sends Bearer tokens decrypted from localStorage
+- The custom audit `find` controller reads plain query params (userId, entityType, page, pageSize), NOT Strapi filter syntax; its response is `{ data: findPage-result }` where findPage returns `{ results, pagination }` — consume defensively
+- Password hashing for plugin::users-permissions.user works through entityService create/update (plugin lifecycle hashes it), so no manual hashing needed in custom admin endpoints
+- Soft-deleting a user should also set `blocked: true` so Strapi's auth rejects login attempts for deactivated users
+- The /admin/users path prefix avoids colliding with the plugin's built-in /users routes
+- Route protection for the page itself comes from ProtectedRoute (superadmin role); PermissionGate handles per-action visibility (MANAGE_USERS, MANAGE_ROLES, VIEW_AUDIT_LOGS, MANAGE_SETTINGS)
 ---
 
 ## [2026-07-11] - US-012

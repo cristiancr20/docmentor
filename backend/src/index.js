@@ -88,6 +88,19 @@ module.exports = {
               });
             }
           }
+
+          const adminRole = allRoles.find(r => r.name === 'Admin');
+          if (adminRole && allPermissions.length > 0) {
+            for (const permission of allPermissions) {
+              await strapi.entityService.update('api::rol.rol', adminRole.id, {
+                data: {
+                  permissions: {
+                    connect: [permission.id],
+                  },
+                },
+              });
+            }
+          }
         }
       },
     });

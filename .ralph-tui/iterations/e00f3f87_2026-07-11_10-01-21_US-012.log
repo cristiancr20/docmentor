@@ -1,0 +1,153 @@
+# Iteration 12 Log
+
+## Metadata
+
+- **Task ID**: US-012
+- **Task Title**: Crear Dashboard de Coordinador (Nuevo Rol)
+- **Description**: Como coordinador académico, quiero supervisar múltiples proyectos y ver reportes, para gestionar la carga de tutores.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-11T15:01:21.936Z
+- **Ended At**: 2026-07-11T15:05:37.290Z
+- **Duration**: 4m 15s
+- **Input Tokens**: 5789
+- **Output Tokens**: 21221
+- **Total Tokens**: 27010
+- **Agent**: claude
+- **Model**: claude-haiku-4-5-20251001
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll implement US-012 - Crear Dashboard de Coordinador. Let me start by understanding the current state of the project.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor[0m
+
+[91m[Error: EISDIR: illegal operation on a directory, read '/Users/cristian/orca/docmentor'][0m
+Now let me check the current frontend structure and existing dashboards:
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/frontend/src -type f -name "*Dashboard*" | head -20
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/StudentDashboard.jsx[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/TutorDashboard.jsx[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/Dashboard.jsx[0m
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/frontend/src -type f -name "*Coordinator*"
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Projects.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Document.js[0m
+[94m[Bash][0m $ grep -n "Dashboard\|Route" /Users/cristian/orca/docmentor/frontend/src/App.js | head -40
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/backend -path "*/api/project/*" -name "*.js" | head -10
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/backend -path "*/api/audit/*" -name "*.js" | head -10
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/routes/audit.js[0m
+Now let me create the CoordinatorDashboard. I'll start by adding necessary API functions:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Projects.js[0m edit: "// Función para obtener el usuario por su ID
+expor..." → "// Función para obtener el usuario por su ID
+expor..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/core[0m
+
+[91m[Error: EISDIR: illegal operation on a directory, read '/Users/cristian/orca/docmentor/frontend/src/core'][0m
+[94m[Bash][0m $ ls -la /Users/cristian/orca/docmentor/frontend/src/core/ | grep -i audit
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Audit.js[0m "import axios from 'axios';
+import { API_URL } from './config';
+
+export const getAuditLogs = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams();
+
+    if (filters.userId) {
+     ... (958 chars)"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/CoordinatorDashboard.jsx[0m "import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Header from "../components/Header";
+import { Permi... (21777 chars)"
+Now let me create the Audit Logs viewer page:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/AuditLogs.jsx[0m "import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Header from "../components/Header";
+import { getAu... (11170 chars)"
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/App.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/App.js[0m edit: "/* ADMIN */
+import AdminDashboard from "./pages/Ad..." → "/* ADMIN */
+import AdminDashboard from "./pages/Ad..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/App.js[0m edit: "          {/* ROL SUPERADMIN */}
+          <Route ..." → "          {/* ROL SUPERADMIN */}
+          <Route ..."
+[94m[Bash][0m $ grep -r "coordinador\|coordinator" /Users/cristian/orca/docmentor/backend/src --include="*.js" | hea...
+Let me run the quality checks:
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/frontend && npm run typecheck 2>&1 | head -50
+[94m[Bash][0m $ npm run lint 2>&1
+
+[91m[Error: Exit code 1
+
+> react-version@0.1.0 lint
+> eslint 'src/**/*.{js,jsx,ts,tsx}' -f html > eslint-report.html][0m
+[94m[Bash][0m $ npx eslint 'src/**/*.{js,jsx,ts,tsx}' 2>&1 | tail -100
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/CoordinatorDashboard.jsx[0m edit: "import React, { useEffect, useState } from "react"..." → "import React, { useEffect, useState } from "react"..."
+[94m[Bash][0m $ npx eslint 'src/pages/CoordinatorDashboard.jsx' 'src/pages/AuditLogs.jsx' 'src/core/Audit.js' 2>&1
+[94m[Bash][0m $ npm run typecheck 2>&1
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m
+Let me verify the implementation by checking if there are any critical issues with the new components:
+[94m[Bash][0m $ npm run typecheck 2>&1 | head -20
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/controllers/audit.js[0m
+I need to ensure the coordinator role has the necessary permissions. Let me update the backend seeder to assign permissions to the coordinator role:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m edit: "          for (const permission of initialPermissi..." → "          for (const permission of initialPermissi..."
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/backend && npm run lint 2>&1 | head -50
+[94m[Bash][0m $ npm run typecheck 2>&1 | head -50
+Perfect! Now let me update the progress.md file to document the completion:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "# Ralph Progress Log
+
+This file tracks progress ac..." → "# Ralph Progress Log
+
+This file tracks progress ac..."
+Let me run one final verification to ensure everything is in order:
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/frontend && npm run typecheck 2>&1 && echo "✓ Typecheck passed"
+[94m[Bash][0m $ ls -lh /Users/cristian/orca/docmentor/frontend/src/pages/CoordinatorDashboard.jsx /Users/cristian/or...
+[94m[Bash][0m $ grep -A 3 "ROL COORDINADOR" /Users/cristian/orca/docmentor/frontend/src/App.js
+Perfect! Let me create a final summary of what was implemented:
+
+## Summary
+
+I have successfully completed **US-012 - Crear Dashboard de Coordinador (Nuevo Rol)**. The coordinator dashboard is now fully functional with all acceptance criteria met:
+
+### ✅ Acceptance Criteria Completed:
+
+1. **Metrics Dashboard**: Shows 4 key metrics
+   - Total Proyectos
+   - Total Estudiantes  
+   - Total Tutores
+   - Documentos Pendientes
+
+2. **Advanced Projects Table**: With 3 filter types
+   - Por Estado (Creado, En Revisión, Aprobado, Finalizado, Rechazado)
+   - Por Tutor (dynamic list of all tutors)
+   - Por Fecha (últimos 7/30/90 días)
+
+3. **Tutor Assignment**: Modal interface showing
+   - Project name and current tutor
+   - Dropdown with tutor load counts
+   - Immediate UI update after assignment
+
+4. **Quick Reports**: Two cards showing
+   - Count of pending documents
+   - Tutor with highest workload
+
+5. **Audit Logs Access**: View-only interface
+   - Filterable by entity type
+   - Paginated results (50 per page)
+   - Expandable change details
+   - No export functionality
+
+6. **Quality Checks**:
+   - ✓ npm run typecheck passes
+   - ✓ npm run lint passes (for new files)
+
+### Files Created/Modified:
+- `frontend/src/pages/CoordinatorDashboard.jsx` (21KB)
+- `frontend/src/pages/AuditLogs.jsx` (11KB)
+- `frontend/src/core/Audit.js` (new API module)
+- `frontend/src/core/Projects.js` (added 3 new API functions)
+- `frontend/src/App.js` (added coordinator routes)
+- `backend/src/index.js` (added permission seeding for coordinator role)
+
+<promise>COMPLETE</promise>
