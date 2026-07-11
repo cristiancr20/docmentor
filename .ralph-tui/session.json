@@ -3,10 +3,10 @@
   "sessionId": "e00f3f87-ccde-46e6-9784-2e62a20fd68c",
   "status": "running",
   "startedAt": "2026-07-11T14:25:16.597Z",
-  "updatedAt": "2026-07-11T14:44:20.152Z",
-  "currentIteration": 6,
+  "updatedAt": "2026-07-11T14:51:47.040Z",
+  "currentIteration": 7,
   "maxIterations": 0,
-  "tasksCompleted": 6,
+  "tasksCompleted": 7,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -53,8 +53,8 @@
       {
         "id": "US-007",
         "title": "Implementar GDPR/LOPD - Anonimización de Datos",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-008",
@@ -178,6 +178,16 @@
       "durationMs": 144472,
       "startedAt": "2026-07-11T14:38:43.982Z",
       "endedAt": "2026-07-11T14:41:08.454Z"
+    },
+    {
+      "iteration": 7,
+      "status": "completed",
+      "taskId": "US-007",
+      "taskTitle": "Implementar GDPR/LOPD - Anonimización de Datos",
+      "taskCompleted": true,
+      "durationMs": 190590,
+      "startedAt": "2026-07-11T14:41:09.560Z",
+      "endedAt": "2026-07-11T14:44:20.150Z"
     }
   ],
   "skippedTaskIds": [],

@@ -6,4 +6,17 @@
 
 const { createCoreRouter } = require('@strapi/strapi').factories;
 
-module.exports = createCoreRouter('api::audit.audit');
+module.exports = {
+  routes: [
+    {
+      method: 'GET',
+      path: '/audit-logs/export',
+      handler: 'api::audit.audit.export',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    ...createCoreRouter('api::audit.audit').routes,
+  ],
+};

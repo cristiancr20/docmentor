@@ -11,6 +11,30 @@ after each iteration and it's included in prompts for context.
 - **CRUD Routes**: Strapi's `createCoreRouter()` auto-generates GET, POST, PUT, DELETE endpoints for collection types
 - **Custom Relation Endpoints**: For custom relation behavior, define routes in routes array with custom handler methods and use `entityService.update()` with `connect`/`disconnect` operations for many-to-many relations
 - **Many-to-Many Relations**: Use `relation: "manyToMany"` with `inversedBy` to manage both sides automatically; use `mappedBy` only when one side should not manage the relation
+- **File Export Pattern**: For PDF/XLSX exports, create routes array with custom handler, service method returns data + hash, controller uses format parameter to dispatch to appropriate generator, response includes Content-Type/Content-Disposition headers and optional X-[Resource]-Hash header for integrity verification
+
+---
+
+## [2026-07-11] - US-008
+
+### Implementation
+Implemented audit log export functionality supporting PDF and XLSX formats with digital signatures for integrity verification. Exports include filters by date range, user ID, and entity type.
+
+### Files Changed
+- `backend/src/api/audit/routes/audit.js` - Added GET /api/audit-logs/export custom route
+- `backend/src/api/audit/services/audit.js` - Added exportAuditLogs method that retrieves filtered logs and generates SHA-256 hash
+- `backend/src/api/audit/controllers/audit.js` - Added export method with permission validation and format handling
+- `backend/src/utils/exportReports.js` - Created PDF and XLSX generation utilities using pdfkit and xlsx libraries
+- `backend/package.json` - Added pdfkit and xlsx dependencies
+
+### Learnings
+- PDF generation with pdfkit requires stream handling with Promise wrapping to buffer output
+- XLSX generation with xlsx library uses sheet arrays and can span multiple worksheets for summary and detailed data
+- Digital signatures via SHA-256 hash included in both file headers (X-Audit-Hash) and embedded in reports
+- Export endpoints reuse the same filtering logic as paginated queries for consistency
+- File download responses require proper Content-Type and Content-Disposition headers
+- PDF exports format human-readable summaries while XLSX provides structured data suitable for spreadsheet analysis
+- Permission-based export ensures only users with VIEW_AUDIT_LOGS can access sensitive audit data
 
 ---
 
