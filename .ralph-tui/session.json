@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "sessionId": "e00f3f87-ccde-46e6-9784-2e62a20fd68c",
+  "status": "running",
+  "startedAt": "2026-07-11T14:25:16.597Z",
+  "updatedAt": "2026-07-11T14:28:42.909Z",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "claude",
+  "trackerState": {
+    "plugin": "json",
+    "prdPath": "./tasks/prd.json",
+    "totalTasks": 17,
+    "tasks": [
+      {
+        "id": "US-001",
+        "title": "Crear modelo de Roles en Base de Datos",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-002",
+        "title": "Crear modelo de Permisos Dinámicos",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-003",
+        "title": "Validar Permisos en Endpoints del Backend",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-004",
+        "title": "Agregar Estados de Workflow a Proyectos",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-005",
+        "title": "Agregar Estados de Workflow a Documentos",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-006",
+        "title": "Crear Sistema de Auditoría - Logs de Cambios",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-007",
+        "title": "Implementar GDPR/LOPD - Anonimización de Datos",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-008",
+        "title": "Exportar Reportes de Auditoría",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-009",
+        "title": "Crear Context de Permisos Dinámico",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-010",
+        "title": "Refactorizar Dashboard de Estudiante",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-011",
+        "title": "Refactorizar Dashboard de Tutor",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-012",
+        "title": "Crear Dashboard de Coordinador (Nuevo Rol)",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-013",
+        "title": "Refactorizar Dashboard de Admin",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-014",
+        "title": "Actualizar componentes para permiso dinámico",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-015",
+        "title": "Implementar Sistema de Notificaciones en Tiempo Real",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-016",
+        "title": "Exportar Reporte de Proyecto a PDF",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-017",
+        "title": "Exportar Reporte de Auditoría a Excel",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/cristian/orca/docmentor",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}

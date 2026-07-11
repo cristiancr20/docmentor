@@ -13,7 +13,9 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "strapi": "strapi",
-    "test": "jest --forceExit --detectOpenHandles"
+    "test": "jest --forceExit --detectOpenHandles",
+    "lint": "echo 'No lint rules configured'",
+    "typecheck": "echo 'No typecheck rules configured'"
   },
   "jest": {
     "testPathIgnorePatterns": [

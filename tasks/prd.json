@@ -1,0 +1,353 @@
+{
+  "name": "Refactorización Arquitectónica de DocMentor - Sistema de Roles Dinámicos y Auditoría Académica",
+  "description": "Refactorizar la arquitectura de DocMentor para deshardcodear roles, crear sistema dinámico de permisos, implementar auditoría completa y cumplimiento GDPR/LOPD.",
+  "branchName": "ralph/docmentor-roles-audit",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Crear modelo de Roles en Base de Datos",
+      "description": "Como administrador, quiero que los roles se almacenen en la base de datos en lugar de estar hardcodeados, para poder crear y modificar roles sin cambiar código.",
+      "acceptanceCriteria": [
+        "Tabla roles en PostgreSQL con campos: id, name, description, isActive",
+        "Endpoint GET /api/roles devuelve lista de roles",
+        "Endpoint POST /api/roles crea nuevo rol con validación",
+        "Endpoint PUT /api/roles/:id actualiza rol existente",
+        "Endpoint DELETE /api/roles/:id desactiva rol (soft delete)",
+        "Seeders iniciales con 4 roles: Estudiante, Tutor, Coordinador, Admin",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Crear modelo de Permisos Dinámicos",
+      "description": "Como administrador, quiero asociar permisos a roles de forma dinámica, para controlar qué acciones puede hacer cada rol.",
+      "acceptanceCriteria": [
+        "Tabla permissions en PostgreSQL con campos: id, code, description, module",
+        "Tabla relacional role_permissions (muchos-a-muchos)",
+        "Endpoint GET /api/roles/:id/permissions devuelve permisos del rol",
+        "Endpoint POST /api/roles/:id/permissions agrega permiso al rol",
+        "Endpoint DELETE /api/roles/:id/permissions/:permissionId remueve permiso",
+        "Lista base de permisos: view_project, create_project, comment_document, approve_document, etc.",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Validar Permisos en Endpoints del Backend",
+      "description": "Como desarrollador, quiero que cada endpoint valide permisos antes de ejecutar, para proteger datos según el rol del usuario.",
+      "acceptanceCriteria": [
+        "Middleware de autenticación valida JWT",
+        "Middleware de autorización chequea permisos del usuario",
+        "Endpoints retornan 403 Forbidden si usuario no tiene permiso",
+        "Logs registran intentos de acceso denegado",
+        "Permisos validados en: POST /projects, PUT /projects/:id, POST /documents, etc.",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Agregar Estados de Workflow a Proyectos",
+      "description": "Como tutor, quiero que los proyectos tengan estados definidos, para entender en qué fase está cada proyecto académico.",
+      "acceptanceCriteria": [
+        "Campo status en tabla projects: Creado, En Revisión, Aprobado, Finalizado, Rechazado",
+        "Transiciones permitidas: Creado → En Revisión → Aprobado → Finalizado",
+        "Transición alternativa: En Revisión → Rechazado → En Revisión",
+        "Solo usuarios con permiso change_project_status pueden cambiar estado",
+        "Cambios de estado se registran en auditoría",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Agregar Estados de Workflow a Documentos",
+      "description": "Como tutor, quiero que los documentos tengan estados, para ver si están revisados, aprobados o requieren cambios.",
+      "acceptanceCriteria": [
+        "Campo status en tabla documents: Subido, En Revisión, Aprobado, Cambios Solicitados, Archivado",
+        "Transiciones permitidas: Subido → En Revisión → Aprobado → Archivado",
+        "Transición alternativa: En Revisión → Cambios Solicitados → En Revisión",
+        "Solo tutores con permiso review_document pueden cambiar estado",
+        "Endpoint PUT /api/documents/:id/status actualiza estado",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Crear Sistema de Auditoría - Logs de Cambios",
+      "description": "Como administrador, quiero registrar todos los cambios en proyectos y documentos, para cumplir requisitos académicos y GDPR.",
+      "acceptanceCriteria": [
+        "Tabla audit_logs con campos: id, userId, action, entityType, entityId, oldValue, newValue, timestamp, ipAddress",
+        "Crear entrada en audit_logs cuando: se crea/modifica proyecto, se sube documento, se cambia estado",
+        "Logs incluyen: quién hizo el cambio, qué cambió, valores anterior/nuevo, fecha/hora, IP",
+        "Endpoint GET /api/audit-logs retorna logs paginados (solo Admin)",
+        "Filtros: por usuario, por entidad, por fecha",
+        "Retención de logs: mínimo 5 años (configuración)",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Implementar GDPR/LOPD - Anonimización de Datos",
+      "description": "Como administrador, quiero poder anonimizar datos de usuarios, para cumplir derechos de eliminación (GDPR Artículo 17).",
+      "acceptanceCriteria": [
+        "Endpoint DELETE /api/users/:id/anonymize anonimiza datos del usuario",
+        "Anonimización: nombre → Usuario Anonimizado, email → anonimizado@docmentor.local, etc.",
+        "Logs de auditoría se mantienen pero sin identificar al usuario",
+        "Registro en audit_logs de quién y cuándo anonimizó datos",
+        "Documentos y comentarios permanecen pero asociados a usuario anónimo",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Exportar Reportes de Auditoría",
+      "description": "Como administrador, quiero exportar logs de auditoría a PDF/Excel, para auditorías internas y regulatorias.",
+      "acceptanceCriteria": [
+        "Endpoint GET /api/audit-logs/export?format=pdf genera PDF con logs",
+        "Endpoint GET /api/audit-logs/export?format=xlsx genera Excel con logs",
+        "Reportes incluyen: fecha rango, usuario, acción, entidad, cambios",
+        "Reportes firmados digitalmente (hash) para integridad",
+        "Filtros por fecha, usuario, tipo de entidad",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Crear Context de Permisos Dinámico",
+      "description": "Como desarrollador frontend, quiero cargar permisos del usuario desde backend, para renderizar UI según permisos reales.",
+      "acceptanceCriteria": [
+        "Crear PermissionContext que carga permisos en login",
+        "Hook usePermission(permissionCode) retorna boolean",
+        "Función hasPermissions(['perm1', 'perm2']) para múltiples permisos",
+        "Permisos cached en localStorage + refrescados cada sesión",
+        "Componentes se renderizan/ocultan según permisos",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Refactorizar Dashboard de Estudiante",
+      "description": "Como estudiante, quiero un dashboard personalizado con mis proyectos y documentos, sin ver opciones que no puedo usar.",
+      "acceptanceCriteria": [
+        "Dashboard muestra: Proyectos activos (lista), Documentos recientes (tabla)",
+        "Botones (Crear proyecto, Subir documento) solo si tiene permisos",
+        "Métrica: X documentos pendientes revisión",
+        "Estados visuales: Creado (gris), En Revisión (azul), Aprobado (verde), Rechazado (rojo)",
+        "Link a Mis Proyectos y Historial de Documentos",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Refactorizar Dashboard de Tutor",
+      "description": "Como tutor, quiero ver proyectos asignados y documentos por revisar, priorizados por fecha.",
+      "acceptanceCriteria": [
+        "Dashboard muestra: Proyectos asignados (tabla), Documentos por revisar (lista)",
+        "Ordenar documentos por: más reciente, requiere atención",
+        "Métrica: X documentos en revisión",
+        "Acceso rápido a: Ver proyecto detalle, Revisar documento",
+        "Botones (Cambiar estado, Comentar) solo si tiene permisos",
+        "Indicador visual de documentos urgentes (> 7 días sin revisar)",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Crear Dashboard de Coordinador (Nuevo Rol)",
+      "description": "Como coordinador académico, quiero supervisar múltiples proyectos y ver reportes, para gestionar la carga de tutores.",
+      "acceptanceCriteria": [
+        "Dashboard muestra: Total de proyectos, Total de estudiantes, Total de tutores",
+        "Tabla de proyectos con filtros: por estado, por tutor, por fecha",
+        "Asignación de tutores a proyectos (botón)",
+        "Reporte rápido: documentos pendientes, tutores con más carga",
+        "Acceso a auditoría básica (sin exportar)",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-013",
+      "title": "Refactorizar Dashboard de Admin",
+      "description": "Como administrador, quiero gestionar usuarios, roles y ver toda la actividad del sistema.",
+      "acceptanceCriteria": [
+        "Secciones: Usuarios (CRUD), Roles, Auditoría, Configuración",
+        "Crear/editar/eliminar usuarios (soft delete)",
+        "Visualizar/editar permisos de roles",
+        "Ver logs de auditoría (últimos 100)",
+        "Exportar reportes de auditoría",
+        "Configuración: SMTP, retención de datos, backup",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-012"
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "Actualizar componentes para permiso dinámico",
+      "description": "Como desarrollador, quiero reemplazar chequeos hardcodeados de rol, para usar sistema de permisos dinámicos.",
+      "acceptanceCriteria": [
+        "Reemplazar: rol?.includes(tutor) → hasPermission(review_document)",
+        "Actualizar en: ProyectoDetalle.jsx, Administration.jsx, all pages",
+        "Botones condicionados: {hasPermission(approve_document) && <ApproveBtn />}",
+        "Mensajes de acceso denegado consistentes",
+        "Tests de permisos para componentes críticos",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-015",
+      "title": "Implementar Sistema de Notificaciones en Tiempo Real",
+      "description": "Como usuario, quiero recibir notificaciones instantáneas de cambios en mis proyectos, para estar siempre actualizado.",
+      "acceptanceCriteria": [
+        "Tecnología elegida (Socket.io, WebSocket nativo, polling) - flexible",
+        "Notificaciones para: nuevo documento subido, estado cambiado, comentario recibido",
+        "Notificaciones visibles en navbar/bell icon",
+        "Marcar notificaciones como leídas",
+        "Preferencias de notificación por usuario (email, in-app, ambas)",
+        "Historial de notificaciones (últimas 30 días)",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-016",
+      "title": "Exportar Reporte de Proyecto a PDF",
+      "description": "Como estudiante/tutor, quiero generar un PDF con el proyecto completo, para archivo o entrega.",
+      "acceptanceCriteria": [
+        "Botón Descargar PDF en vista de proyecto",
+        "PDF incluye: título, descripción, lista de documentos, estados, comentarios tutores",
+        "Formato profesional con logo universidad",
+        "Metadatos: fecha generación, generado por, hash de integridad",
+        "Tamaño < 10MB (optimizar imágenes)",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-017",
+      "title": "Exportar Reporte de Auditoría a Excel",
+      "description": "Como administrador, quiero exportar logs de auditoría a Excel para análisis en office.",
+      "acceptanceCriteria": [
+        "Endpoint retorna .xlsx con hojas: Resumen, Detalles, Usuarios",
+        "Resumen: total cambios, usuarios activos, cambios por tipo",
+        "Detalles: cada log con columnas: timestamp, usuario, acción, entidad, valores",
+        "Usuarios: actividad por usuario",
+        "Formatos listos para análisis (números formateados, fechas consistentes)",
+        "npm run lint passes",
+        "npm run typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-07-11T14:28:42.908Z"
+  }
+}
