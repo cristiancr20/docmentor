@@ -15,6 +15,34 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-011
+
+### Implementation
+Refactored TutorDashboard into a comprehensive review interface displaying assigned projects and documents requiring review with filtering, sorting, urgency indicators, and permission-based action buttons.
+
+### Files Changed
+- `frontend/src/pages/TutorDashboard.jsx` - Refactored from welcome screen to full-featured dashboard with:
+  - Assigned projects table with status badges and quick access to project details
+  - Documents table sorted by date or urgency (> 7 days old marked as urgent)
+  - Three metrics cards: Proyectos Asignados, Documentos Totales, En Revisión
+  - Urgency indicators showing red warning for documents unreviewed for 7+ days
+  - Days elapsed count next to each document date
+  - Dynamic sort dropdown for documents (Más Reciente / Requiere Atención)
+  - Permission-gated action buttons: "Revisar" (REVIEW_DOCUMENT), "Comentar" (COMMENT_DOCUMENT)
+  - Responsive table layout with Framer Motion animations
+  - Loading state and error handling
+
+### Learnings
+- TutorDashboard uses getProjectsByTutor() to fetch projects where current user is the tutor
+- Same document fetching pattern as StudentDashboard, but filtered by assigned tutor projects
+- Urgency logic: Documents created > 7 days ago display red "Urgente" indicator
+- Sort function refactored to support multiple sort types without re-fetching data
+- Permission gates (REVIEW_DOCUMENT, COMMENT_DOCUMENT) control visibility of action buttons
+- Dashboard calculates metrics on first load: total documents, documents in "En Revisión" status
+- Navigation to document detail view passes document ID for downstream review/commenting
+
+---
+
 ## [2026-07-11] - US-010
 
 ### Implementation
