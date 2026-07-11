@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 
 import { useAuth, AuthProvider } from "./context/AuthContext";
+import { PermissionProvider } from "./context/PermissionContext";
 
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/ErrorNotFound";
@@ -53,38 +54,40 @@ const ProtectedRoute = ({ requiredRole }) => {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        {/* Rutas públicas */}
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/login-institucional" element={<LoginInstitucional />} />
-        <Route path="/sign-up" element={<SignUp />} />
-        {/* ROL TUTOR-ESTUDIANTE */}
-        <Route path="/document/:documentId" element={<DocumentoViewer />} />
-        <Route path="/project/:projectId" element={<ProjectDetalle />} />
+      <PermissionProvider>
+        <Routes>
+          {/* Rutas públicas */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/login-institucional" element={<LoginInstitucional />} />
+          <Route path="/sign-up" element={<SignUp />} />
+          {/* ROL TUTOR-ESTUDIANTE */}
+          <Route path="/document/:documentId" element={<DocumentoViewer />} />
+          <Route path="/project/:projectId" element={<ProjectDetalle />} />
 
 
-        {/* Rutas protegidas */}
-        {/* ROL TUTOR y SUPERADMIN */}
-        <Route element={<ProtectedRoute requiredRole={["superadmin","tutor"]} />}>
-          <Route path="/tutor/dashboard" element={<TutorDashboard />} />
-          <Route path="/tutor/projects/view" element={<ProjectsAsignedTutor />} />
-        </Route>
-        {/* ROL ESTUIANE*/}
-        <Route element={<ProtectedRoute requiredRole="estudiante" />}>
-          <Route path="/student/dashboard" element={<StudentsDashboard />} />
-          <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
-        </Route>
+          {/* Rutas protegidas */}
+          {/* ROL TUTOR y SUPERADMIN */}
+          <Route element={<ProtectedRoute requiredRole={["superadmin","tutor"]} />}>
+            <Route path="/tutor/dashboard" element={<TutorDashboard />} />
+            <Route path="/tutor/projects/view" element={<ProjectsAsignedTutor />} />
+          </Route>
+          {/* ROL ESTUIANE*/}
+          <Route element={<ProtectedRoute requiredRole="estudiante" />}>
+            <Route path="/student/dashboard" element={<StudentsDashboard />} />
+            <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
+          </Route>
 
-        {/* ROL SUPERADMIN */}
-        <Route element={<ProtectedRoute requiredRole="superadmin" />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        </Route>
+          {/* ROL SUPERADMIN */}
+          <Route element={<ProtectedRoute requiredRole="superadmin" />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
 
 
-        {/* Ruta 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Ruta 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PermissionProvider>
     </AuthProvider>
   );
 }

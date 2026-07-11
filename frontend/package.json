@@ -44,7 +44,8 @@
     "build": "react-scripts build",
     "eject": "react-scripts eject",
     "test": "react-scripts test --coverage",
-    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' -f html > eslint-report.html"
+    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' -f html > eslint-report.html",
+    "typecheck": "tsc --noEmit"
   },
   "browserslist": {
     "production": [

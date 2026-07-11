@@ -15,6 +15,31 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-009
+
+### Implementation
+Created a dynamic permission context system that loads user permissions from the backend during login and provides hooks for checking permissions on the frontend.
+
+### Files Changed
+- `backend/src/extensions/users-permissions/controllers/User.js` - Added getMyPermissions method that fetches current user's role permissions and returns filtered permission codes
+- `backend/src/extensions/users-permissions/routes/index.js` - Added GET /api/auth/me/permissions route
+- `frontend/src/context/PermissionContext.js` - Created PermissionContext with usePermission hook, usePermissionCheck hook, and hasPermissions utility function
+- `frontend/src/components/PermissionGate.js` - Created PermissionGate component for conditional rendering based on permissions
+- `frontend/src/App.js` - Wrapped app with PermissionProvider to enable permission checking throughout the app
+- `frontend/package.json` - Added typecheck script
+- `frontend/tsconfig.json` - Created TypeScript configuration file
+
+### Learnings
+- Permission context loads permissions after user login by fetching from the backend endpoint
+- Permissions are cached in localStorage for quick access across sessions
+- Decryption of JWT token is required to use it in Authorization header for API calls
+- Backend permissions endpoint uses JWT authentication via Bearer token in Authorization header
+- PermissionGate component supports single permission checks, multiple permissions with OR logic (default), or AND logic via requireAll flag
+- Frontend provides three ways to check permissions: usePermissionCheck hook for single permission, hasPermissions utility for multiple permissions, and PermissionGate component for UI rendering
+- Permissions are fetched only when user is authenticated; unauthenticated users get empty permissions from localStorage cache
+
+---
+
 ## [2026-07-11] - US-008
 
 ### Implementation

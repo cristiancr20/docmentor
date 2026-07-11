@@ -1,4 +1,35 @@
 module.exports = {
+  async getMyPermissions(ctx) {
+    const { authenticate } = require('../../../utils/protectedController');
+
+    const user = authenticate(ctx, strapi);
+    if (!user) return;
+
+    const userWithRole = await strapi.entityService.findOne('plugin::users-permissions.user', user.id, {
+      populate: {
+        rol: {
+          populate: {
+            permissions: true,
+          },
+        },
+      },
+    });
+
+    if (!userWithRole || !userWithRole.rol) {
+      return ctx.send({ data: [] });
+    }
+
+    const permissions = userWithRole.rol.permissions || [];
+    const permissionCodes = permissions
+      .filter(p => p.isActive)
+      .map(p => p.code);
+
+    ctx.send({
+      data: permissionCodes,
+      permissions: permissions.filter(p => p.isActive),
+    });
+  },
+
   async anonymize(ctx) {
     const { authenticate, authorize } = require('../../../utils/protectedController');
 

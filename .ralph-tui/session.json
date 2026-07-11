@@ -3,10 +3,10 @@
   "sessionId": "e00f3f87-ccde-46e6-9784-2e62a20fd68c",
   "status": "running",
   "startedAt": "2026-07-11T14:25:16.597Z",
-  "updatedAt": "2026-07-11T14:51:47.040Z",
-  "currentIteration": 7,
+  "updatedAt": "2026-07-11T14:55:54.499Z",
+  "currentIteration": 8,
   "maxIterations": 0,
-  "tasksCompleted": 7,
+  "tasksCompleted": 8,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -59,8 +59,8 @@
       {
         "id": "US-008",
         "title": "Exportar Reportes de Auditoría",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-009",
@@ -188,6 +188,16 @@
       "durationMs": 190590,
       "startedAt": "2026-07-11T14:41:09.560Z",
       "endedAt": "2026-07-11T14:44:20.150Z"
+    },
+    {
+      "iteration": 8,
+      "status": "completed",
+      "taskId": "US-008",
+      "taskTitle": "Exportar Reportes de Auditoría",
+      "taskCompleted": true,
+      "durationMs": 445780,
+      "startedAt": "2026-07-11T14:44:21.252Z",
+      "endedAt": "2026-07-11T14:51:47.032Z"
     }
   ],
   "skippedTaskIds": [],
