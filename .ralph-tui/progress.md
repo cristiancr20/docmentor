@@ -14,6 +14,25 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-007
+
+### Implementation
+Implemented GDPR/LOPD compliant data anonymization system allowing administrators to anonymize user data while maintaining audit trails and document/comment associations.
+
+### Files Changed
+- `backend/src/extensions/users-permissions/controllers/User.js` - Created new controller with anonymize method that anonymizes user credentials and logs action
+- `backend/src/extensions/users-permissions/routes/index.js` - Created custom route for DELETE /api/users/:id/anonymize endpoint
+- `backend/src/index.js` - Added ANONYMIZE_USER permission to initial seeder
+
+### Learnings
+- Plugin extensions in Strapi can add custom controllers and routes in the extensions folder
+- Anonymization preserves user ID to maintain document/comment associations while making user data non-identifiable
+- Audit logs capture anonymization actions with who, what, when, and IP address information
+- Email addresses must be unique, so anonymized emails use format anonimizado_<id>@docmentor.local to allow multiple anonymizations
+- Permission-based access control gates sensitive operations like user anonymization
+
+---
+
 ## [2026-07-11] - US-006
 
 ### Implementation

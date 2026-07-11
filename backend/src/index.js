@@ -56,6 +56,7 @@ module.exports = {
             { code: 'REVIEW_DOCUMENT', description: 'Revisar y cambiar estado de documentos', module: 'documents', isActive: true },
             { code: 'VIEW_USERS', description: 'Ver usuarios', module: 'users', isActive: true },
             { code: 'MANAGE_USERS', description: 'Gestionar usuarios', module: 'users', isActive: true },
+            { code: 'ANONYMIZE_USER', description: 'Anonimizar usuarios (GDPR)', module: 'users', isActive: true },
             { code: 'MANAGE_ROLES', description: 'Gestionar roles', module: 'roles', isActive: true },
             { code: 'MANAGE_PERMISSIONS', description: 'Gestionar permisos', module: 'roles', isActive: true },
             { code: 'MANAGE_SETTINGS', description: 'Gestionar configuración', module: 'settings', isActive: true },
