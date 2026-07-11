@@ -15,6 +15,33 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-010
+
+### Implementation
+Refactored StudentDashboard into a personalized dashboard displaying active projects and recent documents with permission-based controls. Dashboard includes metrics for projects, documents, and documents pending review with visual status indicators.
+
+### Files Changed
+- `frontend/src/pages/StudentDashboard.jsx` - Refactored from welcome screen to full-featured dashboard with:
+  - Active projects list with status badges
+  - Recent documents table sorted by date
+  - Three metrics cards: Projects Activos, Documentos Totales, En Revisión
+  - Permission-gated buttons for Create Project and Upload Document (using PermissionGate component)
+  - Status color coding: Creado/Subido (gray), En Revisión (blue), Aprobado (green), Rechazado/Cambios Solicitados (red)
+  - Navigation links to My Projects and Document History
+  - Responsive grid layout with Framer Motion animations
+  - Loading state and error handling
+
+### Learnings
+- StudentDashboard uses the same data fetching patterns as other pages (getProjectsByStudents, getDocumentsByProjectId)
+- Permission gates work seamlessly with PermissionContext from US-009 to conditionally render action buttons
+- Status colors should map document status values (Subido, En Revisión, Aprobado, etc.) to visual badges
+- Dashboard data requires fetching documents from multiple projects, sorting by date, and calculating metrics
+- Navigation between dashboard and projects view uses React Router's useNavigate hook
+- Recent documents should be sorted by createdAt descending and limited to first 5 for dashboard view
+- The user object from AuthContext contains username which is used for personalized greeting
+
+---
+
 ## [2026-07-11] - US-009
 
 ### Implementation
