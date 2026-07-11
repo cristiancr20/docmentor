@@ -217,4 +217,46 @@ export const getUserById = async (id) => {
   }
 };
 
+export const getAllProjects = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/api/projects?populate=tutor,students&pagination[pageSize]=1000`
+    );
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching all projects:", error);
+    throw error;
+  }
+};
+
+export const getAllUsers = async (rolType) => {
+  try {
+    const url = rolType
+      ? `${API_URL}/api/users?filters[rols][rolType][$eq]=${rolType}&pagination[pageSize]=1000`
+      : `${API_URL}/api/users?pagination[pageSize]=1000`;
+    const response = await axios.get(url);
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw error;
+  }
+};
+
+export const assignTutorToProject = async (projectId, tutorId) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/api/projects/${projectId}`,
+      {
+        data: {
+          tutor: tutorId,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error assigning tutor to project:", error);
+    throw error;
+  }
+};
+
 

@@ -68,6 +68,26 @@ module.exports = {
           for (const permission of initialPermissions) {
             await strapi.entityService.create('api::permission.permission', { data: permission });
           }
+
+          const allRoles = await strapi.entityService.findMany('api::rol.rol');
+          const allPermissions = await strapi.entityService.findMany('api::permission.permission');
+
+          const coordinatorRole = allRoles.find(r => r.name === 'Coordinador');
+          if (coordinatorRole && allPermissions.length > 0) {
+            const coordinatorPermissions = allPermissions.filter(p =>
+              ['VIEW_PROJECT', 'VIEW_AUDIT_LOGS', 'VIEW_USERS', 'VIEW_DOCUMENT'].includes(p.code)
+            );
+
+            for (const permission of coordinatorPermissions) {
+              await strapi.entityService.update('api::rol.rol', coordinatorRole.id, {
+                data: {
+                  permissions: {
+                    connect: [permission.id],
+                  },
+                },
+              });
+            }
+          }
         }
       },
     });

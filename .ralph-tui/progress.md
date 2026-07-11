@@ -12,6 +12,59 @@ after each iteration and it's included in prompts for context.
 - **Custom Relation Endpoints**: For custom relation behavior, define routes in routes array with custom handler methods and use `entityService.update()` with `connect`/`disconnect` operations for many-to-many relations
 - **Many-to-Many Relations**: Use `relation: "manyToMany"` with `inversedBy` to manage both sides automatically; use `mappedBy` only when one side should not manage the relation
 - **File Export Pattern**: For PDF/XLSX exports, create routes array with custom handler, service method returns data + hash, controller uses format parameter to dispatch to appropriate generator, response includes Content-Type/Content-Disposition headers and optional X-[Resource]-Hash header for integrity verification
+- **Dashboard Patterns**: Role-specific dashboards follow similar structure (fetch data based on role context, calculate metrics from fetched data, display metrics cards with Framer Motion animations, filter/sort tables, include action buttons for role-specific operations)
+- **Pagination/Filtering Pattern**: Filters stored in component state, applyFilters function transforms data based on multiple filter criteria, data re-fetched when filters change
+- **Permission Seeding**: Bootstrap seeder should assign permissions to roles using entityService.update with connect operation for many-to-many relations
+
+---
+
+## [2026-07-11] - US-012
+
+### Implementation
+Created comprehensive Coordinator Dashboard enabling academic coordinators to supervise multiple projects and tutors with real-time load balancing and audit trail access.
+
+### Files Changed
+- `frontend/src/pages/CoordinatorDashboard.jsx` - New coordinator dashboard with:
+  - Metrics cards showing: Total projects, Total students, Total tutors, Pending documents
+  - Quick report section: Pending documents count, Tutor with highest load
+  - Advanced project filtering by status, tutor assignment, date range (7/30/90 days)
+  - Projects table with tutor assignment modal for load balancing
+  - View and Assign Tutor actions on each project
+  - Responsive grid layout with Framer Motion animations and loading states
+
+- `frontend/src/pages/AuditLogs.jsx` - New audit logs viewer with:
+  - Permission-gated access (VIEW_AUDIT_LOGS required)
+  - Filterable audit log table by entity type (project, document, user)
+  - Action type badges (create, update, delete, change_status, anonymize)
+  - Expandable details showing old and new values for each audit entry
+  - Pagination support with 50 logs per page
+  - Timestamp display in local timezone
+  - Back button to coordinator dashboard
+
+- `frontend/src/core/Projects.js` - Added coordinator-specific API functions:
+  - getAllProjects() - Fetch all projects with tutor and student populations
+  - getAllUsers(rolType) - Fetch users by role type (tutor, estudiante)
+  - assignTutorToProject(projectId, tutorId) - Update project tutor assignment
+
+- `frontend/src/core/Audit.js` - New audit API module:
+  - getAuditLogs(filters) - Fetch audit logs with pagination and filtering by userId, entityType, date range
+
+- `frontend/src/App.js` - Added coordinator routes:
+  - /coordinator/dashboard protected route (requires "coordinador" role)
+  - /audit-logs protected route for audit log viewer
+
+- `backend/src/index.js` - Enhanced bootstrap seeder:
+  - Automatically assigns VIEW_PROJECT, VIEW_AUDIT_LOGS, VIEW_USERS, VIEW_DOCUMENT permissions to Coordinador role
+  - Uses entityService.update with connect operation for many-to-many permission assignment
+
+### Learnings
+- Dashboard metrics calculated from fetched data: pending documents count by checking status === "En Revisión" || "Subido", tutor load calculated by counting projects per tutor ID
+- Audit logs access controlled by VIEW_AUDIT_LOGS permission checked in backend controller
+- Tutor assignment updates entire project object via PUT /api/projects/:id, reflected immediately in UI without full refetch
+- Filter patterns: single filter state applied sequentially through applyFilters function, date filtering uses daysDiff millisecond calculation
+- Role-permission assignment needs to happen in bootstrap after both roles and permissions exist, using many-to-many connect operations
+- Coordinator doesn't need CREATE/UPDATE/DELETE permissions - only VIEW permissions and audit access for supervision
+- PermissionGate component not needed for route protection (done via ProtectedRoute), but useful for action-level permissions within dashboard
 
 ---
 

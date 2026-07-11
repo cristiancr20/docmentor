@@ -30,6 +30,10 @@ import DocumentoViewer from "./pages/DocumentViewer";
 /* ADMIN */
 import AdminDashboard from "./pages/Administration";
 
+/* COORDINATOR */
+import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+import AuditLogs from "./pages/AuditLogs";
+
 
 /* COMPONENTE RUTAS PROTEGIDAS */
 const ProtectedRoute = ({ requiredRole }) => {
@@ -83,6 +87,11 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
 
+          {/* ROL COORDINADOR */}
+          <Route element={<ProtectedRoute requiredRole="coordinador" />}>
+            <Route path="/coordinator/dashboard" element={<CoordinatorDashboard />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
+          </Route>
 
           {/* Ruta 404 */}
           <Route path="*" element={<NotFound />} />
