@@ -64,6 +64,18 @@
       "relation": "oneToOne",
       "target": "api::document.document",
       "inversedBy": "previous_version"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "Subido",
+        "En Revisión",
+        "Aprobado",
+        "Cambios Solicitados",
+        "Archivado"
+      ],
+      "default": "Subido",
+      "required": true
     }
   }
 }

@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "audits",
+  "info": {
+    "singularName": "audit",
+    "pluralName": "audits",
+    "displayName": "Audit",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "action": {
+      "type": "string",
+      "required": true
+    },
+    "entityType": {
+      "type": "string",
+      "required": true
+    },
+    "entityId": {
+      "type": "integer",
+      "required": true
+    },
+    "userId": {
+      "type": "integer",
+      "required": true
+    },
+    "oldValue": {
+      "type": "json"
+    },
+    "newValue": {
+      "type": "json"
+    },
+    "timestamp": {
+      "type": "datetime",
+      "default": "$now"
+    }
+  }
+}

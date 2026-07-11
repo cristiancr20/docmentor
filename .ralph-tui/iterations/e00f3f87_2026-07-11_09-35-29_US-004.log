@@ -1,0 +1,188 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: Agregar Estados de Workflow a Proyectos
+- **Description**: Como tutor, quiero que los proyectos tengan estados definidos, para entender en qué fase está cada proyecto académico.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-11T14:35:29.924Z
+- **Ended At**: 2026-07-11T14:37:21.550Z
+- **Duration**: 1m 51s
+- **Input Tokens**: 728
+- **Output Tokens**: 7409
+- **Total Tokens**: 8137
+- **Agent**: claude
+- **Model**: claude-haiku-4-5-20251001
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll help you implement US-004 - Agregar Estados de Workflow a Proyectos. Let me first check the current progress and existing implementation status.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/content-types/project/schema.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/backend/src/api -type d -name "*audit*" 2>/dev/null
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m
+Now I'll implement US-004. I need to:
+1. Add status field to project schema
+2. Create an audit content type for tracking status changes
+3. Add the CHANGE_PROJECT_STATUS permission
+4. Create a custom endpoint for changing status with audit logging
+
+Let me start by adding the status field to the project schema:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/content-types/project/schema.json[0m edit: "    "itinerary": {
+      "type": "string"
+    }
+  ..." → "    "itinerary": {
+      "type": "string"
+    },
+ ..."
+Now I'll create the audit content type for tracking status changes:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/content-types/audit/schema.json[0m "{
+  "kind": "collectionType",
+  "collectionName": "audits",
+  "info": {
+    "singularName": "audit",
+    "pluralName": "audits",
+    "displayName": "Audit",
+    "description": ""
+  },
+  "options": {
+ ... (735 chars)"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/controllers/audit.js[0m "'use strict';
+
+/**
+ * audit controller
+ */
+
+const { createCoreController } = require('@strapi/strapi').factories;
+
+module.exports = createCoreController('api::audit.audit');
+"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/routes/audit.js[0m "'use strict';
+
+/**
+ * audit router
+ */
+
+const { createCoreRouter } = require('@strapi/strapi').factories;
+
+module.exports = createCoreRouter('api::audit.audit');
+"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/services/audit.js[0m "'use strict';
+
+/**
+ * audit service
+ */
+
+const { createCoreService } = require('@strapi/strapi').factories;
+
+module.exports = createCoreService('api::audit.audit');
+"
+Now I'll update the project controller to add the changeStatus method with permission checking and audit logging:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m edit: "  async delete(ctx) {
+    const user = authenticat..." → "  async delete(ctx) {
+    const user = authenticat..."
+Now I'll update the project routes to include the custom changeStatus endpoint:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m edit: "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..."
+Now I'll update the index.js to add the CHANGE_PROJECT_STATUS permission:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m edit: "          const initialPermissions = [
+           ..." → "          const initialPermissions = [
+           ..."
+Now let me run the quality checks to ensure everything passes:
+[94m[Bash][0m $ npm run lint 2>&1 | head -100
+[94m[Bash][0m $ ls -la /Users/cristian/orca/docmentor/ | head -20
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/backend && npm run lint 2>&1 | head -50
+[94m[Bash][0m $ npm run typecheck 2>&1 | head -50
+Let me verify and fix the project routes file to ensure proper Strapi configuration:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/routes/rol.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m edit: "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..."
+Let me verify the implementation by running a quick validation on the backend:
+[94m[Bash][0m $ node -c src/index.js && echo "✓ index.js syntax valid"
+[94m[Bash][0m $ node -c backend/src/api/project/controllers/project.js && echo "✓ project controller syntax valid" &...
+
+[91m[Error: Exit code 1
+node:internal/modules/cjs/loader:1478
+  throw err;
+  ^
+
+Error: Cannot find module '/Users/cristian/orca/docmentor/backend/backend/src/api/project/controllers/project.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1475:15)
+    at node:internal/main/check_syntax:33:20 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v26.0.0][0m
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor && node -c backend/src/api/project/controllers/project.js && echo ...
+Now let me update the progress.md file to document the implementation:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "---
+
+## [2026-07-11] - US-003" → "---
+
+## [2026-07-11] - US-004
+
+### Implementation
+..."
+Let me verify the git status to ensure all changes are properly tracked:
+[94m[Bash][0m $ git status
+Perfect! I have successfully implemented US-004 - Agregar Estados de Workflow a Proyectos. Here's a summary of what was completed:
+
+## Implementation Summary
+
+### Changes Made:
+1. **Added status field to projects** - Enum field with values: Creado, En Revisión, Aprobado, Finalizado, Rechazado
+2. **Created Audit entity** - New content type to track all status changes with action, user, old/new values, and timestamp
+3. **Implemented changeStatus endpoint** - Custom PUT `/projects/:id/change-status` with:
+   - JWT authentication validation
+   - Permission checking (CHANGE_PROJECT_STATUS)
+   - State transition validation (prevents invalid transitions)
+   - Automatic audit logging
+4. **Added permission to seeder** - CHANGE_PROJECT_STATUS permission in initial data setup
+
+### Acceptance Criteria Met:
+- ✓ Status field with correct enum values
+- ✓ Transiciones permitidas: Creado → En Revisión → Aprobado → Finalizado
+- ✓ Transición alternativa: En Revisión → Rechazado → En Revisión
+- ✓ Only authorized users can change status
+- ✓ All changes logged in audit table
+- ✓ npm run lint passes
+- ✓ npm run typecheck passes
+
+### Files Changed:
+- `backend/src/api/project/content-types/project/schema.json`
+- `backend/src/api/project/controllers/project.js`
+- `backend/src/api/project/routes/project.js`
+- `backend/src/api/audit/` (new content type with schema, controller, routes, service)
+- `backend/src/index.js`
+- `.ralph-tui/progress.md` (documentation)
+
+<promise>COMPLETE</promise>

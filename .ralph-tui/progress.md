@@ -14,6 +14,50 @@ after each iteration and it's included in prompts for context.
 
 ---
 
+## [2026-07-11] - US-005
+
+### Implementation
+Added workflow status management to documents with state transitions, permission-based access control similar to projects.
+
+### Files Changed
+- `backend/src/api/document/content-types/document/schema.json` - Added status field with enum values (Subido, En Revisión, Aprobado, Cambios Solicitados, Archivado)
+- `backend/src/api/document/controllers/document.js` - Added changeStatus method with permission validation and state transition enforcement
+- `backend/src/api/document/routes/document.js` - Added custom PUT /documents/:id/status route, merged with core routes using spread operator
+- `backend/src/index.js` - Added REVIEW_DOCUMENT permission to initial seeder
+
+### Learnings
+- Document status workflow follows same pattern as project workflow from US-004
+- State transitions defined in changeStatus controller: Subido → En Revisión → Aprobado → Archivado, with alternative En Revisión → Cambios Solicitados → En Revisión
+- Custom routes must be spread with core routes to preserve CRUD functionality
+- Enum fields in Strapi schema require explicit array of valid values and optional default
+- REVIEW_DOCUMENT permission gate ensures only authorized users can change document status
+
+---
+
+## [2026-07-11] - US-004
+
+### Implementation
+Added workflow status management to projects with state transitions, permission-based access control, and audit logging for all status changes.
+
+### Files Changed
+- `backend/src/api/project/content-types/project/schema.json` - Added status field with enum values (Creado, En Revisión, Aprobado, Finalizado, Rechazado)
+- `backend/src/api/audit/content-types/audit/schema.json` - Created audit entity to track all status changes with action, entityType, entityId, userId, oldValue, newValue, timestamp
+- `backend/src/api/audit/controllers/audit.js` - Created audit controller
+- `backend/src/api/audit/routes/audit.js` - Created audit routes
+- `backend/src/api/audit/services/audit.js` - Created audit service
+- `backend/src/api/project/controllers/project.js` - Added changeStatus method with permission validation and state transition enforcement
+- `backend/src/api/project/routes/project.js` - Added custom PUT /projects/:id/change-status route
+- `backend/src/index.js` - Added CHANGE_PROJECT_STATUS permission to initial seeder
+
+### Learnings
+- Custom route handlers must be properly namespaced in Strapi (e.g., 'api::project.project.changeStatus')
+- State transitions are best validated in the controller before updating the database
+- Audit logging should capture old and new values as JSON for flexible queries
+- Permission-based state transitions prevent unauthorized status changes while maintaining audit trail
+- The status enum must be explicitly defined in schema.json with a default value
+
+---
+
 ## [2026-07-11] - US-003
 
 ### Implementation

@@ -41,6 +41,12 @@
     },
     "itinerary": {
       "type": "string"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["Creado", "En Revisión", "Aprobado", "Finalizado", "Rechazado"],
+      "default": "Creado",
+      "required": true
     }
   }
 }
