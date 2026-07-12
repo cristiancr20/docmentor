@@ -14,6 +14,7 @@ import ProjectsTable from "../components/ProjectsTable";
 import Header from "../components/Header";
 import { IoArrowBack } from "react-icons/io5";
 import { usePermission } from "../context/PermissionContext";
+import { useAuth } from "../context/AuthContext";
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -25,6 +26,7 @@ const ProyectoDetalle = () => {
   const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(documents.length - 2);
   const { hasPermission } = usePermission();
+  const { user } = useAuth();
 
   const canReviewDocuments = hasPermission("REVIEW_DOCUMENT");
   const canUploadDocuments = hasPermission("CREATE_DOCUMENT");
@@ -407,8 +409,12 @@ const ProyectoDetalle = () => {
             Comparar Versiones
           </motion.button>
 
-          {hasPermission("REVIEW_DOCUMENT") && (
-            <GeneratePdfButton userInfo={attributes} />
+          {(canReviewDocuments || canUploadDocuments) && (
+            <GeneratePdfButton
+              project={attributes}
+              documents={documents}
+              generatedBy={user?.name || user?.email || "Usuario"}
+            />
           )}
 
           <AnimatePresence>

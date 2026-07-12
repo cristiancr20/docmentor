@@ -1,40 +1,42 @@
-import React from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import CryptoJS from "crypto-js";
 import { motion } from "framer-motion";
 import LogoCarrera from "../assets/logo_carrera.png";
 import LogoUniversidad from "../assets/logo_universidad.png";
 import PropTypes from "prop-types";
 
-const GeneratePdfButton = ({ userInfo }) => {
+// Compresión de imágenes para mantener el PDF por debajo de 10MB.
+const IMAGE_COMPRESSION = "MEDIUM";
+
+const formatDate = (value, withTime = false) => {
+  if (!value) return "No disponible";
+  const options = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  if (withTime) {
+    options.hour = "2-digit";
+    options.minute = "2-digit";
+  }
+  return new Date(value).toLocaleDateString("es-ES", options);
+};
+
+const GeneratePdfButton = ({ project, documents, generatedBy }) => {
   const generatePDF = () => {
     const {
-      title: nombreProyecto,
+      title: nombreProyecto = "Proyecto",
       description: descripcionProyecto,
       publishedAt,
       tutor,
       students,
-      documents,
       itinerary,
-    } = userInfo;
+    } = project || {};
 
-    const fechaHoy = new Date();
-    const fechaFormateada = new Date(fechaHoy).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    
-    const fechaDeCreacion = new Date(publishedAt).toLocaleDateString(
-      "es-ES",
-      {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }
-    );
-
-
+    const fechaGeneracion = new Date();
+    const fechaGeneracionTexto = formatDate(fechaGeneracion, true);
+    const fechaDeCreacion = formatDate(publishedAt);
 
     const nombreTutor =
       tutor?.data?.attributes?.username || "Sin tutor asignado";
@@ -43,24 +45,79 @@ const GeneratePdfButton = ({ userInfo }) => {
         ?.map((student) => student.attributes?.username)
         ?.join(", ") || "Sin estudiantes asignados";
 
-    const documentos = documents?.data || [];
+    // Los documentos llegan con sus comentarios poblados (populate=*).
+    const documentos = Array.isArray(documents) ? documents : [];
 
-    // Crear nuevo documento PDF
+    // Recopilar comentarios de tutores por documento.
+    const comentariosTutores = documentos.flatMap((docItem) => {
+      const comentarios = docItem.attributes?.comments?.data || [];
+      return comentarios
+        .map((comentario) => ({
+          documento: docItem.attributes?.title || "Sin título",
+          correccion:
+            comentario.attributes?.correction ||
+            comentario.attributes?.quote ||
+            "",
+        }))
+        .filter((c) => c.correccion.trim() !== "");
+    });
+
+    // Hash de integridad: resumen determinista del contenido del reporte.
+    const contenidoIntegridad = JSON.stringify({
+      proyecto: nombreProyecto,
+      descripcion: descripcionProyecto || "",
+      itinerario: itinerary || "",
+      tutor: nombreTutor,
+      estudiantes: nombresEstudiantes,
+      documentos: documentos.map((docItem) => ({
+        titulo: docItem.attributes?.title,
+        revisado: docItem.attributes?.isRevised,
+        version: docItem.attributes?.version,
+        publishedAt: docItem.attributes?.publishedAt,
+      })),
+      comentarios: comentariosTutores,
+      generadoPor: generatedBy || "Usuario",
+      fechaGeneracion: fechaGeneracion.toISOString(),
+    });
+    const hashIntegridad = CryptoJS.SHA256(contenidoIntegridad).toString();
+
+    // Crear nuevo documento PDF.
     const doc = new jsPDF();
+    doc.setProperties({
+      title: `Reporte de Proyecto - ${nombreProyecto}`,
+      subject: "Reporte de proyecto DocMentor",
+      author: generatedBy || "DocMentor",
+      keywords: `integridad:${hashIntegridad}`,
+    });
 
     const columnaIzquierdaX = 20;
     const columnaDerechaX = 120;
 
-    // Función para agregar el logo y encabezado
     const addHeader = () => {
-      // Ajustar tamaño y posición de los logos
       const logoWidth = 30;
       const logoHeight = 20;
 
-      doc.addImage(LogoCarrera, "PNG", 20, 10, logoWidth, logoHeight);
-      doc.addImage(LogoUniversidad, "PNG", 160, 10, logoWidth, logoHeight);
+      doc.addImage(
+        LogoCarrera,
+        "PNG",
+        20,
+        10,
+        logoWidth,
+        logoHeight,
+        undefined,
+        IMAGE_COMPRESSION
+      );
+      doc.addImage(
+        LogoUniversidad,
+        "PNG",
+        160,
+        10,
+        logoWidth,
+        logoHeight,
+        undefined,
+        IMAGE_COMPRESSION
+      );
 
-      // Título de la institución
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text("UNIVERSIDAD NACIONAL DE LOJA", 105, 20, { align: "center" });
@@ -68,78 +125,70 @@ const GeneratePdfButton = ({ userInfo }) => {
       doc.text("CARRERA DE COMPUTACIÓN", 105, 27, { align: "center" });
     };
 
-    // Agregar encabezado
     addHeader();
 
-    // Línea separadora
+    // Línea separadora.
     doc.setLineWidth(0.5);
     doc.line(20, 40, 190, 40);
 
-    // Título del documento
+    // Título del documento.
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text(`REPORTE DE REVISIÓN DEL PROYECTO "${nombreProyecto}"`, 105, 50, {
+    doc.text(`REPORTE DEL PROYECTO "${nombreProyecto}"`, 105, 50, {
       align: "center",
     });
 
-    // Contenido principal
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
 
-    // Información del proyecto
     const startY = 50;
 
+    // Descripción.
     doc.setFont("helvetica", "bold");
     doc.text("Descripción:", 20, startY + 20);
     doc.setFont("helvetica", "normal");
     const descripcionLines = doc.splitTextToSize(
       descripcionProyecto || "Sin descripción",
-      150
+      170
     );
     doc.text(descripcionLines, 20, startY + 27);
 
-    // Itinerario
+    // Itinerario.
     doc.setFont("helvetica", "bold");
     doc.text("Itinerario:", 20, startY + 40);
     doc.setFont("helvetica", "normal");
     doc.text(itinerary || "Sin itinerario", 20, startY + 47);
 
-    // Fechas
+    // Fechas.
     doc.setFont("helvetica", "bold");
     doc.text("Fecha de Creación:", columnaIzquierdaX, startY + 60);
     doc.setFont("helvetica", "normal");
-    doc.text(
-      fechaDeCreacion || "No disponible",
-      columnaIzquierdaX,
-      startY + 67
-    );
+    doc.text(fechaDeCreacion, columnaIzquierdaX, startY + 67);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Fecha de Informe:", columnaDerechaX, startY + 60);
+    doc.text("Tutor:", columnaDerechaX, startY + 60);
     doc.setFont("helvetica", "normal");
-    doc.text(fechaFormateada, columnaDerechaX, startY + 67);
-
-    // Información de participantes
-    doc.setFont("helvetica", "bold");
-    doc.text("Revisado por:", columnaDerechaX, startY + 80);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Ing. ${nombreTutor}`, columnaDerechaX, startY + 87);
+    doc.text(`Ing. ${nombreTutor}`, columnaDerechaX, startY + 67);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Elaborado por:", columnaIzquierdaX, startY + 80);
+    doc.text("Estudiantes:", columnaIzquierdaX, startY + 80);
     doc.setFont("helvetica", "normal");
-    doc.text(nombresEstudiantes, columnaIzquierdaX, startY + 87);
+    const estudiantesLines = doc.splitTextToSize(nombresEstudiantes, 170);
+    doc.text(estudiantesLines, columnaIzquierdaX, startY + 87);
 
-    // Tabla de documentos
+    // Tabla de documentos con sus estados.
     const documentTableStartY = startY + 100;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Documentos del Proyecto", columnaIzquierdaX, documentTableStartY - 4);
     autoTable(doc, {
       startY: documentTableStartY,
-      head: [["Título", "Fecha de Creación", "Revisado", "Fecha de Revisión"]],
-      body: documentos.map((doc) => [
-        doc.attributes.title,
-        new Date(doc.attributes.publishedAt).toLocaleDateString(),
-        doc.attributes.isRevised ? "Sí" : "No",
-        new Date(doc.attributes.updatedAt).toLocaleDateString(),
+      head: [["Título", "Versión", "Estado", "Fecha de Subida"]],
+      body: documentos.map((docItem) => [
+        docItem.attributes?.title || "Sin título",
+        `v${docItem.attributes?.version ?? "-"}`,
+        docItem.attributes?.isRevised ? "Revisado" : "Pendiente de revisión",
+        formatDate(docItem.attributes?.publishedAt),
       ]),
       theme: "striped",
       styles: { fontSize: 10 },
@@ -147,21 +196,57 @@ const GeneratePdfButton = ({ userInfo }) => {
       alternateRowStyles: { fillColor: [240, 240, 240] },
     });
 
-    // Sección de firmas
-    const firmaY = doc.lastAutoTable.finalY + 20;
-    const pageWidth = doc.internal.pageSize.width;
+    // Sección de comentarios de tutores.
+    const comentariosStartY = doc.lastAutoTable.finalY + 12;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Comentarios de Tutores", columnaIzquierdaX, comentariosStartY - 4);
+    autoTable(doc, {
+      startY: comentariosStartY,
+      head: [["Documento", "Comentario / Corrección"]],
+      body:
+        comentariosTutores.length > 0
+          ? comentariosTutores.map((c) => [c.documento, c.correccion])
+          : [["—", "Sin comentarios de tutores"]],
+      theme: "striped",
+      styles: { fontSize: 10, cellWidth: "wrap" },
+      columnStyles: { 1: { cellWidth: 120 } },
+      headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [240, 240, 240] },
+    });
 
-    // Línea para la firma del tutor
-    doc.setLineWidth(0.5);
-    doc.line(40, firmaY, 100, firmaY);
-    doc.text("Firma del Tutor", 55, firmaY + 10);
+    // Metadatos e integridad al final del documento.
+    const metadataStartY = doc.lastAutoTable.finalY + 15;
+    const pageHeight = doc.internal.pageSize.height;
+    if (metadataStartY > pageHeight - 40) {
+      doc.addPage();
+    }
+    const metaY = metadataStartY > pageHeight - 40 ? 30 : metadataStartY;
 
-    // Línea para la firma del estudiante
-    doc.line(pageWidth - 100, firmaY, pageWidth - 40, firmaY);
-    doc.text("Firma del Estudiante", pageWidth - 90, firmaY + 10);
+    doc.setLineWidth(0.3);
+    doc.line(20, metaY - 6, 190, metaY - 6);
 
-    // Guardar el PDF
-    doc.save("reporte-proyecto.pdf");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("Metadatos del Reporte", columnaIzquierdaX, metaY);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Fecha de generación: ${fechaGeneracionTexto}`,
+      columnaIzquierdaX,
+      metaY + 6
+    );
+    doc.text(
+      `Generado por: ${generatedBy || "Usuario"}`,
+      columnaIzquierdaX,
+      metaY + 12
+    );
+    doc.setFont("helvetica", "bold");
+    doc.text("Hash de integridad (SHA-256):", columnaIzquierdaX, metaY + 18);
+    doc.setFont("helvetica", "normal");
+    const hashLines = doc.splitTextToSize(hashIntegridad, 170);
+    doc.text(hashLines, columnaIzquierdaX, metaY + 24);
+
+    doc.save(`reporte-proyecto-${nombreProyecto}.pdf`);
   };
 
   return (
@@ -172,21 +257,22 @@ const GeneratePdfButton = ({ userInfo }) => {
       className="font-bold mb-4 ml-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
       onClick={generatePDF}
     >
-      Generar Informe de revisión
+      Descargar PDF
     </motion.button>
   );
 };
 
 GeneratePdfButton.propTypes = {
-  userInfo: PropTypes.shape({
+  project: PropTypes.shape({
     title: PropTypes.string,
     description: PropTypes.string,
     publishedAt: PropTypes.string,
     tutor: PropTypes.object,
     students: PropTypes.object,
-    documents: PropTypes.object,
     itinerary: PropTypes.string,
   }),
+  documents: PropTypes.array,
+  generatedBy: PropTypes.string,
 };
 
 export default GeneratePdfButton;
