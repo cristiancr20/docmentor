@@ -61,7 +61,7 @@ const generatePDF = (auditData, hash) => {
       doc.fontSize(9);
       doc.text(`${index + 1}. Action: ${log.action}`, { continued: false });
       doc.text(`   Entity: ${log.entityType} (ID: ${log.entityId})`);
-      doc.text(`   User ID: ${log.userId}`);
+      doc.text(`   User: ${log.userName ? `${log.userName} (ID: ${log.userId})` : log.userId}`);
       doc.text(`   Timestamp: ${new Date(log.timestamp).toLocaleString()}`);
       if (log.ipAddress) {
         doc.text(`   IP Address: ${log.ipAddress}`);
@@ -88,59 +88,117 @@ const generatePDF = (auditData, hash) => {
   });
 };
 
+const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss';
+
+// Devuelve un Date válido o '' para que la celda quede como fecha real de Excel
+const toDate = (value) => {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  return isNaN(date.getTime()) ? '' : date;
+};
+
+// Aplica el formato de fecha consistente a todas las celdas de tipo fecha
+const applyDateFormat = (sheet) => {
+  Object.keys(sheet).forEach((address) => {
+    if (address[0] !== '!' && sheet[address].t === 'd') {
+      sheet[address].z = DATE_FORMAT;
+    }
+  });
+};
+
 const generateXLSX = (auditData, hash) => {
   const workbook = XLSX.utils.book_new();
+  const summary = auditData.summary || {};
+  const userActivity = auditData.userActivity || [];
 
+  // Hoja 1: Resumen
   const summaryData = [
-    ['Audit Report Summary'],
+    ['Reporte de Auditoría - Resumen'],
     [],
-    ['Export Date', new Date(auditData.exportDate).toLocaleString()],
-    ['Total Records', auditData.totalRecords],
+    ['Fecha de exportación', toDate(auditData.exportDate)],
+    ['Total de cambios', summary.totalChanges ?? auditData.totalRecords],
+    ['Usuarios activos', summary.activeUsers ?? 0],
     [],
-    ['Filters'],
-    ['Start Date', auditData.filters.startDate || 'N/A'],
-    ['End Date', auditData.filters.endDate || 'N/A'],
-    ['User ID', auditData.filters.userId || 'N/A'],
-    ['Entity Type', auditData.filters.entityType || 'N/A'],
-    ['Entity ID', auditData.filters.entityId || 'N/A'],
+    ['Cambios por tipo de acción'],
+    ['Acción', 'Cantidad'],
+    ...Object.entries(summary.changesByAction || {}).map(([action, count]) => [action, count]),
     [],
-    ['Digital Signature (SHA-256)', hash],
+    ['Cambios por tipo de entidad'],
+    ['Entidad', 'Cantidad'],
+    ...Object.entries(summary.changesByEntityType || {}).map(([entity, count]) => [entity, count]),
+    [],
+    ['Filtros aplicados'],
+    ['Fecha inicio', toDate(auditData.filters.startDate) || 'N/A'],
+    ['Fecha fin', toDate(auditData.filters.endDate) || 'N/A'],
+    ['ID de usuario', auditData.filters.userId || 'N/A'],
+    ['Tipo de entidad', auditData.filters.entityType || 'N/A'],
+    ['ID de entidad', auditData.filters.entityId || 'N/A'],
+    [],
+    ['Firma digital (SHA-256)', hash],
   ];
 
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData, { cellDates: true });
+  summarySheet['!cols'] = [{ wch: 28 }, { wch: 40 }];
+  applyDateFormat(summarySheet);
+  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
 
-  const logsData = [
-    ['ID', 'Action', 'Entity Type', 'Entity ID', 'User ID', 'Timestamp', 'IP Address', 'Old Value', 'New Value'],
+  // Hoja 2: Detalles (un log por fila)
+  const detailsData = [
+    ['Timestamp', 'Usuario', 'Acción', 'Entidad', 'ID Entidad', 'Valor Anterior', 'Valor Nuevo', 'Dirección IP'],
     ...auditData.logs.map(log => [
-      log.id,
+      toDate(log.timestamp),
+      log.userName || `Usuario ${log.userId}`,
       log.action,
       log.entityType,
       log.entityId,
-      log.userId,
-      new Date(log.timestamp).toLocaleString(),
+      log.oldValue ? JSON.stringify(log.oldValue) : '',
+      log.newValue ? JSON.stringify(log.newValue) : '',
       log.ipAddress || '',
-      JSON.stringify(log.oldValue || {}),
-      JSON.stringify(log.newValue || {}),
     ]),
   ];
 
-  const logsSheet = XLSX.utils.aoa_to_sheet(logsData);
-  logsSheet['!cols'] = [
-    { wch: 8 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 12 },
-    { wch: 10 },
+  const detailsSheet = XLSX.utils.aoa_to_sheet(detailsData, { cellDates: true });
+  detailsSheet['!cols'] = [
+    { wch: 20 },
     { wch: 20 },
     { wch: 15 },
-    { wch: 25 },
-    { wch: 25 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 35 },
+    { wch: 35 },
+    { wch: 15 },
+  ];
+  applyDateFormat(detailsSheet);
+  XLSX.utils.book_append_sheet(workbook, detailsSheet, 'Detalles');
+
+  // Hoja 3: Usuarios (actividad por usuario)
+  const usersData = [
+    ['Usuario', 'Email', 'Total de acciones', 'Detalle de acciones', 'Primera actividad', 'Última actividad'],
+    ...userActivity.map(activity => [
+      activity.userName,
+      activity.email || '',
+      activity.totalActions,
+      Object.entries(activity.actions || {})
+        .map(([action, count]) => `${action}: ${count}`)
+        .join(', '),
+      toDate(activity.firstActivity),
+      toDate(activity.lastActivity),
+    ]),
   ];
 
-  XLSX.utils.book_append_sheet(workbook, logsSheet, 'Logs');
+  const usersSheet = XLSX.utils.aoa_to_sheet(usersData, { cellDates: true });
+  usersSheet['!cols'] = [
+    { wch: 20 },
+    { wch: 28 },
+    { wch: 16 },
+    { wch: 35 },
+    { wch: 20 },
+    { wch: 20 },
+  ];
+  applyDateFormat(usersSheet);
+  XLSX.utils.book_append_sheet(workbook, usersSheet, 'Usuarios');
 
-  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx', cellDates: true });
   return Promise.resolve(buffer);
 };
 

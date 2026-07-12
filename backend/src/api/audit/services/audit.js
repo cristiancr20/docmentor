@@ -81,6 +81,52 @@ module.exports = {
       orderBy: { timestamp: 'desc' },
     });
 
+    // Resolver usuarios involucrados para mostrar nombres en lugar de IDs
+    const userIds = [...new Set(logs.map(log => log.userId).filter(Boolean))];
+    let usersById = {};
+    if (userIds.length > 0) {
+      const users = await strapi.entityService.findMany('plugin::users-permissions.user', {
+        filters: { id: { $in: userIds } },
+        fields: ['id', 'username', 'email'],
+      });
+      usersById = Object.fromEntries(users.map(u => [u.id, u]));
+    }
+
+    // Estadísticas para la hoja de resumen
+    const changesByAction = {};
+    const changesByEntityType = {};
+    const activityByUser = {};
+
+    for (const log of logs) {
+      changesByAction[log.action] = (changesByAction[log.action] || 0) + 1;
+      changesByEntityType[log.entityType] = (changesByEntityType[log.entityType] || 0) + 1;
+
+      if (!activityByUser[log.userId]) {
+        const user = usersById[log.userId];
+        activityByUser[log.userId] = {
+          userId: log.userId,
+          userName: user ? user.username : `Usuario ${log.userId}`,
+          email: user ? user.email : null,
+          totalActions: 0,
+          actions: {},
+          firstActivity: log.timestamp,
+          lastActivity: log.timestamp,
+        };
+      }
+
+      const activity = activityByUser[log.userId];
+      activity.totalActions += 1;
+      activity.actions[log.action] = (activity.actions[log.action] || 0) + 1;
+      if (log.timestamp) {
+        if (!activity.firstActivity || log.timestamp < activity.firstActivity) {
+          activity.firstActivity = log.timestamp;
+        }
+        if (!activity.lastActivity || log.timestamp > activity.lastActivity) {
+          activity.lastActivity = log.timestamp;
+        }
+      }
+    }
+
     const formatData = {
       exportDate: new Date().toISOString(),
       format,
@@ -92,12 +138,20 @@ module.exports = {
         endDate: endDate || null,
       },
       totalRecords: logs.length,
+      summary: {
+        totalChanges: logs.length,
+        activeUsers: Object.keys(activityByUser).length,
+        changesByAction,
+        changesByEntityType,
+      },
+      userActivity: Object.values(activityByUser).sort((a, b) => b.totalActions - a.totalActions),
       logs: logs.map(log => ({
         id: log.id,
         action: log.action,
         entityType: log.entityType,
         entityId: log.entityId,
         userId: log.userId,
+        userName: usersById[log.userId] ? usersById[log.userId].username : `Usuario ${log.userId}`,
         timestamp: log.timestamp,
         oldValue: log.oldValue,
         newValue: log.newValue,
