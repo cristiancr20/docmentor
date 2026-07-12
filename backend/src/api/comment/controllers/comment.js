@@ -7,11 +7,7 @@
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
 
-const coreController = createCoreController('api::comment.comment');
-
-module.exports = {
-  ...coreController,
-
+module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   async create(ctx) {
     const user = authenticate(ctx, strapi);
     if (!user) return;
@@ -19,7 +15,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
     if (!hasPermission) return;
 
-    const result = await coreController.create(ctx);
+    const result = await super.create(ctx);
 
     if (result?.data?.id) {
       await strapi
@@ -37,7 +33,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
     if (!hasPermission) return;
 
-    return coreController.update(ctx);
+    return super.update(ctx);
   },
 
   async delete(ctx) {
@@ -47,6 +43,6 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
     if (!hasPermission) return;
 
-    return coreController.delete(ctx);
+    return super.delete(ctx);
   },
-};
+}));

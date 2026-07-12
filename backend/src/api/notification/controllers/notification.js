@@ -7,13 +7,9 @@
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
 
-const coreController = createCoreController('api::notification.notification');
-
 const VALID_PREFERENCES = ['email', 'in_app', 'both'];
 
-module.exports = {
-  ...coreController,
-
+module.exports = createCoreController('api::notification.notification', ({ strapi }) => ({
   async create(ctx) {
     const user = authenticate(ctx, strapi);
     if (!user) return;
@@ -21,7 +17,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_NOTIFICATIONS', strapi);
     if (!hasPermission) return;
 
-    return coreController.create(ctx);
+    return super.create(ctx);
   },
 
   async update(ctx) {
@@ -31,7 +27,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_NOTIFICATIONS', strapi);
     if (!hasPermission) return;
 
-    return coreController.update(ctx);
+    return super.update(ctx);
   },
 
   async delete(ctx) {
@@ -41,7 +37,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_NOTIFICATIONS', strapi);
     if (!hasPermission) return;
 
-    return coreController.delete(ctx);
+    return super.delete(ctx);
   },
 
   // Notificaciones propias (últimos 30 días): solo requiere autenticación
@@ -129,4 +125,4 @@ module.exports = {
 
     ctx.send({ data: { notificationPreference } });
   },
-};
+}));

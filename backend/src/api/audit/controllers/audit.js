@@ -8,11 +8,7 @@ const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
 const { generatePDF, generateXLSX } = require('../../../utils/exportReports');
 
-const coreController = createCoreController('api::audit.audit');
-
-module.exports = {
-  ...coreController,
-
+module.exports = createCoreController('api::audit.audit', ({ strapi }) => ({
   async find(ctx) {
     const user = authenticate(ctx, strapi);
     if (!user) return;
@@ -85,4 +81,4 @@ module.exports = {
       ctx.internalServerError('Failed to export audit logs');
     }
   },
-};
+}));

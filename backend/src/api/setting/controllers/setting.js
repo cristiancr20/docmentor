@@ -7,11 +7,7 @@
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
 
-const coreController = createCoreController('api::setting.setting');
-
-module.exports = {
-  ...coreController,
-
+module.exports = createCoreController('api::setting.setting', ({ strapi }) => ({
   async create(ctx) {
     const user = authenticate(ctx, strapi);
     if (!user) return;
@@ -19,7 +15,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_SETTINGS', strapi);
     if (!hasPermission) return;
 
-    return coreController.create(ctx);
+    return super.create(ctx);
   },
 
   async update(ctx) {
@@ -29,7 +25,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_SETTINGS', strapi);
     if (!hasPermission) return;
 
-    return coreController.update(ctx);
+    return super.update(ctx);
   },
 
   async delete(ctx) {
@@ -39,6 +35,6 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_SETTINGS', strapi);
     if (!hasPermission) return;
 
-    return coreController.delete(ctx);
+    return super.delete(ctx);
   },
-};
+}));

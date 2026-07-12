@@ -3,9 +3,7 @@
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
 
-const coreController = createCoreController('api::permission.permission');
-
-module.exports = coreController({
+module.exports = createCoreController('api::permission.permission', ({ strapi }) => ({
   async create(ctx) {
     const user = authenticate(ctx, strapi);
     if (!user) return;
@@ -13,7 +11,7 @@ module.exports = coreController({
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
     if (!hasPermission) return;
 
-    return coreController.create(ctx);
+    return super.create(ctx);
   },
 
   async update(ctx) {
@@ -23,7 +21,7 @@ module.exports = coreController({
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
     if (!hasPermission) return;
 
-    return coreController.update(ctx);
+    return super.update(ctx);
   },
 
   async delete(ctx) {
@@ -39,4 +37,4 @@ module.exports = coreController({
     });
     ctx.body = { data: { id, message: 'Permiso desactivado' } };
   },
-});
+}));

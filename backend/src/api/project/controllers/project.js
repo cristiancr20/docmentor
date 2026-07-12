@@ -7,11 +7,7 @@
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
 
-const coreController = createCoreController('api::project.project');
-
-module.exports = {
-  ...coreController,
-
+module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   async create(ctx) {
     const user = authenticate(ctx, strapi);
     if (!user) return;
@@ -19,7 +15,7 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'CREATE_PROJECT', strapi);
     if (!hasPermission) return;
 
-    const result = await coreController.create(ctx);
+    const result = await super.create(ctx);
 
     const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
 
@@ -46,7 +42,7 @@ module.exports = {
     const { id } = ctx.params;
     const oldProject = await strapi.entityService.findOne('api::project.project', id);
 
-    const result = await coreController.update(ctx);
+    const result = await super.update(ctx);
 
     const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
 
@@ -73,7 +69,7 @@ module.exports = {
     const { id } = ctx.params;
     const project = await strapi.entityService.findOne('api::project.project', id);
 
-    const result = await coreController.delete(ctx);
+    const result = await super.delete(ctx);
 
     const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
 
@@ -144,4 +140,4 @@ module.exports = {
 
     ctx.body = updatedProject;
   },
-};
+}));
