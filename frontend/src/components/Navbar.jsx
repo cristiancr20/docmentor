@@ -1,21 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaArrowDown, FaBell, FaBars, FaTimes } from "react-icons/fa";
-import { getNotifications, markAsReadNotification } from "../core/Notification";
+import { FaArrowDown, FaBars, FaTimes } from "react-icons/fa";
 import { decryptData } from "../utils/encryption";
 import { AnimatePresence, motion } from "framer-motion";
 import { MdAdminPanelSettings } from "react-icons/md";
 import { IoLogOut } from "react-icons/io5";
 import { usePermission } from "../context/PermissionContext";
-import { errorAlert } from "./Alerts/Alerts";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -26,36 +22,12 @@ const Navbar = () => {
   // derivado de permisos dinámicos en lugar de roles hardcodeados
   const canReviewDocuments = hasPermission("REVIEW_DOCUMENT");
   const canCreateProjects = hasPermission("CREATE_PROJECT");
-  const canManageNotifications = hasPermission("MANAGE_NOTIFICATIONS");
   const canAccessAdministration =
     hasPermission("MANAGE_USERS") ||
     hasPermission("MANAGE_ROLES") ||
     hasPermission("MANAGE_SETTINGS");
   const showReviewerMenu = canReviewDocuments;
   const showStudentMenu = canCreateProjects && !canReviewDocuments;
-
-  const loadNotifications = async (token) => {
-    try {
-      if (!token) {
-        console.error("No se encontró token de autenticación.");
-        return;
-      }
-
-      const response = await getNotifications(token);
-      
-      if (response && Array.isArray(response)) {
-        setNotifications(response);
-      } else if (response && response.data && Array.isArray(response.data)) {
-        setNotifications(response.data);
-      } else {
-        console.warn("Formato de notificaciones no reconocido:", response);
-        setNotifications([]);
-      }
-    } catch (error) {
-      console.error("Error al cargar notificaciones:", error);
-      setNotifications([]);
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,10 +43,8 @@ const Navbar = () => {
       }
 
       try {
-        const jwtToken = decryptData(encryptedToken);
         const user = JSON.parse(decryptData(encryptedUserData));
         setUserData(user);
-        setToken(jwtToken);
       } catch (error) {
         console.error(
           "Error al procesar los datos del usuario:",
@@ -89,45 +59,7 @@ const Navbar = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    // Cargar notificaciones solo para usuarios con permiso de gestionarlas
-    if (token && canManageNotifications) {
-      loadNotifications(token);
-    }
-  }, [token, canManageNotifications]);
-
   const handleToggle = (setter) => () => setter((prev) => !prev);
-
-  const markAsRead = async (notification) => {
-    try {
-      await markAsReadNotification(notification.id);
-
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) =>
-          notif.id === notification.id
-            ? { ...notif, attributes: { ...notif.attributes, isRead: true } }
-            : notif
-        )
-      );
-
-      // Cerrar el dropdown de notificaciones
-      setIsNotificationOpen(false);
-
-      // Redirigir al documento si existe
-      if (notification.attributes?.documents?.data?.[0]?.id) {
-        const documentId = notification.attributes.documents.data[0].id;
-        navigate(`/document/${documentId}`);
-      } else if (notification.attributes?.project?.data?.id) {
-        const projectId = notification.attributes.project.data.id;
-        navigate(`/project/${projectId}`);
-      } else {
-        console.log("No se encontró documento o proyecto para redirigir");
-      }
-    } catch (error) {
-      console.error("Error al marcar la notificación como leída:", error);
-      errorAlert("Error al procesar la notificación");
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("jwtToken");
@@ -160,10 +92,6 @@ const Navbar = () => {
       </div>
     );
   }
-
-  const unreadNotificationsCount = notifications.filter(
-    (notification) => !notification.attributes?.isRead
-  ).length;
 
   const menuVariants = {
     closed: {
@@ -273,67 +201,8 @@ const Navbar = () => {
             </motion.button>
 
             <div className="flex items-center space-x-3">
-              {canManageNotifications && (
-                <div className="relative">
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    type="button"
-                    className="flex p-2 items-center space-x-2 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                    onClick={handleToggle(setIsNotificationOpen)}
-                  >
-                    <FaBell className="text-yellow-500" />
-                    {unreadNotificationsCount > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full"
-                      >
-                        {unreadNotificationsCount}
-                      </motion.span>
-                    )}
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {isNotificationOpen && (
-                      <motion.div
-                        initial="closed"
-                        animate="open"
-                        exit="closed"
-                        variants={dropdownVariants}
-                        className="absolute right-0 mt-2 w-80 p-2 max-h-96 overflow-y-auto bg-white rounded-lg shadow dark:bg-gray-700 z-50"
-                      >
-                        {notifications.length > 0 ? (
-                          notifications.map((notification) => (
-                            <motion.div
-                              key={notification.id}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              whileHover={{ scale: 1.02 }}
-                              className={`p-3 rounded-lg mt-2 cursor-pointer ${
-                                notification.attributes?.isRead
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-blue-100 text-gray-900"
-                              }`}
-                              onClick={() => markAsRead(notification)}
-                            >
-                              <p className="text-sm">
-                                {notification.attributes?.message}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {new Date(notification.attributes?.createdAt).toLocaleString()}
-                              </p>
-                            </motion.div>
-                          ))
-                        ) : (
-                          <p className="p-3 text-sm text-gray-700 dark:text-gray-400">
-                            No hay notificaciones.
-                          </p>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+              {/* Notificaciones en tiempo real para cualquier usuario autenticado */}
+              <NotificationBell />
               <div className="relative">
                 <motion.button
                   whileTap={{ scale: 0.95 }}

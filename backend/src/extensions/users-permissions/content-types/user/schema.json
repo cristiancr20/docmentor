@@ -98,6 +98,11 @@
     "isInstitutional": {
       "type": "boolean"
     },
+    "notificationPreference": {
+      "type": "enumeration",
+      "enum": ["email", "in_app", "both"],
+      "default": "both"
+    },
     "isActive": {
       "type": "boolean",
       "default": true

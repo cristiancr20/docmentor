@@ -1,52 +1,62 @@
 import axios from "axios";
 
 import { API_URL } from "./config";
+import { decryptData } from "../utils/encryption";
 
-export const getNotifications = async (token) => {
+// Los endpoints de notificaciones propias requieren el JWT desencriptado
+const getAuthHeaders = () => {
+  const encryptedToken = localStorage.getItem("jwtToken");
+  if (!encryptedToken) return {};
+
   try {
-    const response = await axios.get(`${API_URL}/api/notifications?populate=*`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    
-    if (response.status === 200) {
-
-      return response.data.data; // Devuelve los datos de las notificaciones
-    } else {
-      console.warn(`Error en la respuesta del servidor: ${response.status} ${response.statusText}`);
-      return []; // Retorna un array vacío en caso de error no crítico
-    }
+    const token = decryptData(encryptedToken);
+    return token ? { Authorization: `Bearer ${token}` } : {};
   } catch (error) {
-    if (error.response) {
-      // El servidor respondió con un código de estado distinto a 2xx
-      console.error('Error del servidor:', error.response.data);
-      console.error('Código de estado:', error.response.status);
-    } else if (error.request) {
-      // La solicitud fue hecha, pero no se recibió respuesta
-      console.error('Error de red o sin respuesta del servidor:', error.request);
-    } else {
-      // Error al configurar la solicitud
-      console.error('Error al configurar la solicitud:', error.message);
-    }
-
-    throw error;  // Propaga el error para que pueda manejarse en el componente si es necesario
+    console.error("Error al desencriptar el token:", error);
+    return {};
   }
 };
 
-export const markAsReadNotification = async (notificationId) => {
-  try {
-    const response = await axios.put(
-      `${API_URL}/api/notifications/${notificationId}`,
-      {
-        data: {
-          isRead: true,
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error al marcar la notificación como leída:", error);
-    throw error; // re-lanza el error para manejarlo en el frontend
-  }
+// Notificaciones propias de los últimos 30 días
+export const getMyNotifications = async () => {
+  const response = await axios.get(`${API_URL}/api/notifications/me`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data?.data || [];
+};
+
+export const markNotificationAsRead = async (notificationId) => {
+  const response = await axios.put(
+    `${API_URL}/api/notifications/${notificationId}/read`,
+    {},
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+export const markAllNotificationsAsRead = async () => {
+  const response = await axios.put(
+    `${API_URL}/api/notifications/me/read-all`,
+    {},
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
+};
+
+// Preferencia de notificación: "email", "in_app" o "both"
+export const getNotificationPreference = async () => {
+  const response = await axios.get(
+    `${API_URL}/api/notifications/me/preferences`,
+    { headers: getAuthHeaders() }
+  );
+  return response.data?.data?.notificationPreference || "both";
+};
+
+export const updateNotificationPreference = async (notificationPreference) => {
+  const response = await axios.put(
+    `${API_URL}/api/notifications/me/preferences`,
+    { notificationPreference },
+    { headers: getAuthHeaders() }
+  );
+  return response.data;
 };

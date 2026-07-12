@@ -3,7 +3,10 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Navbar from "../Navbar";
 import { usePermission } from "../../context/PermissionContext";
-import { getNotifications } from "../../core/Notification";
+import {
+  getMyNotifications,
+  getNotificationPreference,
+} from "../../core/Notification";
 import { decryptData } from "../../utils/encryption";
 
 jest.mock("../../context/PermissionContext", () => ({
@@ -11,8 +14,11 @@ jest.mock("../../context/PermissionContext", () => ({
 }));
 
 jest.mock("../../core/Notification", () => ({
-  getNotifications: jest.fn(),
-  markAsReadNotification: jest.fn(),
+  getMyNotifications: jest.fn(),
+  markNotificationAsRead: jest.fn(),
+  markAllNotificationsAsRead: jest.fn(),
+  getNotificationPreference: jest.fn(),
+  updateNotificationPreference: jest.fn(),
 }));
 
 jest.mock("../../utils/encryption", () => ({
@@ -48,7 +54,8 @@ describe("Navbar permisos", () => {
         ? "jwt-token"
         : JSON.stringify({ username: "Usuario Test", email: "test@unl.edu.ec" })
     );
-    getNotifications.mockResolvedValue([]);
+    getMyNotifications.mockResolvedValue([]);
+    getNotificationPreference.mockResolvedValue("both");
   });
 
   it("muestra el menu de revision con REVIEW_DOCUMENT", async () => {

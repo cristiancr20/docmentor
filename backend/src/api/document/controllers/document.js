@@ -33,6 +33,10 @@ module.exports = {
       ipAddress
     );
 
+    await strapi
+      .service('api::notification.notification')
+      .notifyDocumentUploaded(result.data.id, user.id);
+
     return result;
   },
 
@@ -139,6 +143,10 @@ module.exports = {
       { status },
       ipAddress
     );
+
+    await strapi
+      .service('api::notification.notification')
+      .notifyDocumentStatusChanged(id, status, user.id);
 
     ctx.send({ data: updatedDocument });
   },

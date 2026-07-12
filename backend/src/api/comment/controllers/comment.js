@@ -19,7 +19,15 @@ module.exports = {
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
     if (!hasPermission) return;
 
-    return coreController.create(ctx);
+    const result = await coreController.create(ctx);
+
+    if (result?.data?.id) {
+      await strapi
+        .service('api::notification.notification')
+        .notifyCommentReceived(result.data.id, user.id);
+    }
+
+    return result;
   },
 
   async update(ctx) {
