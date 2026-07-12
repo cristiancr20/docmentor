@@ -16,6 +16,9 @@
       "required": true,
       "unique": true
     },
+    "rolType": {
+      "type": "string"
+    },
     "description": {
       "type": "text"
     },

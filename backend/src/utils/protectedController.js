@@ -1,5 +1,7 @@
 'use strict';
 
+const jwt = require('jsonwebtoken');
+
 const getToken = (ctx) => {
   return ctx.request.headers.authorization?.replace('Bearer ', '');
 };
@@ -12,7 +14,11 @@ const authenticate = (ctx, strapi) => {
   }
 
   try {
-    return strapi.plugins['users-permissions'].services.jwt.verify(token);
+    // Verificación síncrona: el `jwt.verify` del plugin es asíncrono (Promise),
+    // y todos los call sites usan `authenticate` sin await. Verificamos aquí de
+    // forma síncrona con el mismo secret para devolver el payload directamente.
+    const secret = strapi.config.get('plugin.users-permissions.jwtSecret');
+    return jwt.verify(token, secret);
   } catch (error) {
     strapi.log.warn(`Authentication failed: ${error.message}`);
     ctx.unauthorized('Invalid or expired token');

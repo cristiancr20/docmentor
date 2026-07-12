@@ -1,38 +1,46 @@
+'use strict';
+
+/**
+ * Rutas custom que se inyectan en el plugin users-permissions vía strapi-server.js.
+ * Handler en formato corto ('user.<accion>') y `prefix: ''` para que la ruta
+ * quede montada bajo /api sin el prefijo del plugin.
+ */
+
 module.exports = [
   {
     method: 'GET',
     path: '/auth/me/permissions',
-    handler: 'plugin::users-permissions.user.getMyPermissions',
-    config: { auth: false },
+    handler: 'user.getMyPermissions',
+    config: { prefix: '', auth: false },
   },
   {
     method: 'DELETE',
     path: '/users/:id/anonymize',
-    handler: 'plugin::users-permissions.user.anonymize',
-    config: { auth: false },
+    handler: 'user.anonymize',
+    config: { prefix: '', auth: false },
   },
   {
     method: 'GET',
     path: '/admin/users',
-    handler: 'plugin::users-permissions.user.adminListUsers',
-    config: { auth: false },
+    handler: 'user.adminListUsers',
+    config: { prefix: '', auth: false },
   },
   {
     method: 'POST',
     path: '/admin/users',
-    handler: 'plugin::users-permissions.user.adminCreateUser',
-    config: { auth: false },
+    handler: 'user.adminCreateUser',
+    config: { prefix: '', auth: false },
   },
   {
     method: 'PUT',
     path: '/admin/users/:id',
-    handler: 'plugin::users-permissions.user.adminUpdateUser',
-    config: { auth: false },
+    handler: 'user.adminUpdateUser',
+    config: { prefix: '', auth: false },
   },
   {
     method: 'DELETE',
     path: '/admin/users/:id',
-    handler: 'plugin::users-permissions.user.adminDeleteUser',
-    config: { auth: false },
+    handler: 'user.adminDeleteUser',
+    config: { prefix: '', auth: false },
   },
 ];

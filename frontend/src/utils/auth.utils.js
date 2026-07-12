@@ -21,6 +21,7 @@ export const ROLE_ROUTES = {
   tutor: "/tutor/dashboard",
   superadmin: "/tutor/dashboard",
   estudiante: "/student/dashboard",
+  coordinador: "/coordinator/dashboard",
 };
 
 export const USER_STORAGE_KEYS = ["rol", "username", "email", "userId"];
