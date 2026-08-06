@@ -7,22 +7,13 @@ export const addCommentToDocument = async (
   tutorId,
   highlightAreas,
   quote
-) => {
-  // Sin re-lanzar, un fallo aquí se tragaba y la vista refrescaba como si el
-  // comentario se hubiera guardado.
-  const commentResponse = await postComment(
-    documentId,
-    newComment,
-    tutorId,
-    highlightAreas,
-    quote
-  );
-
-  // Actualiza el estado del documento a revisado
-  const updateResponse = await updateDocumentStatusNoRevisado(documentId);
-
-  return { commentResponse, updateResponse };
-};
+) =>
+  // Solo se publica el comentario. Antes, acto seguido, se marcaba el documento
+  // como pendiente con un PUT genérico que exige UPDATE_DOCUMENT: un tutor no
+  // lo tiene, recibía 403 y la excepción impedía refrescar la vista, así que el
+  // comentario quedaba guardado pero invisible hasta recargar. Ahora esa regla
+  // la aplica el backend al crear el comentario.
+  postComment(documentId, newComment, tutorId, highlightAreas, quote);
 
 // MÉTODO PARA PUBLICAR COMENTARIO
 // La autoría (`correctionTutor`) la fija el backend con el usuario del token,
@@ -40,25 +31,24 @@ const postComment = async (documentId, newComment, tutorId, highlightAreas, quot
   return response.data;
 };
 
-// MÉTODO PARA ACTUALIZAR EL ESTADO DEL DOCUMENTO
+// Marca la versión como revisada. Va por la ruta de revisión, que exige
+// REVIEW_DOCUMENT; el PUT genérico al documento pedía UPDATE_DOCUMENT y
+// devolvía 403 al tutor.
 export const updateDocumentStatusRevisado = async (documentId) => {
-  const response = await api.put(`/api/documents/${documentId}`, {
+  const response = await api.put(`/api/documents/${documentId}/review`, {
     data: { isRevised: true },
   });
 
   return response.data;
 };
 
-const updateDocumentStatusNoRevisado = async (documentId) => {
-  const response = await api.put(`/api/documents/${documentId}`, {
-    data: { isRevised: false },
+// Se pide también el autor de cada corrección: el panel lo muestra junto al
+// comentario, y con `populate=comments` a secas la relación no venía.
+export const getCommentsByDocument = async (documentId) => {
+  const response = await api.get(`/api/documents/${documentId}`, {
+    params: { "populate[comments][populate][0]": "correctionTutor" },
   });
 
-  return response.data;
-};
-
-export const getCommentsByDocument = async (documentId) => {
-  const response = await api.get(`/api/documents/${documentId}?populate=comments`);
   return response.data?.data?.attributes?.comments?.data || [];
 };
 

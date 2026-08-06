@@ -130,6 +130,46 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
     return result;
   },
 
+  /** Marca la versión como revisada o pendiente. */
+  async setReviewed(ctx) {
+    const user = await authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'REVIEW_DOCUMENT', strapi);
+    if (!hasPermission) return;
+
+    const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
+    const { isRevised } = ctx.request.body?.data ?? ctx.request.body ?? {};
+    if (typeof isRevised !== 'boolean') {
+      return ctx.badRequest('Se espera `isRevised` como booleano');
+    }
+
+    const document = await strapi.entityService.findOne('api::document.document', id);
+    if (!document) {
+      return ctx.notFound('Documento no encontrado');
+    }
+
+    const updated = await strapi.entityService.update('api::document.document', id, {
+      data: { isRevised },
+    });
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'REVIEW_DOCUMENT',
+      'document',
+      id,
+      user.id,
+      { isRevised: document.isRevised },
+      { isRevised },
+      ipAddress
+    );
+
+    ctx.send({ data: updated });
+  },
+
   async changeStatus(ctx) {
     const user = await authenticate(ctx, strapi);
     if (!user) return;
