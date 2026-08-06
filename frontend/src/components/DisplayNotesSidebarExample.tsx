@@ -24,6 +24,8 @@ import {
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
+import { useAppTheme } from "../utils/useAppTheme";
+
 interface Note {
   id: number;
   content: string;
@@ -65,6 +67,10 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   const [message, setMessage] = React.useState("");
   let noteId = notes.length;
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // El visor trae su propio tema. Sin pasárselo, en oscuro dejaba los iconos de
+  // la barra en negro sobre fondo oscuro y no se distinguían.
+  const theme = useAppTheme();
 
   // `Viewer` es un componente de función: no acepta ref, así que el
   // `viewerRef.current.jumpToPage(...)` anterior nunca llegaba a ejecutarse
@@ -264,7 +270,16 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   const { Toolbar } = toolbarPluginInstance;
 
   return (
-    <div className="relative flex h-full flex-col">
+    /* La clase de tema oscuro se repite aquí a propósito: nuestra barra de
+       herramientas se renderiza fuera del elemento del visor, así que no le
+       llegaban las variables de `.rpv-core__viewer--dark` y los iconos se
+       quedaban en negro sobre fondo oscuro, invisibles. Al ponerla en un
+       ancestro común, las variables cascadean también a la barra. */
+    <div
+      className={`relative flex h-full flex-col ${
+        theme === "dark" ? "rpv-core__viewer--dark" : ""
+      }`}
+    >
       {/* La barra usaba un gris fijo (#f3f4f6) que en tema oscuro quedaba como
           una franja clara. Va con los tokens del sistema. */}
       <div className="flex items-center gap-0.5 border-b border-line bg-surface-2 px-2 py-1 text-content">
@@ -307,6 +322,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       <div ref={containerRef} className="relative flex-1 overflow-auto">
         <Viewer
           fileUrl={fileUrl}
+          theme={theme}
           onDocumentLoad={handleDocumentLoad}
           plugins={[
             highlightPluginInstance,
@@ -333,6 +349,18 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
                 
                 .highlight-flash {
                     animation: flashHighlight 1s ease-in-out;
+                }
+
+                /* En oscuro, el tema de la librería tiñe también el área donde
+                   se apoya la hoja, y el documento acababa flotando sobre un
+                   fondo casi negro. La barra se queda oscura, pero el papel y
+                   su entorno se mantienen claros: un PDF es una hoja blanca y
+                   leerlo así cansa menos. */
+                .rpv-core__viewer--dark .rpv-core__inner-page {
+                    background-color: #f7f8fa;
+                }
+                .rpv-core__viewer--dark .rpv-core__inner-pages {
+                    background-color: #f7f8fa;
                 }
             `}</style>
     </div>
