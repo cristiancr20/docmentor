@@ -44,6 +44,14 @@
 
   --shadow-card: 0 1px 2px rgba(22, 24, 29, 0.05);
   --shadow-pop: 0 12px 32px rgba(22, 24, 29, 0.12);
+
+  /* Carriles del grafo de versiones. Paleta categórica de tres tonos: es el
+     máximo que supera las comprobaciones de separación con todas las parejas en
+     juego (los carriles se ven en paralelo, así que cualquier par puede acabar
+     comparándose). Se asignan en orden fijo, nunca se ciclan. */
+  --lane-1: #2a78d6;
+  --lane-2: #eb6834;
+  --lane-3: #1baf7a;
 }
 
 :root.dark {
@@ -74,6 +82,11 @@
 
   --shadow-card: 0 1px 2px transparent;
   --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Los mismos tres tonos, escalonados para el fondo oscuro. */
+  --lane-1: #3987e5;
+  --lane-2: #d95926;
+  --lane-3: #199e70;
 }
 
 /**
