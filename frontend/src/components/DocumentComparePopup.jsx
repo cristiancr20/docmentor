@@ -21,7 +21,7 @@ import Button from "./ui/Button";
 import EmptyState from "./ui/EmptyState";
 import { SkeletonRows } from "./ui/Skeleton";
 import ChangeList from "./compare/ChangeList";
-import CompareSummary from "./compare/CompareSummary";
+import CompareSummary, { SimilarityBadge } from "./compare/CompareSummary";
 
 /**
  * Comparador de versiones.
@@ -301,10 +301,13 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
     { key: "side-by-side", label: "Lado a lado", icon: Columns2 },
   ];
 
-  // El resumen vive junto a las pestañas, en la zona fija: los filtros tienen
-  // que seguir alcanzables mientras se recorre una lista larga de cambios.
-  const showSummary =
-    tab === "changes" && status === "done" && !result?.textLayerMissing && hunks.length > 0;
+  // Hay resultado utilizable en cuanto la comparación termina y los PDF traen
+  // texto, aunque no haya ninguna diferencia (100% en común es un dato válido).
+  const hasResult = status === "done" && !result?.textLayerMissing && Boolean(result?.summary);
+
+  // Los filtros solo tienen sentido si hay algo que filtrar, y viven en la
+  // zona fija para seguir alcanzables con listas largas.
+  const showFilters = hasResult && tab === "changes" && hunks.length > 0;
 
   return (
     <Modal
@@ -317,7 +320,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       }`}
       subHeader={
         <>
-          <div className="flex gap-1 border-b border-line">
+          <div className="flex items-center gap-1 border-b border-line">
             {tabs.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -334,9 +337,17 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
                 {label}
               </button>
             ))}
+
+            {/* La similitud acompaña a las pestañas, no al panel de cambios:
+                sigue siendo el dato de referencia en la vista lado a lado. */}
+            {hasResult && (
+              <div className="ml-auto pb-2 pr-1">
+                <SimilarityBadge summary={result.summary} />
+              </div>
+            )}
           </div>
 
-          {showSummary && (
+          {showFilters && (
             <div className="pt-4">
               <CompareSummary
                 summary={result.summary}
