@@ -493,6 +493,11 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
       'api::project.project'
     >;
     publishedAt: Attribute.DateTime;
+    restoredFrom: Attribute.Relation<
+      'api::document.document',
+      'manyToOne',
+      'api::document.document'
+    >;
     status: Attribute.Enumeration<
       [
         'Subido',

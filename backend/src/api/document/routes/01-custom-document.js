@@ -22,5 +22,13 @@ module.exports = {
       handler: 'api::document.document.setReviewed',
       config: { auth: false },
     },
+    // Restaurar una versión anterior como versión nueva. Es una entrega, así
+    // que exige CREATE_DOCUMENT: la hace el estudiante, no el tutor.
+    {
+      method: 'POST',
+      path: '/documents/:id/restore',
+      handler: 'api::document.document.restoreVersion',
+      config: { auth: false },
+    },
   ],
 };

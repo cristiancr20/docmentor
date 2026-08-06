@@ -65,6 +65,11 @@
       "target": "api::document.document",
       "inversedBy": "previous_version"
     },
+    "restoredFrom": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::document.document"
+    },
     "status": {
       "type": "enumeration",
       "enum": [

@@ -127,6 +127,17 @@ export const createDocument = async (title, fileId, projectId) => {
   }
 };
 
+/**
+ * Restaura una versión anterior creando una nueva al final del historial.
+ *
+ * Toda la lógica vive en el backend: el número de versión se calcula allí y no
+ * se arrastran comentarios ni notificaciones del original.
+ */
+export const restoreDocumentVersion = async (documentId) => {
+  const response = await api.post(`/api/documents/${documentId}/restore`);
+  return response.data?.data;
+};
+
 export const copyDocumentAsNewVersion = async (documentId) => {
   try {
     // Obtener el documento original

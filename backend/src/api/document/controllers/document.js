@@ -130,6 +130,102 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
     return result;
   },
 
+  /**
+   * Restaura una versión anterior creando una nueva al final del historial.
+   *
+   * No ramifica: el historial sigue siendo una línea. Un PDF es un binario
+   * opaco, así que dos ramas nunca podrían fusionarse y solo quedaría la duda
+   * de cuál es la buena. Restaurar conserva todo: la v3 y la v4 siguen ahí,
+   * visibles y auditables, y la copia de la v2 pasa a ser la versión actual.
+   *
+   * Lo hacía el cliente encadenando varias llamadas, y arrastraba los
+   * comentarios y las notificaciones del original: los comentarios quedaban
+   * compartidos entre dos versiones (la relación es N-N), de modo que editar
+   * uno afectaba a ambas y los contadores mentían.
+   */
+  async restoreVersion(ctx) {
+    const user = await authenticate(ctx, strapi);
+    if (!user) return;
+
+    const hasPermission = await authorize(ctx, user.id, 'CREATE_DOCUMENT', strapi);
+    if (!hasPermission) return;
+
+    const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
+    const source = await strapi.entityService.findOne('api::document.document', id, {
+      populate: { project: true, documentFile: true },
+    });
+
+    if (!source) {
+      return ctx.notFound('Documento no encontrado');
+    }
+
+    const projectId = source.project?.id;
+    if (!projectId) {
+      return ctx.badRequest('El documento no pertenece a ningún proyecto');
+    }
+
+    // El número se calcula aquí: el cliente lo hacía leyendo la última versión
+    // y sumando uno, así que dos restauraciones simultáneas generaban dos
+    // versiones con el mismo número.
+    const siblings = await strapi.db.query('api::document.document').findMany({
+      where: { project: projectId },
+      select: ['id', 'version'],
+    });
+
+    const nextVersion = siblings.reduce((max, doc) => Math.max(max, doc.version ?? 0), 0) + 1;
+    const currentTip = siblings.reduce(
+      (tip, doc) => ((doc.version ?? 0) > (tip?.version ?? 0) ? doc : tip),
+      null
+    );
+
+    const restored = await strapi.entityService.create('api::document.document', {
+      data: {
+        title: source.title,
+        documentFile: (source.documentFile ?? []).map((file) => file.id),
+        project: projectId,
+        version: nextVersion,
+        isCurrent: true,
+        isRevised: false,
+        status: 'Subido',
+        // Encadena con la punta del historial, y deja constancia aparte de
+        // cuál se restauró: es lo que dibuja la conexión en la línea de tiempo.
+        previous_version: currentTip?.id ?? null,
+        restoredFrom: source.id,
+        // El content-type tiene draftAndPublish activo: sin esto la versión
+        // nace como borrador y no aparece en el historial.
+        publishedAt: new Date(),
+      },
+      populate: { documentFile: true, restoredFrom: true },
+    });
+
+    // Solo la nueva queda como actual.
+    await Promise.all(
+      siblings
+        .filter((doc) => doc.id !== restored.id)
+        .map((doc) =>
+          strapi.entityService.update('api::document.document', doc.id, {
+            data: { isCurrent: false },
+          })
+        )
+    );
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'RESTORE_DOCUMENT_VERSION',
+      'document',
+      restored.id,
+      user.id,
+      { restoredFrom: source.id, version: source.version },
+      { version: nextVersion },
+      ipAddress
+    );
+
+    ctx.send({ data: restored });
+  },
+
   /** Marca la versión como revisada o pendiente. */
   async setReviewed(ctx) {
     const user = await authenticate(ctx, strapi);
