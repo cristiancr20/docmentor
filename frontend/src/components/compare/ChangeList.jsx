@@ -66,9 +66,54 @@ ContextLine.propTypes = {
   position: PropTypes.oneOf(["before", "after"]),
 };
 
+/**
+ * Proporción de palabras que cambian dentro de un bloque modificado.
+ *
+ * Decide cómo se presenta: con un retoque pequeño la vista fusionada se lee de
+ * un vistazo, pero cuando cambia casi todo, los tachados y los añadidos se
+ * entrelazan y el resultado es ilegible ("29xxxxx195" y "29xxxxx366" acaban
+ * pegados como "29xxxxx19529xxxxx366"). A partir de ese punto compensa separar
+ * las dos versiones.
+ */
+const changeRatio = (parts) => {
+  let changed = 0;
+  let total = 0;
+
+  parts.forEach((part) => {
+    const words = part.value.split(/\s+/).filter(Boolean).length;
+    total += words;
+    if (part.added || part.removed) changed += words;
+  });
+
+  return total === 0 ? 0 : changed / total;
+};
+
+const SPLIT_THRESHOLD = 0.4;
+
+/** Dos columnas limpias: cada versión se lee entera, sin ruido. */
+const SplitDiff = ({ before, after }) => (
+  <div className="grid gap-2 sm:grid-cols-2">
+    <div className="rounded-lg bg-danger-wash p-3">
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-danger">Antes</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-content">{before}</p>
+    </div>
+    <div className="rounded-lg bg-ok-wash p-3">
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ok">Después</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-content">{after}</p>
+    </div>
+  </div>
+);
+
+SplitDiff.propTypes = {
+  before: PropTypes.string,
+  after: PropTypes.string,
+};
+
 const ChangeCard = ({ hunk, onGoToPage }) => {
   const meta = TYPE_META[hunk.type];
   const Icon = meta.icon;
+  const isHeavilyRewritten =
+    hunk.type === "modified" && changeRatio(hunk.wordDiff) >= SPLIT_THRESHOLD;
 
   return (
     <article className="rounded-xl border border-line bg-surface p-4">
@@ -99,9 +144,13 @@ const ChangeCard = ({ hunk, onGoToPage }) => {
         <ContextLine text={hunk.contextBefore} position="before" />
 
         {hunk.type === "modified" ? (
-          <div className="rounded-lg bg-surface-2 p-3">
-            <InlineWordDiff parts={hunk.wordDiff} />
-          </div>
+          isHeavilyRewritten ? (
+            <SplitDiff before={hunk.before} after={hunk.after} />
+          ) : (
+            <div className="rounded-lg bg-surface-2 p-3">
+              <InlineWordDiff parts={hunk.wordDiff} />
+            </div>
+          )
         ) : (
           <p
             className={`whitespace-pre-wrap rounded-lg p-3 text-sm leading-relaxed ${
