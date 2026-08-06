@@ -1,21 +1,13 @@
 import * as React from "react";
-import {
-  Button,
-  PdfJs,
-  Position,
-  PrimaryButton,
-  Tooltip,
-  Viewer,
-} from "@react-pdf-viewer/core";
+import { Viewer } from "@react-pdf-viewer/core";
+import { MessageSquarePlus } from "lucide-react";
 
-import { toolbarPlugin, ToolbarSlot } from "@react-pdf-viewer/toolbar";
+import { toolbarPlugin } from "@react-pdf-viewer/toolbar";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 
-/* import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout'; */
 import {
   HighlightArea,
   highlightPlugin,
-  MessageIcon,
   RenderHighlightContentProps,
   RenderHighlightTargetProps,
   RenderHighlightsProps,
@@ -129,6 +121,44 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   }, [goToPage, jumpToPage]);
 
   /**
+   * Descarta las selecciones que el plugin de resaltado no sabe procesar.
+   *
+   * Su manejador asume que la selección empieza y acaba en nodos de texto: hace
+   * `range.startContainer.parentNode` y usa `startOffset` como posición de
+   * carácter. Si la selección arranca en un elemento (por ejemplo al empezar a
+   * arrastrar desde un hueco entre fragmentos), ese offset es en realidad un
+   * índice de hijo y acaba lanzando
+   * "IndexSizeError: There is no child at offset N", que además rompe el
+   * arrastre.
+   *
+   * Aquí se colapsa la selección en fase de captura, antes de que llegue al
+   * plugin: al quedar vacía, su manejador sale por su propia comprobación. El
+   * efecto visible es que esa selección concreta no ofrece el botón de
+   * comentar, en lugar de reventar.
+   */
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    const isTextNodeInLayer = (node: Node | null) =>
+      node?.nodeType === Node.TEXT_NODE &&
+      node.parentElement?.classList.contains("rpv-core__text-layer-text");
+
+    const discardUnsupportedSelection = () => {
+      const selection = document.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+
+      const range = selection.getRangeAt(0);
+      if (!isTextNodeInLayer(range.startContainer) || !isTextNodeInLayer(range.endContainer)) {
+        selection.removeAllRanges();
+      }
+    };
+
+    container.addEventListener("mouseup", discardUnsupportedSelection, true);
+    return () => container.removeEventListener("mouseup", discardUnsupportedSelection, true);
+  }, []);
+
+  /**
    * El scroll no ocurre en nuestro contenedor sino en el que monta el visor por
    * dentro, así que hay que localizarlo una vez cargado el documento.
    */
@@ -147,33 +177,38 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
 
   React.useEffect(() => () => scrollerReadyRef.current?.(null), []);
 
-  const renderHighlightTarget = (props: RenderHighlightTargetProps) => (
+  /**
+   * Botón que aparece al soltar una selección sobre el documento.
+   *
+   * Era un bloque con `background: cyan` alrededor del botón de la librería:
+   * un rectángulo de color chillón que no se parecía a nada del resto de la
+   * interfaz. Ahora es una píldora con el acento, y el color del contenedor
+   * desaparece porque el botón ya lo aporta.
+   */
+  const renderHighlightTarget = (props: RenderHighlightTargetProps) => {
+    if (!canComment) return null;
 
-    <div
-      style={{
-        background: "cyan",
-        display: canComment ? "flex" : "none", 
-        position: "absolute",
-        left: `${props.selectionRegion.left}%`,
-        top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
-        transform: "translate(0, 8px)",
-        zIndex: 1,
-      }}
-    >
-      <Tooltip
-        position={Position.TopCenter}
-        target={
-          <Button onClick={props.toggle}>
-            <MessageIcon />
-          </Button>
-        }
-        content={() => <div style={{ width: "100px" }}>Agregar comentario</div>}
-        offset={{ left: 0, top: -8 }}
-      />
-
-      
-    </div>
-  );
+    return (
+      <div
+        className="absolute z-10"
+        style={{
+          left: `${props.selectionRegion.left}%`,
+          top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
+          transform: "translate(0, 8px)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={props.toggle}
+          title="Comentar la selección"
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1.5 text-xs font-medium text-on-accent shadow-pop transition-colors hover:bg-accent-soft"
+        >
+          <MessageSquarePlus className="h-3.5 w-3.5" strokeWidth={2} />
+          Comentar
+        </button>
+      </div>
+    );
+  };
   
   const renderHighlightContent = (props: RenderHighlightContentProps) => {
     const addNote = () => {
