@@ -63,7 +63,8 @@ const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) =>
   const handleDelete = async () => {
     const confirmed = await confirmAlert(
       "¿Eliminar el comentario?",
-      "Esta acción no se puede deshacer."
+      "Esta acción no se puede deshacer.",
+      "Sí, eliminar"
     );
     if (!confirmed) return;
 

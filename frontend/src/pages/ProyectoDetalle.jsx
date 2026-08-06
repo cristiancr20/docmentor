@@ -138,7 +138,8 @@ const ProyectoDetalle = () => {
 
     const confirmed = await confirmAlert(
       `¿Restaurar la versión ${version}?`,
-      "Se creará una versión nueva con ese contenido. Las versiones posteriores se conservan en el historial."
+      "Se creará una versión nueva con ese contenido. Las versiones posteriores se conservan en el historial.",
+      "Sí, restaurar"
     );
     if (!confirmed) return;
 

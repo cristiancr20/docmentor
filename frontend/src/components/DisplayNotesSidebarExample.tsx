@@ -148,8 +148,12 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       const selection = document.getSelection();
       if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
 
+      // Solo se comprueba el inicio. El plugin sí contempla varios casos para el
+      // extremo final (que caiga en la capa de resaltados, o en el propio
+      // contenedor), y exigir también ahí un nodo de texto descartaba
+      // selecciones perfectamente válidas: dejaba de poder comentarse.
       const range = selection.getRangeAt(0);
-      if (!isTextNodeInLayer(range.startContainer) || !isTextNodeInLayer(range.endContainer)) {
+      if (!isTextNodeInLayer(range.startContainer)) {
         selection.removeAllRanges();
       }
     };

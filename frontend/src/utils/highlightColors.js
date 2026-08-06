@@ -18,9 +18,10 @@ export const HIGHLIGHT_COLORS = {
   commentSelected: "rgba(79, 70, 229, 0.28)",
   commentBarSelected: "#4f46e5",
 
-  // Comparador de versiones.
-  removed: "#f87171",
-  added: "#34d399",
+  // Comparador de versiones. Van con transparencia como los demás: en sólido
+  // tapaban por completo el texto de la página y no se podía leer qué cambió.
+  removed: "rgba(248, 113, 113, 0.35)",
+  added: "rgba(52, 211, 153, 0.35)",
 };
 
 export default HIGHLIGHT_COLORS;

@@ -14,6 +14,7 @@ import {
 import { API_URL } from "../core/config.js";
 import { getCommentsByDocument } from "../core/Comments";
 import { comparePdfDocuments } from "../utils/pdfCompare";
+import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
 
 import DisplayNotesSidebarExample from "./DisplayNotesSidebarExample.tsx";
 import Modal from "./ui/Modal";
@@ -200,7 +201,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       content: tone === "removed" ? "Texto eliminado en la nueva versión" : "Texto agregado",
       quote: "",
       highlightAreas: [area],
-      color: tone === "removed" ? "#f87171" : "#34d399",
+      color: tone === "removed" ? HIGHLIGHT_COLORS.removed : HIGHLIGHT_COLORS.added,
       readOnly: true,
     }));
 

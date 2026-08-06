@@ -42,18 +42,21 @@ export const errorAlert = (mensaje) => {
 };
 
 /**
- * Confirmación destructiva. Devuelve true si el usuario acepta.
+ * Confirmación de una acción. Devuelve true si el usuario acepta.
  *
  * Sustituye a los `Swal.fire(...).then(...)` sueltos, que llevaban sus propios
  * colores en hexadecimal y repetían la misma estructura en cada llamada.
+ *
+ * El texto del botón se pasa en cada caso: estaba fijo como "Sí, eliminar" y
+ * aparecía también al confirmar acciones que no borran nada.
  */
-export const confirmAlert = async (titulo, mensaje) => {
+export const confirmAlert = async (titulo, mensaje, confirmButtonText = "Confirmar") => {
   const result = await fireThemed({
     icon: "warning",
     title: titulo,
     text: mensaje,
     showCancelButton: true,
-    confirmButtonText: "Sí, eliminar",
+    confirmButtonText,
     cancelButtonText: "Cancelar",
     reverseButtons: true,
   });
