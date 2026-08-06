@@ -25,6 +25,7 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 import { useAppTheme } from "../utils/useAppTheme";
+import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
 
 interface Note {
   id: number;
@@ -188,43 +189,50 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       }
     };
 
-    return canComment ? (
+    if (!canComment) return null;
+
+    return (
       <div
+        className="absolute z-10 w-72 rounded-xl border border-line bg-surface p-3 shadow-pop"
         style={{
-          background: "#fff",
-          border: "1px solid rgba(0, 0, 0, .3)",
-          borderRadius: "2px",
-          padding: "8px",
-          position: "absolute",
           left: `${props.selectionRegion.left}%`,
           top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
-          zIndex: 1,
         }}
       >
-        <div>
-          <textarea
-            required
-            rows={3}
-            style={{
-              border: "1px solid rgba(0, 0, 0, .3)",
-            }}
-            onChange={(e) => setMessage(e.target.value)}
-          ></textarea>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            marginTop: "8px",
-          }}
-        >
-          <div style={{ marginRight: "8px" }}>
-            <PrimaryButton onClick={addNote}>Agregar</PrimaryButton>
-          </div>
-          <Button onClick={props.cancel}>Cancelar</Button>
+        {/* La cita da contexto de qué se está corrigiendo: al escribir, el
+            fragmento seleccionado queda tapado por esta misma caja. */}
+        {props.selectedText && (
+          <p className="mb-2 line-clamp-2 border-l-2 border-accent bg-accent-wash px-2 py-1 text-xs italic text-muted">
+            {props.selectedText}
+          </p>
+        )}
+
+        <textarea
+          autoFocus
+          rows={3}
+          placeholder="Escribe la corrección…"
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-content placeholder:text-muted"
+        />
+
+        <div className="mt-2 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={props.cancel}
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-content"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={addNote}
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-on-accent transition-colors hover:bg-accent-soft"
+          >
+            Comentar
+          </button>
         </div>
       </div>
-    ) : null;
-    
+    );
   };
 
   const renderHighlights = (props: RenderHighlightsProps) => (
@@ -246,9 +254,17 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
                   {
                     background:
                       note.color ??
-                      (note.id === selectedHighlightId ? "#ffeb3b" : "yellow"),
-                    opacity: note.id === selectedHighlightId ? 0.7 : 0.4,
-                    transition: "all 0.3s ease",
+                      (note.id === selectedHighlightId
+                        ? HIGHLIGHT_COLORS.commentSelected
+                        : HIGHLIGHT_COLORS.comment),
+                    // El resaltado seleccionado lleva contorno además de color:
+                    // el cambio de tono solo se notaba con el texto encima.
+                    outline:
+                      note.id === selectedHighlightId
+                        ? `2px solid ${HIGHLIGHT_COLORS.commentBarSelected}`
+                        : "none",
+                    borderRadius: "2px",
+                    transition: "background 0.2s ease, outline-color 0.2s ease",
                     pointerEvents: note.readOnly ? "none" : undefined,
                   },
                   props.getCssProperties(area, props.rotation)

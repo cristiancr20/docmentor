@@ -41,6 +41,26 @@ export const errorAlert = (mensaje) => {
   });
 };
 
+/**
+ * Confirmación destructiva. Devuelve true si el usuario acepta.
+ *
+ * Sustituye a los `Swal.fire(...).then(...)` sueltos, que llevaban sus propios
+ * colores en hexadecimal y repetían la misma estructura en cada llamada.
+ */
+export const confirmAlert = async (titulo, mensaje) => {
+  const result = await fireThemed({
+    icon: "warning",
+    title: titulo,
+    text: mensaje,
+    showCancelButton: true,
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar",
+    reverseButtons: true,
+  });
+
+  return result.isConfirmed;
+};
+
 // Alerta DE ADVERTENCIA
 export const warningAlert = (mensaje) => {
   fireThemed({

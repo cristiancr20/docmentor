@@ -1,204 +1,235 @@
 import React, { useState } from "react";
-import { updateComment, deleteComment } from "../core/Comments";
-import Swal from "sweetalert2";
-import { ChevronDown, MessageSquare, Pencil, Trash2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import PropTypes from "prop-types";
-import { errorAlert, successAlert } from "./Alerts/Alerts";
+import { motion } from "framer-motion";
+import { Check, MessageSquare, Pencil, Trash2, X } from "lucide-react";
+import { updateComment, deleteComment } from "../core/Comments";
+import { confirmAlert, errorAlert, successAlert } from "./Alerts/Alerts";
 import { usePermission } from "../context/PermissionContext";
 import Button from "./ui/Button";
 import { Textarea } from "./ui/Input";
 import EmptyState from "./ui/EmptyState";
-import { formatDateTime } from "../utils/format";
+import { formatDateTime, initialsOf } from "../utils/format";
+import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
 
-const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [updatedContent, setUpdatedContent] = useState("");
-  const [isDropdownOpenComments, setIsDropdownOpenComments] = useState(true);
+/** "hace 5 min", "ayer"... Para fechas lejanas cae a la fecha completa. */
+const relativeTime = (value) => {
+  if (!value) return "";
 
-  const { hasPermission } = usePermission();
-  const canManageComments = hasPermission("MANAGE_COMMENTS");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
 
-  const handleEditClick = (comment) => {
-    setEditingCommentId(comment.id);
-    setUpdatedContent(comment.attributes.correction);
-  };
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000);
 
-  const handleEditSubmit = async (commentId) => {
+  if (minutes < 1) return "ahora mismo";
+  if (minutes < 60) return `hace ${minutes} min`;
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
+
+  const days = Math.round(hours / 24);
+  if (days === 1) return "ayer";
+  if (days < 7) return `hace ${days} días`;
+
+  return formatDateTime(value);
+};
+
+const authorOf = (comment) =>
+  comment.attributes.correctionTutor?.data?.attributes?.username ?? "Tutor";
+
+const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.attributes.correction);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const author = authorOf(comment);
+  const { correction, quote, createdAt, updatedAt } = comment.attributes;
+  const wasEdited = updatedAt && createdAt && updatedAt !== createdAt;
+
+  const handleSave = async () => {
+    if (!draft.trim()) return;
+
+    setIsSaving(true);
     try {
-      await updateComment(commentId, updatedContent);
-      onUpdateComments();
-      setEditingCommentId(null);
+      await updateComment(comment.id, draft);
+      await onUpdated();
+      setIsEditing(false);
     } catch (error) {
       console.error("Error updating comment", error);
+      errorAlert("No se pudo guardar el comentario");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDeleteClick = async (commentId) => {
-    Swal.fire({
-      title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar!",
-      cancelButtonText: "Cancelar",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await deleteComment(commentId);
-          onUpdateComments();
-          const mensaje = "El comentario ha sido eliminado.";
-          successAlert(mensaje);
-        } catch (error) {
-          console.error("Error deleting comment", error);
-          const mensaje = "Error al eliminar el comentario";
-          errorAlert(mensaje);
-        }
-      }
-    });
-  };
+  const handleDelete = async () => {
+    const confirmed = await confirmAlert(
+      "¿Eliminar el comentario?",
+      "Esta acción no se puede deshacer."
+    );
+    if (!confirmed) return;
 
-  const handleDropdownToggleComments = () => {
-    setIsDropdownOpenComments(!isDropdownOpenComments);
+    try {
+      await deleteComment(comment.id);
+      await onUpdated();
+      successAlert("El comentario ha sido eliminado.");
+    } catch (error) {
+      console.error("Error deleting comment", error);
+      errorAlert("Error al eliminar el comentario");
+    }
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-        <div className="flex items-center gap-2">
-          <h2 className="font-display text-lg font-semibold text-content">Comentarios</h2>
-          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs tabular text-muted">
-            {comments.length}
-          </span>
+    <motion.article
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={() => !isEditing && onSelect(comment)}
+      style={{
+        // La barra lateral lleva el mismo color que el resaltado del documento,
+        // así se ve de un vistazo a qué marca corresponde cada tarjeta.
+        borderLeftColor: isSelected
+          ? HIGHLIGHT_COLORS.commentBarSelected
+          : HIGHLIGHT_COLORS.commentBar,
+      }}
+      className={[
+        "group cursor-pointer rounded-xl border border-l-4 bg-surface p-3 transition-colors",
+        isSelected
+          ? "border-accent shadow-card"
+          : "border-line hover:border-line-strong",
+      ].join(" ")}
+    >
+      <header className="mb-2 flex items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-wash font-mono text-[11px] font-medium text-accent">
+          {initialsOf(author)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium leading-tight text-content">{author}</p>
+          <p className="font-mono text-[11px] leading-tight text-muted">
+            {relativeTime(createdAt)}
+            {wasEdited && " · editado"}
+          </p>
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleDropdownToggleComments}
-          aria-expanded={isDropdownOpenComments}
-        >
-          {isDropdownOpenComments ? "Ocultar" : "Ver comentarios"}
-          <motion.span
-            animate={{ rotate: isDropdownOpenComments ? 180 : 0 }}
-            transition={{ duration: 0.15 }}
-            className="inline-flex"
-          >
-            <ChevronDown className="h-4 w-4" strokeWidth={1.8} />
-          </motion.span>
-        </Button>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {isDropdownOpenComments && (
-          <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-            {comments.length === 0 ? (
-              <EmptyState
-                icon={MessageSquare}
-                title="No hay comentarios"
-                description="Selecciona texto en el documento para dejar la primera corrección."
-              />
-            ) : (
-              comments.map((comment) => (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong"
-                  onClick={() => onCommentClick(comment)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onCommentClick(comment);
-                    }
-                  }}
-                >
-                  {editingCommentId === comment.id ? (
-                    <div
-                      className="flex flex-col gap-3"
-                      onClick={(event) => event.stopPropagation()}
-                      onKeyDown={(event) => event.stopPropagation()}
-                      role="presentation"
-                    >
-                      <Textarea
-                        label="Corrección"
-                        id={`comment-${comment.id}`}
-                        rows={3}
-                        value={updatedContent}
-                        onChange={(e) => setUpdatedContent(e.target.value)}
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleEditSubmit(comment.id)}>
-                          Guardar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setEditingCommentId(null)}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <p className="text-sm text-content">{comment.attributes.correction}</p>
-
-                      {comment.attributes.quote && (
-                        <p className="border-l-2 border-accent bg-accent-wash px-3 py-2 text-sm italic text-muted">
-                          {comment.attributes.quote}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-col gap-0.5 font-mono text-xs text-muted">
-                          <span>Creado: {formatDateTime(comment.attributes.createdAt)}</span>
-                          <span>
-                            Modificado: {formatDateTime(comment.attributes.updatedAt)}
-                          </span>
-                        </div>
-
-                        {canManageComments && (
-                          <div className="flex gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleEditClick(comment);
-                              }}
-                              className="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-content"
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" strokeWidth={1.8} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleDeleteClick(comment.id);
-                              }}
-                              className="rounded-lg p-2 text-danger transition-colors hover:bg-danger-wash"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="h-4 w-4" strokeWidth={1.8} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))
-            )}
+        {canManage && !isEditing && (
+          <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <button
+              type="button"
+              title="Editar"
+              onClick={(event) => {
+                event.stopPropagation();
+                setDraft(correction);
+                setIsEditing(true);
+              }}
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            >
+              <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              title="Eliminar"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDelete();
+              }}
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-danger-wash hover:text-danger"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
+            </button>
           </div>
         )}
-      </AnimatePresence>
+      </header>
+
+      {quote && (
+        <p className="mb-2 border-l-2 border-accent bg-accent-wash px-2.5 py-1.5 text-xs italic leading-relaxed text-muted">
+          {quote}
+        </p>
+      )}
+
+      {isEditing ? (
+        <div
+          className="flex flex-col gap-2"
+          onClick={(event) => event.stopPropagation()}
+          role="presentation"
+        >
+          <Textarea
+            id={`comment-${comment.id}`}
+            rows={3}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSave} loading={isSaving}>
+              <Check className="h-3.5 w-3.5" strokeWidth={2} />
+              Guardar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>
+              <X className="h-3.5 w-3.5" strokeWidth={2} />
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-content">{correction}</p>
+      )}
+    </motion.article>
+  );
+};
+
+CommentCard.propTypes = {
+  comment: PropTypes.object.isRequired,
+  isSelected: PropTypes.bool,
+  canManage: PropTypes.bool,
+  onSelect: PropTypes.func.isRequired,
+  onUpdated: PropTypes.func.isRequired,
+};
+
+/**
+ * Panel lateral de correcciones.
+ *
+ * Se apoya en la convención de los editores colaborativos: el documento manda y
+ * los comentarios viven a su derecha, cada uno con su autor y anclado a la cita
+ * que corrige. Pulsar uno lleva al resaltado correspondiente.
+ */
+const CommentsPanel = ({
+  comments = [],
+  onUpdateComments,
+  onCommentClick,
+  selectedCommentId,
+}) => {
+  const { hasPermission } = usePermission();
+  const canManageComments = hasPermission("MANAGE_COMMENTS");
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
+        <MessageSquare className="h-4 w-4 text-muted" strokeWidth={1.8} />
+        <h2 className="font-display text-sm font-semibold text-content">Comentarios</h2>
+        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs tabular text-muted">
+          {comments.length}
+        </span>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+        {comments.length === 0 ? (
+          <EmptyState
+            icon={MessageSquare}
+            title="Sin comentarios"
+            description="Selecciona un fragmento del documento para dejar la primera corrección."
+          />
+        ) : (
+          comments.map((comment) => (
+            <CommentCard
+              key={comment.id}
+              comment={comment}
+              isSelected={comment.id === selectedCommentId}
+              canManage={canManageComments}
+              onSelect={onCommentClick}
+              onUpdated={onUpdateComments}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 };
@@ -207,6 +238,7 @@ CommentsPanel.propTypes = {
   comments: PropTypes.array,
   onUpdateComments: PropTypes.func,
   onCommentClick: PropTypes.func,
+  selectedCommentId: PropTypes.number,
 };
 
 export default CommentsPanel;
