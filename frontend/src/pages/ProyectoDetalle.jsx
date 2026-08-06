@@ -4,27 +4,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   CalendarDays,
-  Copy,
-  FileText,
   GitCompare,
   Route,
   Upload,
   User,
   Users,
 } from "lucide-react";
-import { copyDocumentAsNewVersion, getDocumentsByProjectId } from "../core/Document";
+import { restoreDocumentVersion, getDocumentsByProjectId } from "../core/Document";
 import { getProjectById } from "../core/Projects";
 import AppLayout from "../components/layout/AppLayout";
 import Card, { CardHeader } from "../components/ui/Card";
-import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Skeleton, { SkeletonRows } from "../components/ui/Skeleton";
 import SubirDocumento from "../components/SubirDocumento";
-import { warningAlert } from "../components/Alerts/Alerts";
+import { confirmAlert, errorAlert, successAlert, warningAlert } from "../components/Alerts/Alerts";
 import GeneratePdfButton from "../components/GeneratePdfButton";
 import DocumentComparePopup from "../components/DocumentComparePopup";
-import ProjectsTable from "../components/ProjectsTable";
+import VersionTimeline from "../components/VersionTimeline";
 import { usePermission } from "../context/PermissionContext";
 import { useAuth } from "../context/AuthContext";
 import { formatDateTime } from "../utils/format";
@@ -43,6 +40,7 @@ const ProyectoDetalle = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
   const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
+  const [restoringId, setRestoringId] = useState(null);
   // Con la lista vacía esto valía -2, un índice fuera de rango que hacía
   // reventar el comparador.
   const [currentIndex, setCurrentIndex] = useState(Math.max(0, documents.length - 2));
@@ -129,94 +127,34 @@ const ProyectoDetalle = () => {
     fetchProject();
   };
 
-  const copyDocumentNewVersion = async (documentId) => {
-    await copyDocumentAsNewVersion(documentId);
-    fetchProject();
+  // La versión actual va arriba: es la que se consulta a diario, y obligar a
+  // bajar hasta el final para llegar a ella no tiene sentido.
+  const orderedDocuments = [...documents].sort(
+    (a, b) => (b.attributes.version ?? 0) - (a.attributes.version ?? 0)
+  );
+
+  const handleRestoreVersion = async (doc) => {
+    const version = doc.attributes.version;
+
+    const confirmed = await confirmAlert(
+      `¿Restaurar la versión ${version}?`,
+      "Se creará una versión nueva con ese contenido. Las versiones posteriores se conservan en el historial."
+    );
+    if (!confirmed) return;
+
+    setRestoringId(doc.id);
+    try {
+      await restoreDocumentVersion(doc.id);
+      await fetchProject();
+      successAlert(`Se restauró la versión ${version} como versión nueva`);
+    } catch (error) {
+      console.error("Error al restaurar la versión:", error);
+      errorAlert("No se pudo restaurar la versión");
+    } finally {
+      setRestoringId(null);
+    }
   };
 
-  const columns = [
-    {
-      key: "title",
-      label: "Documento",
-      render: (doc) => (
-        <span className="font-medium text-content">{doc.attributes.title}</span>
-      ),
-    },
-    {
-      key: "version",
-      label: "Versión",
-      render: (doc) => {
-        const version = doc.attributes.version;
-        const previousVersion = doc.attributes.previous_version?.data?.attributes?.version;
-
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="tabular text-content">v{version}</span>
-            <span className="text-xs text-muted">
-              {previousVersion ? `Copia de v${previousVersion}` : "Documento nuevo"}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      key: "isCurrent",
-      label: "Actual",
-      render: (doc) =>
-        doc.attributes.isCurrent ? (
-          <Badge tone="ok">Versión actual</Badge>
-        ) : (
-          <span className="text-muted">—</span>
-        ),
-    },
-    {
-      key: "isRevised",
-      label: "Estado",
-      render: (doc) => {
-        if (doc.attributes.isRevised === true) return <Badge tone="ok">Revisado</Badge>;
-        if (doc.attributes.isRevised === false)
-          return <Badge tone="warn">Pendiente de revisión</Badge>;
-        return <Badge tone="neutral">Sin estado</Badge>;
-      },
-    },
-    {
-      key: "publishedAt",
-      label: "Fecha de subida",
-      render: (doc) => (
-        <span className="whitespace-nowrap font-mono text-xs text-muted">
-          {formatDateTime(doc.attributes.publishedAt)}
-        </span>
-      ),
-    },
-    {
-      key: "acciones",
-      label: "Acciones",
-      render: (doc) => (
-        <div className="flex items-center gap-2">
-          {/* Ver documento */}
-          {doc.attributes.documentFile?.data?.length > 0 ? (
-            <Link
-              to={`/document/${doc.id}`}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent-soft"
-            >
-              <FileText className="h-4 w-4" strokeWidth={1.8} />
-              Ver documento
-            </Link>
-          ) : (
-            <span className="text-sm text-muted">No hay documento</span>
-          )}
-
-          {/* Botón para crear nueva versión */}
-          {hasPermission("REVIEW_DOCUMENT") && (
-            <Button variant="secondary" size="sm" onClick={() => copyDocumentNewVersion(doc.id)}>
-              <Copy className="h-4 w-4" strokeWidth={1.8} />
-              Nueva versión
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ];
 
   return (
     <AppLayout title={attributes.title} description={itinerario || "Detalle del proyecto"} actions={backLink}>
@@ -348,11 +286,11 @@ const ProyectoDetalle = () => {
           </div>
 
           <div className="p-6">
-            <ProjectsTable
-              projects={documents}
-              columns={columns}
-              emptyTitle="Aún no hay documentos"
-              emptyDescription="Sube la primera versión para empezar el historial del proyecto."
+            <VersionTimeline
+              documents={orderedDocuments}
+              canRestore={canUploadDocuments}
+              onRestore={handleRestoreVersion}
+              restoringId={restoringId}
             />
           </div>
         </Card>
