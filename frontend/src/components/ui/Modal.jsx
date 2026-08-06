@@ -18,7 +18,16 @@ const SIZES = {
  * `bg-black/50`, con y sin AnimatePresence). Esta cierra con Escape y bloquea
  * el scroll del fondo, cosa que ninguna de las tres hacía.
  */
-const Modal = ({ open, onClose, title, description, size = "md", children, footer }) => {
+const Modal = ({
+  open,
+  onClose,
+  title,
+  description,
+  size = "md",
+  children,
+  subHeader,
+  footer,
+}) => {
   useEffect(() => {
     if (!open) return undefined;
 
@@ -74,6 +83,12 @@ const Modal = ({ open, onClose, title, description, size = "md", children, foote
               </button>
             </div>
 
+            {/* Franja fija entre la cabecera y el contenido: pestañas, filtros
+                o cualquier control que deba seguir alcanzable mientras se
+                recorre una lista larga. Va fuera del área con scroll, así que
+                no hace falta recurrir a position:sticky. */}
+            {subHeader && <div className="shrink-0 px-6 pt-4">{subHeader}</div>}
+
             <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
 
             {footer && (
@@ -94,6 +109,7 @@ Modal.propTypes = {
   description: PropTypes.node,
   size: PropTypes.oneOf(["sm", "md", "lg", "xl"]),
   children: PropTypes.node,
+  subHeader: PropTypes.node,
   footer: PropTypes.node,
 };
 
