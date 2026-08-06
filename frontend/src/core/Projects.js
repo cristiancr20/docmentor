@@ -1,12 +1,11 @@
-import axios from "axios";
+import api from './apiClient';
 
-import { API_URL } from "./config";
 
 //METODO PARA CREAR UN NUEVO PROYECTO
 export const createProject = async (projectData) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/projects`,
+    const response = await api.post(
+      `/api/projects`,
       {
         data: projectData,
       },
@@ -29,8 +28,8 @@ export const createProject = async (projectData) => {
 //EDITAR PROYECTO
 export const updateProject = async (projectId, projectData) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/api/projects/${projectId}`,
+    const response = await api.put(
+      `/api/projects/${projectId}`,
       {
         data: projectData,
       }
@@ -45,8 +44,8 @@ export const updateProject = async (projectId, projectData) => {
 //ELIMINAR PROYECTO
 export const deleteProject = async (projectId) => {
   try {
-    const response = await axios.delete(
-      `${API_URL}/api/projects/${projectId}`
+    const response = await api.delete(
+      `/api/projects/${projectId}`
     );
     return response.data;
   } catch (error) {
@@ -58,8 +57,8 @@ export const deleteProject = async (projectId) => {
 //OBTENER LOS PROYECTOS POR ESTUDIANTE
 /* export const getProjectsByStudents = async (userId) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users/${userId}?populate=project_es.tutor,project_es.students`
+    const response = await api.get(
+      `/api/users/${userId}?populate=project_es.tutor,project_es.students`
     );
     return response.data.project_es;
   } catch (error) {
@@ -71,8 +70,8 @@ export const deleteProject = async (projectId) => {
 // OBTENER DETALLES DE UN PROYECTO POR ID DEL PROYECTO
 export const getProjectById = async (projectId) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/projects/${projectId}?populate=*`
+    const response = await api.get(
+      `/api/projects/${projectId}?populate=*`
     );
     return response.data.data;
   } catch (error) {
@@ -83,8 +82,8 @@ export const getProjectById = async (projectId) => {
 
 export const getProjectsByTutor = async (userEmail) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
+    const response = await api.get(
+      `/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
     );
     // Verificar si la respuesta contiene datos
     if (!response.data || response.data.length === 0) {
@@ -106,8 +105,8 @@ export const getProjectsByTutor = async (userEmail) => {
 /* OBTENER LOS PROYECTOS POR ESTUDIANTE */
 export const getProjectsByEmail = async (userEmail) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_es.tutor,project_es.students`
+    const response = await api.get(
+      `/api/users?filters[email][$eq]=${userEmail}&populate=project_es.tutor,project_es.students`
     );
     // Verificar si la respuesta contiene datos
     if (!response.data || response.data.length === 0) {
@@ -126,8 +125,8 @@ export const getProjectsByEmail = async (userEmail) => {
 
 export const getProjectsByStudents = async (userEmail) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_es.tutor,project_es.students`
+    const response = await api.get(
+      `/api/users?filters[email][$eq]=${userEmail}&populate=project_es.tutor,project_es.students`
     );
     // Verificar si la respuesta contiene datos
     if (!response.data || response.data.length === 0) {
@@ -149,8 +148,8 @@ export const getProjectsByStudents = async (userEmail) => {
 
 /* export const getProjectsByEmail = async (userEmail) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
+    const response = await api.get(
+      `/api/users?filters[email][$eq]=${userEmail}&populate=project_ts.tutor,project_ts.students`
     );
     // Verificar si la respuesta contiene datos
     if (!response.data || response.data.length === 0) {
@@ -171,10 +170,16 @@ export const getProjectsByStudents = async (userEmail) => {
 
 export const getTutors = async (isInstitutional) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users?filters[rols][rolType][$eq]=tutor&filters[isInstitutional][$eq]=${isInstitutional}`
-    );
-    return response.data;
+    // El filtro `isInstitutional` se resuelve en el cliente a propósito: en la
+    // base el campo es NULL para las cuentas creadas sin él, y un
+    // `$eq=false` de Strapi no encuentra NULL (en SQL, NULL = false no es
+    // cierto). El resultado era una lista vacía y el select quedaba en
+    // "Cargando...". Aquí NULL cuenta como no institucional.
+    const response = await api.get(`/api/users?filters[rols][rolType][$eq]=tutor`);
+    const tutors = response.data || [];
+
+    const wantInstitutional = isInstitutional === true;
+    return tutors.filter((tutor) => (tutor.isInstitutional === true) === wantInstitutional);
   } catch (error) {
     console.error("Error fetching tutors:", error);
     throw error;
@@ -185,8 +190,8 @@ export const getTutors = async (isInstitutional) => {
 // Función para obtener un usuario por correo y rol de estudiante
 export const getUserByEmail = async (email) => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${email}&filters[rols][rolType][$eq]=estudiante&populate=rols`
+    const response = await api.get(
+      `/api/users?filters[email][$eq]=${email}&filters[rols][rolType][$eq]=estudiante&populate=rols`
     );
 
     const users = response.data;
@@ -209,7 +214,7 @@ export const getUserByEmail = async (email) => {
 // Función para obtener el usuario por su ID
 export const getUserById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/api/users/${id}`);
+    const response = await api.get(`/api/users/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error al obtener el usuario por ID:', error);
@@ -219,8 +224,8 @@ export const getUserById = async (id) => {
 
 export const getAllProjects = async () => {
   try {
-    const response = await axios.get(
-      `${API_URL}/api/projects?populate=tutor,students&pagination[pageSize]=1000`
+    const response = await api.get(
+      `/api/projects?populate=tutor,students&pagination[pageSize]=1000`
     );
     return response.data.data || [];
   } catch (error) {
@@ -232,9 +237,9 @@ export const getAllProjects = async () => {
 export const getAllUsers = async (rolType) => {
   try {
     const url = rolType
-      ? `${API_URL}/api/users?filters[rols][rolType][$eq]=${rolType}&pagination[pageSize]=1000`
-      : `${API_URL}/api/users?pagination[pageSize]=1000`;
-    const response = await axios.get(url);
+      ? `/api/users?filters[rols][rolType][$eq]=${rolType}&pagination[pageSize]=1000`
+      : `/api/users?pagination[pageSize]=1000`;
+    const response = await api.get(url);
     return response.data || [];
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -244,8 +249,8 @@ export const getAllUsers = async (rolType) => {
 
 export const assignTutorToProject = async (projectId, tutorId) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/api/projects/${projectId}`,
+    const response = await api.put(
+      `/api/projects/${projectId}`,
       {
         data: {
           tutor: tutorId,

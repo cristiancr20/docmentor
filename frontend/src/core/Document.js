@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_URL } from './config';
+import api from './apiClient';
 import { decryptData } from '../utils/encryption';
 
 // Resto de tu código
@@ -10,35 +9,10 @@ export const uploadFile = async (file) => {
   const formData = new FormData();
   formData.append("files", file);
 
-  let token = null;
-
-  const encryptedToken = localStorage.getItem("jwtToken");
-
-  if (encryptedToken) {
-    // Desencriptar los datos
-    const decryptedToken = decryptData(encryptedToken);
-
-    // Acceder al rol desde los datos desencriptados
-    token = decryptedToken;
-
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
-
-  if (!token) {
-    throw new Error("Token JWT no encontrado");
-  }
-
-  const response = await axios.post(
-    `${API_URL}/api/upload`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`, // Añadir el token en los headers
-      },
-    }
-  );
+  // El token lo adjunta el interceptor de apiClient.
+  const response = await api.post(`/api/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
   return response.data[0]; // Retorna el primer archivo subido
 };
@@ -46,7 +20,7 @@ export const uploadFile = async (file) => {
 // Función para obtener el documento más reciente del proyecto
 const getLastDocument = async (projectId) => {
   try {
-    const response = await axios.get(`${API_URL}/api/documents`, {
+    const response = await api.get(`/api/documents`, {
       params: {
         "filters[project][id][$eq]": projectId,
         "sort[0]": "version:desc",
@@ -64,7 +38,7 @@ const getLastDocument = async (projectId) => {
 // Función para actualizar un documento y marcarlo como no actual
 const markDocumentAsOld = async (documentId) => {
   try {
-    await axios.put(`${API_URL}/api/documents/${documentId}`, {
+    await api.put(`/api/documents/${documentId}`, {
       data: {
         isCurrent: false,
       },
@@ -81,14 +55,17 @@ export const createDocument = async (title, fileId, projectId) => {
     throw new Error("Se requiere un ID de proyecto válido");
   }
 
-  try {
-    // Bloqueo temporal para evitar duplicados (revisamos si ya hay un documento subiendo)
-    if (window.isUploadingDocument) {
-      console.warn("Intento de doble carga detectado, cancelando.");
-      return null;
-    }
-    window.isUploadingDocument = true;
+  // Cerrojo contra envíos duplicados. Antes se activaba pero no se liberaba
+  // nunca (no había `finally`), así que tras la primera subida de la sesión
+  // todas las siguientes salían por aquí devolviendo null en silencio mientras
+  // la interfaz seguía diciendo "documento subido correctamente".
+  if (window.isUploadingDocument) {
+    console.warn("Intento de doble carga detectado, cancelando.");
+    return null;
+  }
+  window.isUploadingDocument = true;
 
+  try {
     // Obtener el último documento del proyecto
     const lastDocument = await getLastDocument(projectId);
     let previousVersionId = null;
@@ -119,8 +96,8 @@ export const createDocument = async (title, fileId, projectId) => {
     }
 
 
-    const response = await axios.post(
-      `${API_URL}/api/documents`,
+    const response = await api.post(
+      `/api/documents`,
       documentData,
       {
         headers: {
@@ -142,14 +119,19 @@ export const createDocument = async (title, fileId, projectId) => {
 
     return document;
   } catch (error) {
+    // Se re-lanza: tragarse el error hacía que la vista mostrara "documento
+    // subido correctamente" aunque la subida hubiera fallado.
     handleError(error);
+    throw error;
+  } finally {
+    window.isUploadingDocument = false;
   }
 };
 
 export const copyDocumentAsNewVersion = async (documentId) => {
   try {
     // Obtener el documento original
-    const response = await axios.get(`${API_URL}/api/documents/${documentId}?populate=*`);
+    const response = await api.get(`/api/documents/${documentId}?populate=*`);
     if (!response || !response.data || !response.data.data) {
       throw new Error("No se pudo obtener el documento original.");
     }
@@ -189,7 +171,7 @@ export const copyDocumentAsNewVersion = async (documentId) => {
     };
 
     // Crear la nueva versión en Strapi
-    const newResponse = await axios.post(`${API_URL}/api/documents`, newDocumentData, {
+    const newResponse = await api.post(`/api/documents`, newDocumentData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -200,7 +182,7 @@ export const copyDocumentAsNewVersion = async (documentId) => {
     }
 
     // Actualizar la versión anterior para que ya no sea la actual
-    await axios.put(`${API_URL}/api/documents/${documentId}`, {
+    await api.put(`/api/documents/${documentId}`, {
       data: { isCurrent: false },
     });
 
@@ -215,8 +197,8 @@ export const copyDocumentAsNewVersion = async (documentId) => {
 // MÉTODO PARA CREAR UNA NOTIFICACIÓN
 const createNotification = async (title, projectId, documentoId) => {
   try {
-    const projectResponse = await axios.get(
-      `${API_URL}/api/projects/${projectId}?populate=tutor`
+    const projectResponse = await api.get(
+      `/api/projects/${projectId}?populate=tutor`
     );
 
 
@@ -244,7 +226,7 @@ const createNotification = async (title, projectId, documentoId) => {
         },
       };
 
-      await axios.post(`${API_URL}/api/notifications`, notificationData);
+      await api.post(`/api/notifications`, notificationData);
     }
   } catch (error) {
     handleError(error);
@@ -266,8 +248,8 @@ const handleError = (error) => {
 export const getDocumentsByProjectId = async (projectId) => {
   try {
     // Utiliza la sintaxis correcta para aplicar el filtro
-    const response = await axios.get(
-      `${API_URL}/api/documents?filters[project][id][$eq]=${projectId}&populate=*`
+    const response = await api.get(
+      `/api/documents?filters[project][id][$eq]=${projectId}&populate=*`
     );
 
     return response.data;
@@ -282,14 +264,8 @@ export const getDocumentsByProjectId = async (projectId) => {
 
 export const getDocumentById = async (documentId) => {
   try {
-    const response = await fetch(
-      `${API_URL}/api/documents/${documentId}?populate=*`
-    );
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
+    const response = await api.get(`/api/documents/${documentId}?populate=*`);
+    return response.data;
   } catch (error) {
     console.error("Error fetching document:", error);
     throw error;

@@ -1,25 +1,10 @@
-import axios from "axios";
-import { API_URL } from "./config";
-import { decryptData } from "../utils/encryption";
-
-// Obtener headers con el JWT desencriptado desde localStorage
-const getAuthHeaders = () => {
-  const encryptedToken = localStorage.getItem("jwtToken");
-  if (!encryptedToken) return {};
-
-  const token = decryptData(encryptedToken);
-  if (!token) return {};
-
-  return { Authorization: `Bearer ${token}` };
-};
+import api from './apiClient';
 
 /* ==================== USUARIOS (CRUD con soft delete) ==================== */
 
 export const getAdminUsers = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/admin/users`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.get(`/api/admin/users`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
@@ -29,9 +14,7 @@ export const getAdminUsers = async () => {
 
 export const createAdminUser = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/api/admin/users`, userData, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.post(`/api/admin/users`, userData);
     return response.data.data;
   } catch (error) {
     console.error("Error al crear usuario:", error);
@@ -41,9 +24,7 @@ export const createAdminUser = async (userData) => {
 
 export const updateAdminUser = async (userId, userData) => {
   try {
-    const response = await axios.put(`${API_URL}/api/admin/users/${userId}`, userData, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.put(`/api/admin/users/${userId}`, userData);
     return response.data.data;
   } catch (error) {
     console.error("Error al actualizar usuario:", error);
@@ -54,9 +35,7 @@ export const updateAdminUser = async (userId, userData) => {
 // Soft delete: el backend marca isActive=false y blocked=true
 export const deleteAdminUser = async (userId) => {
   try {
-    const response = await axios.delete(`${API_URL}/api/admin/users/${userId}`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.delete(`/api/admin/users/${userId}`);
     return response.data.data;
   } catch (error) {
     console.error("Error al eliminar usuario:", error);
@@ -68,7 +47,7 @@ export const deleteAdminUser = async (userId) => {
 
 export const getRols = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/rols?pagination[pageSize]=100`);
+    const response = await api.get(`/api/rols?pagination[pageSize]=100`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error al obtener roles:", error);
@@ -78,7 +57,7 @@ export const getRols = async () => {
 
 export const getAllPermissions = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/permissions?pagination[pageSize]=100`);
+    const response = await api.get(`/api/permissions?pagination[pageSize]=100`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error al obtener permisos:", error);
@@ -88,9 +67,7 @@ export const getAllPermissions = async () => {
 
 export const getRolePermissions = async (rolId) => {
   try {
-    const response = await axios.get(`${API_URL}/api/rols/${rolId}/permissions`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.get(`/api/rols/${rolId}/permissions`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error al obtener permisos del rol:", error);
@@ -100,11 +77,9 @@ export const getRolePermissions = async (rolId) => {
 
 export const addPermissionToRole = async (rolId, permissionId) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/rols/${rolId}/permissions`,
-      { permissionId },
-      { headers: getAuthHeaders() }
-    );
+    const response = await api.post(
+      `/api/rols/${rolId}/permissions`,
+      { permissionId });
     return response.data.data || [];
   } catch (error) {
     console.error("Error al agregar permiso al rol:", error);
@@ -114,10 +89,8 @@ export const addPermissionToRole = async (rolId, permissionId) => {
 
 export const removePermissionFromRole = async (rolId, permissionId) => {
   try {
-    const response = await axios.delete(
-      `${API_URL}/api/rols/${rolId}/permissions/${permissionId}`,
-      { headers: getAuthHeaders() }
-    );
+    const response = await api.delete(
+      `/api/rols/${rolId}/permissions/${permissionId}`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error al quitar permiso del rol:", error);
@@ -137,9 +110,7 @@ export const getAdminAuditLogs = async (filters = {}) => {
     params.append("page", filters.page || 1);
     params.append("pageSize", filters.pageSize || 100);
 
-    const response = await axios.get(`${API_URL}/api/audit-logs?${params.toString()}`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.get(`/api/audit-logs?${params.toString()}`);
 
     // El servicio devuelve { data: { results, pagination } } (findPage) o { data: [...] }
     const payload = response.data?.data;
@@ -160,13 +131,9 @@ export const exportAuditReport = async (format, filters = {}) => {
     if (filters.startDate) params.append("startDate", filters.startDate);
     if (filters.endDate) params.append("endDate", filters.endDate);
 
-    const response = await axios.get(
-      `${API_URL}/api/audit-logs/export?${params.toString()}`,
-      {
-        headers: getAuthHeaders(),
-        responseType: "blob",
-      }
-    );
+    const response = await api.get(`/api/audit-logs/export?${params.toString()}`, {
+      responseType: "blob",
+    });
 
     // Descargar el archivo en el navegador
     const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -189,7 +156,7 @@ export const exportAuditReport = async (format, filters = {}) => {
 
 export const getSettings = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/settings?sort=id:asc`);
+    const response = await api.get(`/api/settings?sort=id:asc`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error al obtener configuración:", error);
@@ -199,11 +166,9 @@ export const getSettings = async () => {
 
 export const createSetting = async (data) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/settings`,
-      { data },
-      { headers: getAuthHeaders() }
-    );
+    const response = await api.post(
+      `/api/settings`,
+      { data });
     return response.data;
   } catch (error) {
     console.error("Error al crear configuración:", error);
@@ -213,11 +178,9 @@ export const createSetting = async (data) => {
 
 export const updateSetting = async (settingId, data) => {
   try {
-    const response = await axios.put(
-      `${API_URL}/api/settings/${settingId}`,
-      { data },
-      { headers: getAuthHeaders() }
-    );
+    const response = await api.put(
+      `/api/settings/${settingId}`,
+      { data });
     return response.data;
   } catch (error) {
     console.error("Error al actualizar configuración:", error);
