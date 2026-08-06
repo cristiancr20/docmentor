@@ -8,11 +8,13 @@ export const ACCESS_DENIED_MESSAGE =
 const AccessDenied = ({ message = ACCESS_DENIED_MESSAGE }) => (
   <div
     role="alert"
-    className="flex flex-col items-center justify-center text-center bg-red-50 border border-red-200 rounded-xl p-8 m-4"
+    className="flex flex-col items-center justify-center rounded-xl border border-line bg-danger-wash px-6 py-12 text-center"
   >
-    <ShieldOff className="w-12 h-12 text-red-500 mb-4" />
-    <h2 className="text-xl font-bold text-red-700 mb-2">Acceso denegado</h2>
-    <p className="text-red-600">{message}</p>
+    <div className="mb-3 grid h-11 w-11 place-items-center rounded-full bg-surface text-danger">
+      <ShieldOff className="h-5 w-5" strokeWidth={1.8} />
+    </div>
+    <p className="font-display text-lg font-semibold text-content">Acceso denegado</p>
+    <p className="mt-1 max-w-sm text-sm text-muted">{message}</p>
   </div>
 );
 

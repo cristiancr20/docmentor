@@ -1,10 +1,12 @@
+import React from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import CryptoJS from "crypto-js";
-import { motion } from "framer-motion";
+import { Download } from "lucide-react";
 import LogoCarrera from "../assets/logo_carrera.png";
 import LogoUniversidad from "../assets/logo_universidad.png";
 import PropTypes from "prop-types";
+import Button from "./ui/Button";
 
 // Compresión de imágenes para mantener el PDF por debajo de 10MB.
 const IMAGE_COMPRESSION = "MEDIUM";
@@ -250,15 +252,10 @@ const GeneratePdfButton = ({ project, documents, generatedBy }) => {
   };
 
   return (
-    <motion.button
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="font-bold mb-4 ml-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
-      onClick={generatePDF}
-    >
+    <Button type="button" variant="secondary" onClick={generatePDF}>
+      <Download className="h-4 w-4" strokeWidth={1.8} />
       Descargar PDF
-    </motion.button>
+    </Button>
   );
 };
 

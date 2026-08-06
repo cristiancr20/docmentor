@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { updateComment, deleteComment } from "../core/Comments";
 import Swal from "sweetalert2";
-import { FaArrowDown, FaPen } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
+import { ChevronDown, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PropTypes from "prop-types";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
 import { usePermission } from "../context/PermissionContext";
+import Button from "./ui/Button";
+import { Textarea } from "./ui/Input";
+import EmptyState from "./ui/EmptyState";
+import { formatDateTime } from "../utils/format";
 
 const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -62,147 +65,140 @@ const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
   };
 
   return (
-    <div className="comments-panel p-4 rounded">
-      <div className="relative">
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          type="button"
-          className="flex p-2 items-center space-x-2 bg-gray-800 rounded-lg focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-          onClick={handleDropdownToggleComments}
-        >
-          <span className="text-white font-bold">Ver Comentarios</span>
-          <motion.div
-            animate={{ rotate: isDropdownOpenComments ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FaArrowDown className="text-white" />
-          </motion.div>
-        </motion.button>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+        <div className="flex items-center gap-2">
+          <h2 className="font-display text-lg font-semibold text-content">Comentarios</h2>
+          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs tabular text-muted">
+            {comments.length}
+          </span>
+        </div>
 
-        <AnimatePresence>
-          {isDropdownOpenComments && (
-            <div className="rounded-lg p-2 h-screen ">
-              {comments.length === 0 ? (
-                <p className="text-gray-900 text-lg text-center font-bold">
-                  No hay comentarios
-                </p>
-              ) : (
-                comments.map((comment, index) => (
-                  <motion.div
-                    key={comment.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.2 }}
-                    className="m-2 rounded-lg  border transition-all duration-300 cursor-pointer"
-                    onClick={() => onCommentClick(comment)}
-                  >
-                    {editingCommentId === comment.id ? (
-                      <div>
-                        <textarea
-                          value={updatedContent}
-                          onChange={(e) => setUpdatedContent(e.target.value)}
-                          className="w-full p-2 border rounded"
-                        />
-                        <div className="flex space-x-2 m-2">
-                          <button
-                            onClick={() => handleEditSubmit(comment.id)}
-                            className="bg-blue-500 text-white px-4 py-2 rounded"
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            onClick={() => setEditingCommentId(null)}
-                            className="bg-red-500 text-white px-4 py-2 rounded"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg p-4 ">
-                        <div className="flex-grow">
-                          <p className="text-gray-800 text-base">
-                            <strong className="font-semibold">
-                              Comentario:
-                            </strong>{" "}
-                            {comment.attributes.correction}
-                          </p>
-                          {comment.attributes.quote && (
-                            <p className="text-gray-600 text-sm mt-1 italic border-l-4 border-blue-900 pl-2 bg-blue-50 rounded p-2">
-                              <strong className="font-semibold">
-                                Texto seleccionado:
-                              </strong>{" "}
-                              {comment.attributes.quote}
-                            </p>
-                          )}
-                          <div className="date-option grid grid-cols-1 md:grid-cols-2 items-center">
-                            <div className="date">
-                              <p className="text-gray-600 text-sm mt-1">
-                                <strong className="font-semibold">
-                                  Fecha de Creación:
-                                </strong>{" "}
-                                <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                                  {new Date(
-                                    comment.attributes.createdAt
-                                  ).toLocaleDateString("es-ES", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              </p>
-                              <p className="text-gray-600 text-sm mt-1">
-                                <strong className="font-semibold">
-                                  Fecha de Modificación:
-                                </strong>{" "}
-                                <span className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-50 text-yellow-700">
-                                  {new Date(
-                                    comment.attributes.updatedAt
-                                  ).toLocaleDateString("es-ES", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="option ">
-                              {canManageComments && (
-                                <div className="flex justify-start gap-2 m-2">
-                                  <button
-                                    onClick={() => handleEditClick(comment)}
-                                    className="text-yellow-500 hover:text-yellow-600 bg-gray-900 p-2 rounded-lg flex items-center justify-center w-12 h-12"
-                                    title="Editar"
-                                  >
-                                    <FaPen size={24} />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteClick(comment.id)
-                                    }
-                                    className="text-red-500 hover:text-red-600 bg-gray-900 p-2 rounded-lg flex items-center justify-center w-12 h-12"
-                                    title="Eliminar"
-                                  >
-                                    <MdDelete size={24} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                ))
-              )}
-            </div>
-          )}
-        </AnimatePresence>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleDropdownToggleComments}
+          aria-expanded={isDropdownOpenComments}
+        >
+          {isDropdownOpenComments ? "Ocultar" : "Ver comentarios"}
+          <motion.span
+            animate={{ rotate: isDropdownOpenComments ? 180 : 0 }}
+            transition={{ duration: 0.15 }}
+            className="inline-flex"
+          >
+            <ChevronDown className="h-4 w-4" strokeWidth={1.8} />
+          </motion.span>
+        </Button>
       </div>
+
+      <AnimatePresence initial={false}>
+        {isDropdownOpenComments && (
+          <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+            {comments.length === 0 ? (
+              <EmptyState
+                icon={MessageSquare}
+                title="No hay comentarios"
+                description="Selecciona texto en el documento para dejar la primera corrección."
+              />
+            ) : (
+              comments.map((comment) => (
+                <motion.div
+                  key={comment.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15 }}
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong"
+                  onClick={() => onCommentClick(comment)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onCommentClick(comment);
+                    }
+                  }}
+                >
+                  {editingCommentId === comment.id ? (
+                    <div
+                      className="flex flex-col gap-3"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                      role="presentation"
+                    >
+                      <Textarea
+                        label="Corrección"
+                        id={`comment-${comment.id}`}
+                        rows={3}
+                        value={updatedContent}
+                        onChange={(e) => setUpdatedContent(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleEditSubmit(comment.id)}>
+                          Guardar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setEditingCommentId(null)}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm text-content">{comment.attributes.correction}</p>
+
+                      {comment.attributes.quote && (
+                        <p className="border-l-2 border-accent bg-accent-wash px-3 py-2 text-sm italic text-muted">
+                          {comment.attributes.quote}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-col gap-0.5 font-mono text-xs text-muted">
+                          <span>Creado: {formatDateTime(comment.attributes.createdAt)}</span>
+                          <span>
+                            Modificado: {formatDateTime(comment.attributes.updatedAt)}
+                          </span>
+                        </div>
+
+                        {canManageComments && (
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleEditClick(comment);
+                              }}
+                              className="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-content"
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" strokeWidth={1.8} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDeleteClick(comment.id);
+                              }}
+                              className="rounded-lg p-2 text-danger transition-colors hover:bg-danger-wash"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,23 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import { motion } from "framer-motion";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  FileWarning,
+} from "lucide-react";
+import AppLayout from "../components/layout/AppLayout";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Skeleton from "../components/ui/Skeleton";
+import EmptyState from "../components/ui/EmptyState";
 import CommentsPanel from "../components/CommentsPanel";
+import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 import { getDocumentById } from "../core/Document";
 import {
   getCommentsByDocument,
   addCommentToDocument,
   updateDocumentStatusRevisado,
 } from "../core/Comments.js";
-import { motion } from "framer-motion";
-import { Calendar, CheckCircle, XCircle } from "lucide-react";
-import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 import { API_URL } from "../core/config.js";
 import { decryptData } from "../utils/encryption.js";
-import Header from "../components/Header";
-import { IoArrowBack } from "react-icons/io5";
+import { formatDateTime } from "../utils/format";
 import { getUserByEmail } from "../core/Autentication.js";
 import { usePermission } from "../context/PermissionContext";
-
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -40,7 +50,7 @@ const DocumentoViewer = () => {
 
   if (encryptedUserData) {
     // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+    const decryptedUserData = decryptData(encryptedUserData);
     tutorEmail = decryptedUserData.email;
   } else {
     console.log("No se encontró el userData en localStorage");
@@ -56,7 +66,7 @@ const DocumentoViewer = () => {
   }, [tutorEmail]);
 
   const fetchStrapiUser = async () => {
-    if (tutorEmail) { 
+    if (tutorEmail) {
       const user = await getUserByEmail(tutorEmail);
       if (user) {
         setStrapiUserId(user.id);
@@ -64,7 +74,6 @@ const DocumentoViewer = () => {
       }
     }
   };
-
 
   const fetchDocument = async () => {
     try {
@@ -148,174 +157,136 @@ const DocumentoViewer = () => {
     handleAddComment(note.content, note.highlightAreas, note.quote);
   };
 
+  const backButton = (
+    <Button variant="secondary" onClick={handleBackClick}>
+      <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
+      Volver al proyecto
+    </Button>
+  );
+
   if (error) {
-    return <p className="text-red-500 mb-4">{error}</p>;
+    return (
+      <AppLayout title="Documento" actions={backButton}>
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-line bg-danger-wash px-4 py-3 text-sm text-danger"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
+          {error}
+        </div>
+      </AppLayout>
+    );
   }
 
   if (!document) {
-    return <p>Cargando documento...</p>;
+    return (
+      <AppLayout title="Documento">
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-[86px]" />
+            <Skeleton className="h-[86px]" />
+          </div>
+          <Skeleton className="h-[600px]" />
+        </div>
+      </AppLayout>
+    );
   }
 
   const { title, publishedAt, isRevised, documentFile } =
     document?.data?.attributes || {};
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    if (isNaN(date)) {
-      return "Fecha no válida";
-    }
-    return date.toLocaleString("es-ES", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-  };
 
   const documentUrl = documentFile
     ? `${API_URL}${documentFile.data?.[0]?.attributes?.url}`
     : null;
 
   if (!documentUrl) {
-    return <p>No se encontró el archivo del documento.</p>;
+    return (
+      <AppLayout title={title || "Documento"} actions={backButton}>
+        <EmptyState
+          icon={FileWarning}
+          title="No se encontró el archivo del documento"
+          description="La versión no tiene un archivo adjunto o se eliminó del servidor."
+        />
+      </AppLayout>
+    );
   }
 
-
   return (
-    <div>
-      <Navbar />
-      <Header />
-      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-        <div className="mb-2">
-          <motion.button
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-
-            className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            <IoArrowBack className="text-white text-xl mr-2" />
-            <span className="text-lg font-bold" onClick={handleBackClick}>Volver a los detalles del proyecto</span>
-          </motion.button>
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-3xl font-bold mb-2 pb-3 border-b border-gray-200 mt-2"
-          >
-            {title}
-          </motion.h1>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Fecha de creación */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4"
-            >
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-sm font-medium text-gray-500">
-                  Fecha de Creación
-                </h2>
-                <p className="text-sm md:text-lg font-semibold text-gray-900">
-                  {publishedAt
-                    ? formatDate(publishedAt)
-                    : "Fecha no disponible"}
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Estado de revisión */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className={`p-4 rounded-xl shadow-sm border flex items-center space-x-4 ${
-                isRevised
-                  ? "bg-green-50 border-green-100"
-                  : "bg-red-50 border-red-100"
-              }`}
-            >
-              <div
-                className={`p-3 rounded-lg ${
-                  isRevised ? "bg-green-100" : "bg-red-100"
-                }`}
-              >
-                {isRevised ? (
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                ) : (
-                  <XCircle className="w-6 h-6 text-red-600" />
-                )}
-              </div>
-              <div>
-                <h2 className="text-sm font-medium text-gray-500">
-                  Estado de Revisión
-                </h2>
-                <p
-                  className={`text-sm md:text-lg font-semibold ${
-                    isRevised ? "text-green-700" : "text-red-700"
-                  }`}
-                >
-                  {isRevised ? "Revisado" : "Pendiente"}
-                </p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Botón para quienes pueden aprobar documentos */}
+    <AppLayout
+      title={title}
+      description="Revisa el documento y gestiona las correcciones."
+      actions={
+        <>
+          {backButton}
           {canApproveDocument && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="col-span-3 flex justify-end m-2"
-            >
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={handleRevisadoClick}
-              >
-                {isSubmitting
-                  ? "Actualizando estado..."
-                  : "Marcar como Revisado"}
-              </button>
-            </motion.div>
+            <Button onClick={handleRevisadoClick} loading={isSubmitting}>
+              <CheckCircle2 className="h-4 w-4" strokeWidth={1.8} />
+              {isSubmitting ? "Actualizando estado..." : "Marcar como revisado"}
+            </Button>
           )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 ">
-          <div className="gap-2 border rounded-lg overflow-auto">
-            <CommentsPanel
-              comments={comments}
-              onUpdateComments={fetchComments}
-              onCommentClick={handleCommentClick}
-            />
+        </>
+      }
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15 }}
+        className="mb-6 grid gap-4 sm:grid-cols-2"
+      >
+        <Card padded={false} className="flex items-center gap-4 p-5">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-wash text-accent">
+            <Calendar className="h-5 w-5" strokeWidth={1.8} />
           </div>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-muted">Fecha de creación</p>
+            <p className="truncate font-mono text-sm text-content">
+              {formatDateTime(publishedAt)}
+            </p>
+          </div>
+        </Card>
 
+        <Card padded={false} className="flex items-center gap-4 p-5">
           <div
-            className="bg-gray-900 rounded-lg p-2 h-full overflow-auto"
-            style={{ height: "100vh", overflow: "auto" }}
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${
+              isRevised ? "bg-ok-wash text-ok" : "bg-warn-wash text-warn"
+            }`}
           >
-            <DisplayNotesSidebarExample
-              fileUrl={documentUrl}
-              notes={notes}
-              onAddNote={handleAddNote}
-              canComment={canComment}
-              selectedHighlightId={selectedHighlightId}
-            />
+            {isRevised ? (
+              <CheckCircle2 className="h-5 w-5" strokeWidth={1.8} />
+            ) : (
+              <Clock className="h-5 w-5" strokeWidth={1.8} />
+            )}
           </div>
-        </div>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-muted">Estado de revisión</p>
+            <Badge tone={isRevised ? "ok" : "warn"} className="mt-1">
+              {isRevised ? "Revisado" : "Pendiente"}
+            </Badge>
+          </div>
+        </Card>
+      </motion.div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card padded={false} className="max-h-[80vh] overflow-hidden">
+          <CommentsPanel
+            comments={comments}
+            onUpdateComments={fetchComments}
+            onCommentClick={handleCommentClick}
+          />
+        </Card>
+
+        {/* El visor de PDF pinta su propio lienzo: solo aporta el marco y el alto. */}
+        <Card padded={false} className="h-[80vh] overflow-auto bg-surface-2 p-2">
+          <DisplayNotesSidebarExample
+            fileUrl={documentUrl}
+            notes={notes}
+            onAddNote={handleAddNote}
+            canComment={canComment}
+            selectedHighlightId={selectedHighlightId}
+          />
+        </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

@@ -11,9 +11,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.j
 
 import DisplayNotesSidebarExample from "./DisplayNotesSidebarExample.tsx";
 
-import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
-import { FaCodeCompare } from "react-icons/fa6";
+import { ChevronLeft, ChevronRight, GitCompare } from "lucide-react";
 import { getCommentsByDocument } from "../core/Comments";
+import Modal from "./ui/Modal";
+import Button from "./ui/Button";
+import EmptyState from "./ui/EmptyState";
 
 const DocumentComparePopup = ({
   documents,
@@ -30,19 +32,30 @@ const DocumentComparePopup = ({
   const doc1 = sortedDocuments[currentIndex];
   const doc2 = sortedDocuments[currentIndex + 1];
 
-  const documento1 = `${API_URL}${doc1.attributes.documentFile.data[0].attributes.url}`;
-  const documento2 = `${API_URL}${doc2.attributes.documentFile.data[0].attributes.url}`;
+  // Estos accesos iban sin guardas: bastaba un índice fuera de rango (el
+  // llamador lo inicializa como `documents.length - 2`, que es -2 con la lista
+  // vacía) o un documento sin archivo adjunto para dejar la pantalla en blanco.
+  const fileUrl = (doc) => {
+    const url = doc?.attributes?.documentFile?.data?.[0]?.attributes?.url;
+    return url ? `${API_URL}${url}` : null;
+  };
 
-  const doc1Id = doc1.id;
-  const doc2Id = doc2.id;
+  const documento1 = fileUrl(doc1);
+  const documento2 = fileUrl(doc2);
 
-  const nameDocumento1 = doc1.attributes.title;
-  const nameDocumento2 = doc2.attributes.title;
+  const doc1Id = doc1?.id;
+  const doc2Id = doc2?.id;
+
+  const nameDocumento1 = doc1?.attributes?.title ?? "";
+  const nameDocumento2 = doc2?.attributes?.title ?? "";
+
+  const canCompare = Boolean(documento1 && documento2);
 
   useEffect(() => {
-    getHighlightedAreas();
-    console.log(nameDocumento1, nameDocumento2);
-  }, [documento1, documento2]);
+    if (canCompare) {
+      getHighlightedAreas();
+    }
+  }, [doc1Id, doc2Id, canCompare]);
 
   const handlePrevious = () => {
     setDifferences([]);
@@ -163,232 +176,183 @@ const DocumentComparePopup = ({
     }
   };
 
+  // Hacen falta dos versiones con archivo para poder comparar.
+  if (!canCompare) {
+    return (
+      <Modal
+        open
+        onClose={onClose}
+        size="sm"
+        title="No hay versiones que comparar"
+        footer={
+          <Button variant="secondary" onClick={onClose}>
+            Cerrar
+          </Button>
+        }
+      >
+        <EmptyState
+          icon={GitCompare}
+          title="Faltan versiones"
+          description="Se necesitan al menos dos versiones con archivo adjunto para usar el comparador."
+        />
+      </Modal>
+    );
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
-    >
-      <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-11/12 h-11/12 overflow-hidden">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Comparador de Documentos
-          </h2>
-          <motion.button
-            onClick={onClose}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-lg p-2 hover:bg-red-100"
-          >
-            <svg
-              className="w-6 h-6 md:w-7 md:h-7"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </motion.button>
-        </div>
-
-        <div className="flex space-x-4 h-full">
-          <motion.div className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-2">
-              {doc1.attributes.title}
-            </h3>
-            <div style={{ height: "650px", overflow: "auto" }}>
-              {/* <Worker workerUrl={WORKER_URL}>
-                <Viewer
-                  fileUrl={documento1}
-                  plugins={[highlightPluginInstance]}
-                />
-              </Worker> */}
-              <DisplayNotesSidebarExample
-                fileUrl={documento1}
-                notes={notesDocument1}
-                onAddNote=""
-                isTutor={false}
-                selectedHighlightId=""
-              />
-            </div>
-          </motion.div>
-
-          <motion.div className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-2">
-              {doc2.attributes.title}
-            </h3>
-            <div style={{ height: "650px", overflow: "auto" }}>
-              {/* <Worker workerUrl={WORKER_URL}>
-                <Viewer
-                  fileUrl={documento2}
-                  plugins={[highlightPluginInstance]}
-                />
-              </Worker> */}
-
-              <DisplayNotesSidebarExample
-                fileUrl={documento2}
-                notes={notesDocument2}
-                onAddNote=""
-                isTutor={false}
-                selectedHighlightId=""
-              />
-            </div>
-          </motion.div>
-          <motion.div className="relative flex-1 bg-gray-100 p-4 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-4">Diferencias</h3>
-
-            {/* Contenedor con scroll y altura fija */}
-            <div
-              className="grid grid-cols-2 gap-4 mb-6"
-              style={{ height: "400px", overflowY: "auto" }}
-            >
-              {/* Columna izquierda - Eliminados */}
-              <div>
-                <h4 className="text-md font-semibold mb-2 text-red-600">
-                  Eliminado
-                </h4>
-                {differences.filter((diff) => diff.type === "removed").length >
-                0 ? (
-                  differences
-                    .filter((diff) => diff.type === "removed")
-                    .map((diff, index) => (
-                      <motion.div
-                        key={index}
-                        className="p-3 mb-2 rounded bg-red-50 border border-red-300"
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: 50 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <p className="text-sm text-gray-700 mb-1">
-                          {diff.value}
-                        </p>
-                        <p className="text-xs text-gray-500 italic font-semibold">
-                          Documento: {diff.document}
-                        </p>
-                      </motion.div>
-                    ))
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    No se encontraron elementos eliminados.
-                  </p>
-                )}
-              </div>
-
-              {/* Columna derecha - Agregados */}
-              <div>
-                <h4 className="text-md font-semibold mb-2 text-green-600">
-                  Agregado
-                </h4>
-                {differences.filter((diff) => diff.type === "added").length >
-                0 ? (
-                  differences
-                    .filter((diff) => diff.type === "added")
-                    .map((diff, index) => (
-                      <motion.div
-                        key={index}
-                        className="p-3 mb-2 rounded bg-green-50 border border-green-300"
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: 50 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <p className="text-sm text-gray-700 mb-1">
-                          {diff.value}
-                        </p>
-                        <p className="text-xs text-gray-500 italic font-semibold">
-                          Documento: {diff.document}
-                        </p>
-                      </motion.div>
-                    ))
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    No se encontraron elementos agregados.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Mensaje centrado */}
-            <p className="col-span-2 text-center text-gray-600">
-              Haz clic en &quot;Comparar&quot; para ver las diferencias.
-            </p>
-
-            {/* Sección de instrucciones */}
-            <div className="bg-gray-700 p-3 rounded-lg border border-red-300">
-              <h4 className="text-md font-semibold mb-2 text-yellow-600">
-                Instrucciones
-              </h4>
-              <div className="grid grid-cols-2 gap-2">
-                <ul className="list-disc list-inside text-sm text-white">
-                  <li className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    Secciones señaladas para corrección.
-                  </li>
-                  <li className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    Texto eliminado.
-                  </li>
-                  <li className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    Texto agregado.
-                  </li>
-                </ul>
-                <div className="text-sm text-white">
-                  <p className="mb-1">
-                    <span className="text-green-400">Verde (Agregado):</span> Texto que está en el documento más reciente (derecha) pero no en el anterior (izquierda).
-                  </p>
-                  <p className="mb-1">
-                    <span className="text-red-400">Rojo (Eliminado):</span> Texto que estaba en el documento anterior (izquierda) pero no en el más reciente (derecha).
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            
-          </motion.div>
-        </div>
-
-        <div className="mt-4 flex justify-between">
-          <button
+    <Modal
+      open
+      onClose={onClose}
+      size="xl"
+      title="Comparador de documentos"
+      description="Revisa dos versiones lado a lado y resalta sus diferencias."
+      footer={
+        <div className="flex w-full items-center justify-between gap-3">
+          <Button
+            variant="secondary"
             onClick={handlePrevious}
             disabled={currentIndex === 0}
-            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 disabled:opacity-50"
           >
-            <MdOutlineNavigateBefore className="ml-2" /> Anterior
-          </button>
+            <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
+            Anterior
+          </Button>
 
-          <button
-            onClick={compareDocuments}
-            className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-          >
-            <motion.div
+          <Button onClick={compareDocuments}>
+            <motion.span
               animate={isComparing ? { rotate: 360 } : { rotate: 0 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="mr-2"
+              className="inline-flex"
             >
-              <FaCodeCompare />
-            </motion.div>
+              <GitCompare className="h-4 w-4" strokeWidth={1.8} />
+            </motion.span>
             Comparar
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={handleNext}
             disabled={currentIndex >= documents.length - 2}
-            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 disabled:opacity-50"
           >
-            Siguiente <MdOutlineNavigateNext className="ml-2" />
-          </button>
+            Siguiente
+            <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+          </Button>
+        </div>
+      }
+    >
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-line bg-surface-2 p-3">
+          <h3 className="mb-2 font-display text-sm font-semibold text-content">
+            {nameDocumento1}
+          </h3>
+          <div className="h-[600px] overflow-auto rounded-lg bg-surface">
+            <DisplayNotesSidebarExample
+              fileUrl={documento1}
+              notes={notesDocument1}
+              onAddNote=""
+              isTutor={false}
+              selectedHighlightId=""
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-line bg-surface-2 p-3">
+          <h3 className="mb-2 font-display text-sm font-semibold text-content">
+            {nameDocumento2}
+          </h3>
+          <div className="h-[600px] overflow-auto rounded-lg bg-surface">
+            <DisplayNotesSidebarExample
+              fileUrl={documento2}
+              notes={notesDocument2}
+              onAddNote=""
+              isTutor={false}
+              selectedHighlightId=""
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface-2 p-4">
+          <h3 className="font-display text-sm font-semibold text-content">Diferencias</h3>
+
+          <div className="grid h-[380px] grid-cols-1 gap-4 overflow-y-auto md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-medium uppercase tracking-wide text-danger">
+                Eliminado
+              </h4>
+              {differences.filter((diff) => diff.type === "removed").length > 0 ? (
+                differences
+                  .filter((diff) => diff.type === "removed")
+                  .map((diff, index) => (
+                    <motion.div
+                      key={index}
+                      className="rounded-lg border border-line bg-danger-wash p-3"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <p className="text-sm text-content">{diff.value}</p>
+                      <p className="mt-1 font-mono text-xs text-muted">{diff.document}</p>
+                    </motion.div>
+                  ))
+              ) : (
+                <p className="text-sm text-muted">No se encontraron elementos eliminados.</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-medium uppercase tracking-wide text-ok">Agregado</h4>
+              {differences.filter((diff) => diff.type === "added").length > 0 ? (
+                differences
+                  .filter((diff) => diff.type === "added")
+                  .map((diff, index) => (
+                    <motion.div
+                      key={index}
+                      className="rounded-lg border border-line bg-ok-wash p-3"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <p className="text-sm text-content">{diff.value}</p>
+                      <p className="mt-1 font-mono text-xs text-muted">{diff.document}</p>
+                    </motion.div>
+                  ))
+              ) : (
+                <p className="text-sm text-muted">No se encontraron elementos agregados.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+              Instrucciones
+            </h4>
+            <ul className="flex flex-col gap-1.5 text-sm text-muted">
+              <li className="flex items-center gap-2">
+                {/* Amarillo literal: es el mismo color con el que el visor pinta los
+                    resaltados sobre el PDF, así que la leyenda debe coincidir. */}
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: "yellow" }}
+                />
+                Secciones señaladas para corrección.
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-danger" />
+                Texto eliminado: estaba en la versión anterior (izquierda) y ya no está en
+                la más reciente (derecha).
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-ok" />
+                Texto agregado: aparece en la versión más reciente (derecha) y no en la
+                anterior (izquierda).
+              </li>
+            </ul>
+            <p className="mt-3 text-sm text-muted">
+              Pulsa &quot;Comparar&quot; para calcular las diferencias.
+            </p>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </Modal>
   );
 };
 
