@@ -18,12 +18,39 @@ const toIdList = (value) => {
   return [value];
 };
 
+/**
+ * Editar o borrar un comentario: puede su autor, y puede quien modera.
+ *
+ * Antes exigía MANAGE_COMMENTS a secas, de modo que un estudiante no podía ni
+ * corregir una errata en su propio comentario.
+ */
+const canModifyComment = async (ctx, userId, strapi) => {
+  const comment = await strapi.db.query('api::comment.comment').findOne({
+    where: { id: ctx.params.id },
+    populate: { correctionTutor: true },
+  });
+
+  if (!comment) {
+    ctx.notFound('Comentario no encontrado');
+    return false;
+  }
+
+  if (comment.correctionTutor?.id === userId) return true;
+
+  return authorize(ctx, userId, 'MANAGE_COMMENTS', strapi);
+};
+
 module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   async create(ctx) {
     const user = await authenticate(ctx, strapi);
     if (!user) return;
 
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
+    // Comentar exige COMMENT_DOCUMENT, no MANAGE_COMMENTS. Este control pedía
+    // el segundo, que solo tiene el tutor, así que un estudiante recibía 403 al
+    // responder a una corrección pese a tener concedido COMMENT_DOCUMENT.
+    // MANAGE_COMMENTS es para moderar los comentarios de otros, no para
+    // escribir el propio.
+    const hasPermission = await authorize(ctx, user.id, 'COMMENT_DOCUMENT', strapi);
     if (!hasPermission) return;
 
     // La autoría la fija el servidor. Venía en el body, así que se podía
@@ -66,8 +93,7 @@ module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
     const user = await authenticate(ctx, strapi);
     if (!user) return;
 
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
-    if (!hasPermission) return;
+    if (!(await canModifyComment(ctx, user.id, strapi))) return;
 
     // Tampoco se puede reasignar la autoría al editar.
     if (ctx.request.body?.data) {
@@ -81,8 +107,7 @@ module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
     const user = await authenticate(ctx, strapi);
     if (!user) return;
 
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_COMMENTS', strapi);
-    if (!hasPermission) return;
+    if (!(await canModifyComment(ctx, user.id, strapi))) return;
 
     return super.delete(ctx);
   },
