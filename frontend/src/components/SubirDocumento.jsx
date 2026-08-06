@@ -1,7 +1,17 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types";
+import { motion } from "framer-motion";
+import { Upload } from "lucide-react";
 import { uploadFile, createDocument } from "../core/Document";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
-import PropTypes from "prop-types";
+import Input, { inputClass } from "./ui/Input";
+import Button from "./ui/Button";
+
+const fadeIn = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.18 },
+};
 
 const SubirDocumento = ({ projectId, onClose }) => {
   const [title, setTitle] = useState("");
@@ -10,12 +20,15 @@ const SubirDocumento = ({ projectId, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
+    // La validación va antes de bloquear el botón: al salir por aquí no se
+    // restablecía `isSubmitting` y el formulario quedaba inutilizable.
     if (!file || !title || !projectId) {
-      alert("Por favor, complete todos los campos.");
+      errorAlert("Por favor, complete todos los campos.");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const uploadedFile = await uploadFile(file);
@@ -27,8 +40,7 @@ const SubirDocumento = ({ projectId, onClose }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error uploading document:", error);
-      const mensaje =
-        error.response?.data?.message || "Error al subir el documento";
+      const mensaje = error.response?.data?.message || "Error al subir el documento";
       errorAlert(mensaje);
     } finally {
       setIsSubmitting(false);
@@ -36,33 +48,19 @@ const SubirDocumento = ({ projectId, onClose }) => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6 p-6 bg-white rounded-lg shadow-md"
-    >
-      <div>
-        <label
-          htmlFor="title"
-          className="block text-sm font-semibold text-gray-800 mb-2"
-        >
-          Título del Documento
-        </label>
-        <input
-          type="text"
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg p-2 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
-          required
-        />
-      </div>
+    <motion.form {...fadeIn} onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <Input
+        id="title"
+        label="Título del documento"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Ingrese el título del documento"
+        required
+      />
 
-      <div>
-        <label
-          htmlFor="file"
-          className="block text-sm font-semibold text-gray-800 mb-2"
-        >
-          Archivo del Documento
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="file" className="text-sm font-medium text-content">
+          Archivo del documento
         </label>
         <input
           type="file"
@@ -73,23 +71,28 @@ const SubirDocumento = ({ projectId, onClose }) => {
             if (selectedFile && selectedFile.type === "application/pdf") {
               setFile(selectedFile); // Solo se establece si es un archivo PDF válido
             } else {
-              alert("Por favor, selecciona un archivo PDF válido.");
+              errorAlert("Por favor, selecciona un archivo PDF válido.");
               e.target.value = null; // Limpia el input si no es válido
             }
           }}
-          className="w-full border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out"
+          className={`${inputClass} file:mr-3 file:rounded-md file:border-0 file:bg-surface-2 file:px-3 file:py-1 file:text-sm file:font-medium file:text-content`}
           required
         />
+        <p className="text-xs text-muted">Solo se admiten archivos PDF.</p>
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
-      >
-        {isSubmitting ? "Subiendo Documento..." : "Subir Documento"}
-      </button>
-    </form>
+      <div className="flex justify-end gap-3 border-t border-line pt-4">
+        {onClose && (
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+        )}
+        <Button type="submit" loading={isSubmitting}>
+          {!isSubmitting && <Upload className="h-4 w-4" strokeWidth={1.8} />}
+          {isSubmitting ? "Subiendo documento..." : "Subir documento"}
+        </Button>
+      </div>
+    </motion.form>
   );
 };
 

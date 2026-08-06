@@ -1,14 +1,33 @@
 import React, { useEffect, useState } from "react";
-import {  getProjectsByTutor } from "../core/Projects";
-import Navbar from "../components/Navbar";
+import { motion } from "framer-motion";
+import { Search } from "lucide-react";
+import { getProjectsByTutor } from "../core/Projects";
+import AppLayout from "../components/layout/AppLayout";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import { Select, inputClass } from "../components/ui/Input";
+import { SkeletonRows } from "../components/ui/Skeleton";
 import ProjectsTable from "../components/ProjectsTable";
 import { decryptData } from "../utils/encryption";
-import Header from "../components/Header";
+import { formatDateTime } from "../utils/format";
+
+const ITINERARIES = [
+  "Ingeniería de Software",
+  "Sistemas Inteligentes",
+  "Computación Aplicada",
+];
+
+const fadeIn = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.18 },
+};
 
 const ProjectsAsignedTutor = () => {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [authorFilter, setAuthorFilter] = useState("");
   const [itineraryFilter, setItineraryFilter] = useState("");
   let userEmail = null;
@@ -17,8 +36,7 @@ const ProjectsAsignedTutor = () => {
 
   if (encryptedUserData) {
     // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
+    const decryptedUserData = decryptData(encryptedUserData);
 
     userEmail = decryptedUserData.email;
   } else {
@@ -28,23 +46,24 @@ const ProjectsAsignedTutor = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        setLoading(true);
         if (userEmail) {
           const userProjects = await getProjectsByTutor(userEmail);
           setProjects(userProjects);
           setFilteredProjects(userProjects);
         } else {
-          setError("User ID is not available");
+          setError("No se pudo obtener el correo del usuario");
         }
       } catch (error) {
-        setError("Error fetching projects");
+        setError("Error al cargar los proyectos");
         console.error("Error fetching projects:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProjects();
   }, [userEmail]);
-  
-  
 
   useEffect(() => {
     handleFilterChange();
@@ -65,8 +84,7 @@ const ProjectsAsignedTutor = () => {
       filtered = filtered.filter(
         (project) =>
           project.itinerary &&
-          project.itinerary.toLowerCase().trim() ===
-            itineraryFilter.toLowerCase().trim()
+          project.itinerary.toLowerCase().trim() === itineraryFilter.toLowerCase().trim()
       );
     }
 
@@ -79,106 +97,110 @@ const ProjectsAsignedTutor = () => {
       key: "estudiante",
       label: "Estudiante",
       render: (project) => (
-        <ul>
+        <ul className="flex flex-col gap-1">
           {project.students.map((estudiante) => (
             <li key={estudiante.id}>
-              {estudiante.username}
-              <span className="text-blue-600 ml-2">({estudiante.email})</span>
+              <span className="text-content">{estudiante.username}</span>
+              <span className="ml-2 font-mono text-xs text-muted">{estudiante.email}</span>
             </li>
           ))}
         </ul>
       ),
     },
-    { key: "title", label: "Título" },
-    { key: "description", label: "Descripción" },
+    {
+      key: "title",
+      label: "Título",
+      render: (project) => <span className="font-medium text-content">{project.title}</span>,
+    },
+    {
+      key: "description",
+      label: "Descripción",
+      render: (project) => (
+        <span className="line-clamp-2 block max-w-xs text-muted">{project.description}</span>
+      ),
+    },
     {
       key: "projectType",
-      label: "Tipo de Proyecto",
-      render: (project) => project.projectType,
+      label: "Tipo de proyecto",
+      render: (project) => <Badge tone="neutral">{project.projectType || "—"}</Badge>,
+    },
+    {
+      key: "status",
+      label: "Estado",
+      render: (project) => <Badge status={project.status || "Creado"} />,
     },
     {
       key: "FechaCreacion",
-      label: "Fecha de Creación",
-      render: (project) => {
-        const date = new Date(project.publishedAt);
-        // Convierte la fecha al formato local
-        return date.toLocaleString("es-ES", {
-          weekday: "long", // Día de la semana
-          year: "numeric", // Año completo
-          month: "long", // Mes completo
-          day: "numeric", // Día del mes
-          hour: "2-digit", // Hora en formato de 2 dígitos
-          minute: "2-digit", // Minutos
-          second: "2-digit", // Segundos
-          hour12: false, // Usa el formato de 24 horas
-        });
-      },
+      label: "Fecha de creación",
+      render: (project) => (
+        <span className="whitespace-nowrap font-mono text-xs text-muted">
+          {formatDateTime(project.publishedAt)}
+        </span>
+      ),
     },
   ];
 
   return (
-    <div>
-      <Navbar />
-      <Header />
-      <div className="container mx-auto p-4">
-        {error && <p className="text-red-500">{error}</p>}
-
-        {/* Filters */}
-
-        <div className="mb-4 flex flex-col md:flex-row gap-4 items-center">
-          <select
-            value={itineraryFilter}
-            onChange={(e) => setItineraryFilter(e.target.value)}
-            className="font-bold bg-indigo-600 text-white py-3 px-6 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer text-center"
-          >
-            <option value="" className="bg-gray-700">
-              Seleccionar Itinerario
-            </option>
-            <option value="Ingeniería de Software" className="bg-gray-700">
-              Ingeniería de Software
-            </option>
-            <option value="Sistemas Inteligentes" className="bg-gray-700">
-              Sistemas Inteligentes
-            </option>
-            <option value="Computación Aplicada" className="bg-gray-700">
-              Computación Aplicada
-            </option>
-          </select>
-
-          <div className="relative flex items-center w-full max-w-sm">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-                className="w-5 h-5 text-gray-400"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-4.35-4.35m2.48-4.48a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </span>
-            <input
-              type="text"
-              placeholder="Buscar por Estudiante"
-              value={authorFilter}
-              onChange={(e) => setAuthorFilter(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:outline-none w-full"
-            />
-          </div>
+    <AppLayout
+      title="Proyectos asignados"
+      description="Proyectos en los que participas como tutor"
+    >
+      {error && (
+        <div className="mb-6 rounded-xl border border-line bg-danger-wash p-4 text-sm text-danger">
+          {error}
         </div>
+      )}
 
-        <ProjectsTable
-          projects={filteredProjects}
-          columns={columns}
-          linkBase="/project"
-        />
-      </div>
-    </div>
+      <motion.div {...fadeIn}>
+        <Card padded={false}>
+          <div className="flex flex-col gap-3 border-b border-line p-6 md:flex-row md:items-end">
+            <div className="w-full md:max-w-xs">
+              <Select
+                id="itineraryFilter"
+                label="Itinerario"
+                value={itineraryFilter}
+                onChange={(e) => setItineraryFilter(e.target.value)}
+              >
+                <option value="">Todos los itinerarios</option>
+                {ITINERARIES.map((itinerary) => (
+                  <option key={itinerary} value={itinerary}>
+                    {itinerary}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div className="flex w-full flex-col gap-1.5 md:max-w-sm">
+              <label htmlFor="authorFilter" className="text-sm font-medium text-content">
+                Estudiante
+              </label>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                  strokeWidth={1.8}
+                />
+                <input
+                  id="authorFilter"
+                  type="text"
+                  placeholder="Buscar por correo del estudiante"
+                  value={authorFilter}
+                  onChange={(e) => setAuthorFilter(e.target.value)}
+                  className={`${inputClass} pl-9`}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {loading ? (
+              <SkeletonRows count={5} />
+            ) : (
+              <ProjectsTable projects={filteredProjects} columns={columns} linkBase="/project" />
+            )}
+          </div>
+        </Card>
+      </motion.div>
+    </AppLayout>
   );
 };
 
