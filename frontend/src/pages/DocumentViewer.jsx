@@ -6,6 +6,8 @@ import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   FileWarning,
 } from "lucide-react";
@@ -17,7 +19,7 @@ import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
 import CommentsPanel from "../components/CommentsPanel";
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
-import { getDocumentById } from "../core/Document";
+import { getDocumentById, getDocumentsByProjectId } from "../core/Document";
 import {
   getCommentsByDocument,
   addCommentToDocument,
@@ -38,6 +40,7 @@ const DocumentoViewer = () => {
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [strapiUserId, setStrapiUserId] = useState(null);
+  const [siblings, setSiblings] = useState([]);
   const navigate = useNavigate();
   const { hasPermission } = usePermission();
 
@@ -79,6 +82,17 @@ const DocumentoViewer = () => {
     try {
       const data = await getDocumentById(documentId);
       setDocument(data);
+
+      // Las demás versiones del mismo proyecto, para poder saltar entre ellas
+      // sin volver al detalle del proyecto cada vez.
+      const projectId = data?.data?.attributes?.project?.data?.id;
+      if (projectId) {
+        const response = await getDocumentsByProjectId(projectId);
+        const ordered = [...(response?.data ?? [])].sort(
+          (a, b) => (a.attributes.version ?? 0) - (b.attributes.version ?? 0)
+        );
+        setSiblings(ordered);
+      }
     } catch (error) {
       setError("Error fetching document details");
     }
@@ -88,21 +102,11 @@ const DocumentoViewer = () => {
     navigate(-1);
   };
 
+  // Se selecciona siempre, tenga o no resaltado: así la tarjeta se marca en el
+  // panel. Si además hay áreas válidas, el visor salta hasta ellas. Antes, un
+  // comentario sin resaltado no daba ninguna señal al pulsarlo.
   const handleCommentClick = (comment) => {
-    try {
-      const highlightAreas = JSON.parse(comment.attributes.highlightAreas);
-
-      // Verificar si hay áreas válidas
-      const validAreas = highlightAreas.filter(
-        (area) => area.height > 0 && area.width > 0 && area.pageIndex >= 0
-      );
-
-      if (validAreas.length > 0) {
-        setSelectedHighlightId(comment.id);
-      }
-    } catch (error) {
-      console.error("Error parsing highlight areas:", error);
-    }
+    setSelectedHighlightId(comment.id);
   };
 
   const fetchComments = async () => {
@@ -164,6 +168,48 @@ const DocumentoViewer = () => {
     </Button>
   );
 
+  // Navegación entre versiones sin salir de la vista.
+  const currentPosition = siblings.findIndex((doc) => String(doc.id) === String(documentId));
+  const previousVersion = currentPosition > 0 ? siblings[currentPosition - 1] : null;
+  const nextVersion =
+    currentPosition >= 0 && currentPosition < siblings.length - 1
+      ? siblings[currentPosition + 1]
+      : null;
+
+  const versionNav = siblings.length > 1 && (
+    <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1">
+      <button
+        type="button"
+        disabled={!previousVersion}
+        onClick={() => previousVersion && navigate(`/document/${previousVersion.id}`)}
+        title={
+          previousVersion
+            ? `Versión ${previousVersion.attributes.version}`
+            : "No hay versión anterior"
+        }
+        className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
+      </button>
+
+      <span className="px-1 font-mono text-xs text-muted">
+        v{document?.data?.attributes?.version ?? "?"} de {siblings.length}
+      </span>
+
+      <button
+        type="button"
+        disabled={!nextVersion}
+        onClick={() => nextVersion && navigate(`/document/${nextVersion.id}`)}
+        title={
+          nextVersion ? `Versión ${nextVersion.attributes.version}` : "No hay versión posterior"
+        }
+        className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+      </button>
+    </div>
+  );
+
   if (error) {
     return (
       <AppLayout title="Documento" actions={backButton}>
@@ -213,10 +259,12 @@ const DocumentoViewer = () => {
 
   return (
     <AppLayout
+      fullHeight
       title={title}
       description="Revisa el documento y gestiona las correcciones."
       actions={
         <>
+          {versionNav}
           {backButton}
           {canApproveDocument && (
             <Button onClick={handleRevisadoClick} loading={isSubmitting}>
@@ -227,62 +275,58 @@ const DocumentoViewer = () => {
         </>
       }
     >
+      {/* Metadatos en una sola franja: antes ocupaban dos tarjetas grandes que
+          empujaban el documento fuera de la pantalla. */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.15 }}
-        className="mb-6 grid gap-4 sm:grid-cols-2"
+        className="mb-4 flex shrink-0 flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3"
       >
-        <Card padded={false} className="flex items-center gap-4 p-5">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-wash text-accent">
-            <Calendar className="h-5 w-5" strokeWidth={1.8} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-muted">Fecha de creación</p>
-            <p className="truncate font-mono text-sm text-content">
-              {formatDateTime(publishedAt)}
-            </p>
-          </div>
-        </Card>
+        <span className="flex items-center gap-2 text-sm text-muted">
+          <Calendar className="h-4 w-4" strokeWidth={1.8} />
+          <span className="font-mono text-xs">{formatDateTime(publishedAt)}</span>
+        </span>
 
-        <Card padded={false} className="flex items-center gap-4 p-5">
-          <div
-            className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${
-              isRevised ? "bg-ok-wash text-ok" : "bg-warn-wash text-warn"
-            }`}
-          >
-            {isRevised ? (
-              <CheckCircle2 className="h-5 w-5" strokeWidth={1.8} />
-            ) : (
-              <Clock className="h-5 w-5" strokeWidth={1.8} />
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-muted">Estado de revisión</p>
-            <Badge tone={isRevised ? "ok" : "warn"} className="mt-1">
-              {isRevised ? "Revisado" : "Pendiente"}
-            </Badge>
-          </div>
-        </Card>
+        <span className="flex items-center gap-2 text-sm text-muted">
+          {isRevised ? (
+            <CheckCircle2 className="h-4 w-4 text-ok" strokeWidth={1.8} />
+          ) : (
+            <Clock className="h-4 w-4 text-warn" strokeWidth={1.8} />
+          )}
+          <Badge tone={isRevised ? "ok" : "warn"}>
+            {isRevised ? "Revisado" : "Pendiente"}
+          </Badge>
+        </span>
+
+        {canComment && (
+          <span className="ml-auto text-xs text-muted">
+            Selecciona texto en el documento para comentarlo.
+          </span>
+        )}
       </motion.div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card padded={false} className="max-h-[80vh] overflow-hidden">
-          <CommentsPanel
-            comments={comments}
-            onUpdateComments={fetchComments}
-            onCommentClick={handleCommentClick}
-          />
-        </Card>
-
-        {/* El visor de PDF pinta su propio lienzo: solo aporta el marco y el alto. */}
-        <Card padded={false} className="h-[80vh] overflow-auto bg-surface-2 p-2">
+      {/* El documento manda y ocupa dos tercios; las correcciones viven a su
+          derecha, como en cualquier editor colaborativo. */}
+      {/* `min-h-0` es lo que permite que los hijos se encojan y hagan scroll
+          por dentro en lugar de estirar la página. */}
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-3">
+        <Card padded={false} className="min-h-0 overflow-hidden bg-surface-2 lg:col-span-2">
           <DisplayNotesSidebarExample
             fileUrl={documentUrl}
             notes={notes}
             onAddNote={handleAddNote}
             canComment={canComment}
             selectedHighlightId={selectedHighlightId}
+          />
+        </Card>
+
+        <Card padded={false} className="min-h-0 overflow-hidden">
+          <CommentsPanel
+            comments={comments}
+            onUpdateComments={fetchComments}
+            onCommentClick={handleCommentClick}
+            selectedCommentId={selectedHighlightId}
           />
         </Card>
       </div>
