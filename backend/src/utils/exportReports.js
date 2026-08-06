@@ -79,10 +79,12 @@ const generatePDF = (auditData, hash) => {
     });
 
     doc.addPage();
-    doc.fontSize(10).text('Integrity Verification', { underline: true });
+    doc.fontSize(10).text('Verificación de integridad', { underline: true });
     doc.moveDown();
-    doc.fontSize(9).text('Digital Signature (SHA-256):', { continued: true });
-    doc.fontSize(8).text(hash, { wordWrap: true });
+    // No es una firma digital: es un checksum sin clave. Llamarlo "Digital
+    // Signature" sugería un no repudio que no ofrece.
+    doc.fontSize(9).text('Checksum de contenido (SHA-256):');
+    doc.fontSize(8).text(hash);
 
     doc.end();
   });

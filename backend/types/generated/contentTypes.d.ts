@@ -387,7 +387,7 @@ export interface ApiAuditAudit extends Schema.CollectionType {
     ipAddress: Attribute.String;
     newValue: Attribute.JSON;
     oldValue: Attribute.JSON;
-    timestamp: Attribute.DateTime & Attribute.DefaultTo<'$now'>;
+    timestamp: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
       'api::audit.audit',

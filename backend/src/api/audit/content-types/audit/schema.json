@@ -35,8 +35,7 @@
       "type": "json"
     },
     "timestamp": {
-      "type": "datetime",
-      "default": "$now"
+      "type": "datetime"
     },
     "ipAddress": {
       "type": "string"
