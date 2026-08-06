@@ -87,7 +87,10 @@ function AuditLogs() {
       title="Registros de auditoría"
       description="Historial de cambios en proyectos y documentos."
       actions={
-        <Button variant="secondary" onClick={() => navigate("/coordinator/dashboard")}>
+        // Vuelve a la vista anterior en vez de a una ruta fija: la auditoría la
+        // abren coordinación y superadmin, y mandar a todos al panel de
+        // coordinación dejaba al superadmin rebotando entre rutas.
+        <Button variant="secondary" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
           Volver
         </Button>

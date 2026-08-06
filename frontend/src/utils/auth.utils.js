@@ -19,7 +19,9 @@ export const getPrimaryRole = (roles) => {
 
 export const ROLE_ROUTES = {
   tutor: "/tutor/dashboard",
-  superadmin: "/tutor/dashboard",
+  // Apuntaba a /tutor/dashboard, así que al superadmin lo dejaba en el panel de
+  // revisión en lugar del suyo.
+  superadmin: "/admin/dashboard",
   estudiante: "/student/dashboard",
   coordinador: "/coordinator/dashboard",
 };

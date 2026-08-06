@@ -9,6 +9,7 @@ import {
 
 import { useAuth, AuthProvider } from "./context/AuthContext";
 import { PermissionProvider } from "./context/PermissionContext";
+import { ROLE_ROUTES } from "./utils/auth.utils";
 
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/ErrorNotFound";
@@ -65,6 +66,26 @@ ProtectedRoute.propTypes = {
   ]),
 };
 
+/**
+ * Portada pública.
+ *
+ * Con sesión iniciada lleva al panel que corresponde al rol. Mostrar aquí la
+ * landing de bienvenida, con sus botones de "Iniciar sesión", hacía creer que
+ * la sesión se había cerrado cada vez que se llegaba a "/".
+ */
+const PublicHome = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Cargando...</div>;
+
+  const role = (user?.rols ?? (user?.rol ? [user.rol] : []))[0];
+  const target = ROLE_ROUTES[role];
+
+  if (target) return <Navigate to={target} replace />;
+
+  return <Dashboard />;
+};
+
 
 function App() {
   return (
@@ -72,7 +93,7 @@ function App() {
       <PermissionProvider>
         <Routes>
           {/* Rutas públicas */}
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<PublicHome />} />
           <Route path="/login" element={<Login />} />
           <Route path="/login-institucional" element={<LoginInstitucional />} />
           <Route path="/sign-up" element={<SignUp />} />
@@ -91,7 +112,7 @@ function App() {
             <Route path="/tutor/dashboard" element={<TutorDashboard />} />
             <Route path="/tutor/projects/view" element={<ProjectsAsignedTutor />} />
           </Route>
-          {/* ROL ESTUIANE*/}
+          {/* ROL ESTUDIANTE */}
           <Route element={<ProtectedRoute requiredRole="estudiante" />}>
             <Route path="/student/dashboard" element={<StudentsDashboard />} />
             <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
@@ -105,6 +126,13 @@ function App() {
           {/* ROL COORDINADOR */}
           <Route element={<ProtectedRoute requiredRole="coordinador" />}>
             <Route path="/coordinator/dashboard" element={<CoordinatorDashboard />} />
+          </Route>
+
+          {/* La auditoría la consultan coordinación y superadmin. Estaba
+              restringida solo a coordinador, así que al superadmin el enlace de
+              la barra lateral lo devolvía a la portada: parecía un cierre de
+              sesión cuando en realidad era un rebote de ruta. */}
+          <Route element={<ProtectedRoute requiredRole={["coordinador", "superadmin"]} />}>
             <Route path="/audit-logs" element={<AuditLogs />} />
           </Route>
 
