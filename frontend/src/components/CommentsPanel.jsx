@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { motion } from "framer-motion";
-import { Check, MessageSquare, Pencil, Trash2, X } from "lucide-react";
+import { Check, GraduationCap, MessageSquare, Pencil, Trash2, X } from "lucide-react";
 import { updateComment, deleteComment } from "../core/Comments";
 import { confirmAlert, errorAlert, successAlert } from "./Alerts/Alerts";
 import { usePermission } from "../context/PermissionContext";
@@ -9,7 +9,6 @@ import Button from "./ui/Button";
 import { Textarea } from "./ui/Input";
 import EmptyState from "./ui/EmptyState";
 import { formatDateTime, initialsOf } from "../utils/format";
-import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
 
 /** "hace 5 min", "ayer"... Para fechas lejanas cae a la fecha completa. */
 const relativeTime = (value) => {
@@ -84,17 +83,10 @@ const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) =>
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.15 }}
       onClick={() => !isEditing && onSelect(comment)}
-      style={{
-        // La barra lateral lleva el mismo color que el resaltado del documento,
-        // así se ve de un vistazo a qué marca corresponde cada tarjeta.
-        borderLeftColor: isSelected
-          ? HIGHLIGHT_COLORS.commentBarSelected
-          : HIGHLIGHT_COLORS.commentBar,
-      }}
       className={[
-        "group cursor-pointer rounded-xl border border-l-4 bg-surface p-3 transition-colors",
+        "group cursor-pointer rounded-xl border bg-surface p-3 transition-colors",
         isSelected
-          ? "border-accent shadow-card"
+          ? "border-accent shadow-card ring-1 ring-accent"
           : "border-line hover:border-line-strong",
       ].join(" ")}
     >
@@ -170,7 +162,16 @@ const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) =>
           </div>
         </div>
       ) : (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-content">{correction}</p>
+        // El icono deja claro de un vistazo que lo que sigue es la indicación
+        // del tutor sobre qué hay que mejorar, y no una nota cualquiera.
+        <div className="flex gap-2">
+          <GraduationCap
+            className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          />
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-content">{correction}</p>
+        </div>
       )}
     </motion.article>
   );
