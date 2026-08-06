@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useAuth } from "./AuthContext";
-import { decryptData } from "../utils/encryption";
+import api, { getAuthToken } from "../core/apiClient";
 
 const PermissionContext = createContext();
 
@@ -30,40 +30,20 @@ export const PermissionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const encryptedToken = localStorage.getItem("jwtToken");
-      if (!encryptedToken) {
+      if (!getAuthToken()) {
         setPermissions([]);
-        setLoading(false);
         return;
       }
 
-      const decryptedToken = decryptData(encryptedToken);
-      if (!decryptedToken) {
-        setPermissions([]);
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch("http://localhost:1337/api/auth/me/permissions", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${decryptedToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch permissions");
-      }
-
-      const data = await response.json();
-      const permissionCodes = data.data || [];
-
-      setPermissions(permissionCodes);
-      localStorage.setItem("userPermissions", JSON.stringify(permissionCodes));
+      // La URL salía hardcodeada a localhost:1337, así que en producción los
+      // permisos nunca cargaban. Va por el cliente central, que resuelve la
+      // base desde API_URL y adjunta el token.
+      const { data } = await api.get("/api/auth/me/permissions");
+      setPermissions(data.data || []);
     } catch (err) {
-      console.error("Error fetching permissions:", err);
+      console.error("Error al obtener los permisos:", err);
       setError(err.message);
+      // Fallar cerrado: sin permisos confirmados por el servidor, ninguno.
       setPermissions([]);
     } finally {
       setLoading(false);
@@ -73,20 +53,14 @@ export const PermissionProvider = ({ children }) => {
   useEffect(() => {
     if (authLoading) return;
 
-    if (user && user.token) {
+    // Los permisos se piden siempre al servidor. Antes se cacheaban en
+    // localStorage en texto plano y se releían sin validar, así que bastaba con
+    // escribir userPermissions a mano en la consola para desbloquear la
+    // interfaz de administración.
+    if (user) {
       fetchPermissions();
     } else {
-      const cachedPermissions = localStorage.getItem("userPermissions");
-      if (cachedPermissions) {
-        try {
-          setPermissions(JSON.parse(cachedPermissions));
-        } catch (err) {
-          console.error("Error parsing cached permissions:", err);
-          setPermissions([]);
-        }
-      } else {
-        setPermissions([]);
-      }
+      setPermissions([]);
       setLoading(false);
     }
   }, [user, authLoading, fetchPermissions]);

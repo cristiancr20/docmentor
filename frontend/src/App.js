@@ -44,10 +44,13 @@ const ProtectedRoute = ({ requiredRole }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  // Verificar si requiredRole es un array o string y si user.rols existe
-  if (requiredRole && user.rols) {
+  // Se comprueba el rol fallando cerrado: si el usuario no trae roles, se
+  // deniega. Antes la condición era `requiredRole && user.rols`, así que un
+  // usuario sin `rols` se saltaba la verificación y entraba a cualquier panel.
+  if (requiredRole) {
     const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!user.rols.some(role => requiredRoles.includes(role))) {
+    const userRoles = user.rols ?? (user.rol ? [user.rol] : []);
+    if (!userRoles.some((role) => requiredRoles.includes(role))) {
       return <Navigate to="/" replace />;
     }
   }
@@ -73,12 +76,16 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/login-institucional" element={<LoginInstitucional />} />
           <Route path="/sign-up" element={<SignUp />} />
-          {/* ROL TUTOR-ESTUDIANTE */}
-          <Route path="/document/:documentId" element={<DocumentoViewer />} />
-          <Route path="/project/:projectId" element={<ProjectDetalle />} />
-
 
           {/* Rutas protegidas */}
+          {/* Detalle de proyecto y documento: cualquier usuario con sesión.
+              Estaban fuera del bloque protegido, así que con IDs correlativos
+              se podían enumerar proyectos y documentos ajenos sin iniciar sesión. */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/document/:documentId" element={<DocumentoViewer />} />
+            <Route path="/project/:projectId" element={<ProjectDetalle />} />
+          </Route>
+
           {/* ROL TUTOR y SUPERADMIN */}
           <Route element={<ProtectedRoute requiredRole={["superadmin","tutor"]} />}>
             <Route path="/tutor/dashboard" element={<TutorDashboard />} />

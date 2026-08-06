@@ -36,7 +36,7 @@ export const saveUserData = (user, userRoles) => {
 
 
   // Convertir el objeto a JSON y encriptarlo
-  const encryptedUserData = encryptData(JSON.stringify(userData));
+  const encryptedUserData = encryptData(userData);
 
   // Guardar el cuerpo encriptado como un solo item en localStorage
   localStorage.setItem("userData", encryptedUserData);
