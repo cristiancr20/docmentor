@@ -1,10 +1,12 @@
 const request = require('supertest');
+const { authHeader } = require('../helpers/strapi');
 
 describe('GET-POST-UPDATE-DELETE /projects', () => {
 
     it("should return Projects", async () => {
         const response = await request(strapi.server.httpServer)
             .get("/api/projects")
+            .set(authHeader())
             .expect(200) // Expect response http code 200
 
         const { data } = response.body;
@@ -35,6 +37,7 @@ describe('GET-POST-UPDATE-DELETE /projects', () => {
         // Verificar si el proyecto fue creado correctamente haciendo una solicitud GET
         const response = await request(strapi.server.httpServer)
             .get("/api/projects") // Este es el endpoint para obtener los proyectos, ajusta según tu API
+            .set(authHeader())
             .expect(200); // Esperamos que la respuesta sea exitosa (código 200)
 
         // Verifica que la respuesta contenga el nuevo proyecto
@@ -63,6 +66,7 @@ describe('GET-POST-UPDATE-DELETE /projects', () => {
 
         const response = await request(strapi.server.httpServer)
             .get("/api/projects") // Este es el endpoint para obtener los proyectos, ajusta según tu API
+            .set(authHeader())
             .expect(200); // Esperamos que la respuesta sea exitosa (código 200)
 
         // Verifica que la respuesta contenga el proyecto editado
@@ -82,6 +86,7 @@ describe('GET-POST-UPDATE-DELETE /projects', () => {
         // Verificar si el proyecto fue eliminado correctamente haciendo una solicitud GET
         const response = await request(strapi.server.httpServer)
             .get("/api/projects") // Este es el endpoint para obtener los proyectos, ajusta según tu API
+            .set(authHeader())
             .expect(200); // Esperamos que la respuesta sea exitosa (código 200)
 
         // Verifica que la respuesta contenga el proyecto eliminado

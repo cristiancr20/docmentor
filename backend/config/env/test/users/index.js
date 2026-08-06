@@ -1,9 +1,11 @@
 const request = require('supertest');
+const { authHeader } = require('../helpers/strapi');
 
 describe('GET-POST /users', () => {
     it("should return a users", async () => {
         const response = await request(strapi.server.httpServer)
             .get("/api/users")
+            .set(authHeader())
             .expect(200) // Expect response http code 200
 
         // Verifica que la respuesta contenga una lista de usuarios
