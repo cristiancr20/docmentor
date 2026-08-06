@@ -167,11 +167,9 @@ module.exports = createCoreService('api::notification.notification', ({ strapi }
   async getMyNotifications(userId) {
     const cutoff = new Date(Date.now() - THIRTY_DAYS_MS).toISOString();
 
-    // Limpieza oportunista del historial: fuera de la respuesta principal
-    this.cleanupOldNotifications().catch((error) =>
-      strapi.log.error(`Error limpiando notificaciones antiguas: ${error.message}`)
-    );
-
+    // La purga de notificaciones antiguas la ejecuta la tarea programada de
+    // config/server.js. Lanzarla desde aquí hacía que una simple lectura
+    // borrara notificaciones de todos los usuarios.
     return strapi.entityService.findMany('api::notification.notification', {
       filters: {
         tutor: { id: userId },
