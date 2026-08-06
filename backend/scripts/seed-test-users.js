@@ -90,6 +90,7 @@ const MANAGED_PREFIXES = [
   'api::setting.setting.',
   'api::audit.audit.',
   'plugin::users-permissions.user.',
+  'plugin::upload.content-api.',
 ];
 
 // Datos operativos: los controllers custom validan permiso y pertenencia.
@@ -124,6 +125,13 @@ const AUTH_ACTIONS = [
   'plugin::users-permissions.user.find',
   'plugin::users-permissions.user.findOne',
   'plugin::users-permissions.user.me',
+
+  // Subida de archivos. Sin este permiso POST /api/upload responde 403 y no se
+  // puede adjuntar ningún documento, que es la función central de la
+  // aplicación. No se conceden `find`/`findOne`, que listan la mediateca
+  // completa, ni `destroy`, que permitiría borrar el archivo de cualquiera:
+  // el visor carga los PDF por su URL estática, no por la API.
+  'plugin::upload.content-api.upload',
 ];
 
 // Sin sesión no se lee nada: `user.find` público exponía el correo de todos los

@@ -1,5 +1,4 @@
 import api from './apiClient';
-import { decryptData } from '../utils/encryption';
 
 // Resto de tu código
 //const API_URL = "http://localhost:1337";
@@ -112,12 +111,12 @@ export const createDocument = async (title, fileId, projectId) => {
       );
     }
 
-    const document = response.data;
-    const documentoId = response.data.data.id;
-
-    await createNotification(title, projectId, documentoId);
-
-    return document;
+    // La notificación al tutor la crea el backend en el propio `create` del
+    // documento (notifyDocumentUploaded). Hacerlo también aquí duplicaba el
+    // aviso y además fallaba con 403: crear notificaciones exige
+    // MANAGE_NOTIFICATIONS, que un estudiante no tiene ni debe tener, porque le
+    // permitiría fabricar avisos a nombre de otros.
+    return response.data;
   } catch (error) {
     // Se re-lanza: tragarse el error hacía que la vista mostrara "documento
     // subido correctamente" aunque la subida hubiera fallado.
@@ -193,45 +192,6 @@ export const copyDocumentAsNewVersion = async (documentId) => {
 };
 
 
-
-// MÉTODO PARA CREAR UNA NOTIFICACIÓN
-const createNotification = async (title, projectId, documentoId) => {
-  try {
-    const projectResponse = await api.get(
-      `/api/projects/${projectId}?populate=tutor`
-    );
-
-
-    if (
-      !projectResponse ||
-      !projectResponse.data ||
-      !projectResponse.data.data
-    ) {
-      throw new Error(
-        "Error inesperado al obtener el proyecto. Estructura de respuesta inválida."
-      );
-    }
-
-    const projectAttributes = projectResponse.data.data.attributes;
-    const tutor = projectAttributes.tutor.data;
-    const proyecto = projectAttributes.title
-
-    if (tutor) {
-      const notificationData = {
-        data: {
-          message: `En el proyecto ${proyecto} se ha subido un nuevo documento: ${title}`,
-          tutor: tutor.id,
-          document: documentoId,
-          isRead: false,
-        },
-      };
-
-      await api.post(`/api/notifications`, notificationData);
-    }
-  } catch (error) {
-    handleError(error);
-  }
-};
 
 // MÉTODO PARA MANEJAR ERRORES
 const handleError = (error) => {
