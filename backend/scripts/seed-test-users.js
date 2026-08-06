@@ -75,24 +75,60 @@ const USERS = [
 ];
 
 // --- Permisos users-permissions a otorgar por rol nativo ---
-const API_UIDS = [
+// Estas acciones son las que gestiona este seed: al ejecutarlo se sincroniza el
+// rol para que tenga EXACTAMENTE las listadas, revocando cualquier otra que se
+// hubiera concedido antes. Las acciones de `auth.*` (login, registro, etc.) no
+// entran aquí y quedan intactas.
+const CRUD = ['find', 'findOne', 'create', 'update', 'delete'];
+const MANAGED_PREFIXES = [
+  'api::project.project.',
+  'api::document.document.',
+  'api::comment.comment.',
+  'api::notification.notification.',
+  'api::rol.rol.',
+  'api::permission.permission.',
+  'api::setting.setting.',
+  'api::audit.audit.',
+  'plugin::users-permissions.user.',
+];
+
+// Datos operativos: los controllers custom validan permiso y pertenencia.
+const OPERATIONAL_UIDS = [
   'api::project.project',
   'api::document.document',
   'api::comment.comment',
   'api::notification.notification',
-  'api::rol.rol',
-  'api::permission.permission',
-  'api::setting.setting',
-  'api::audit.audit',
 ];
-const CRUD = ['find', 'findOne', 'create', 'update', 'delete'];
 
-const PUBLIC_ACTIONS = [
-  'plugin::users-permissions.user.find',
-  'plugin::users-permissions.user.findOne',
+const AUTH_ACTIONS = [
+  ...OPERATIONAL_UIDS.flatMap((uid) => CRUD.map((a) => `${uid}.${a}`)),
+
+  // Catálogos: solo lectura. La escritura pasa por las rutas custom de rol,
+  // que exigen MANAGE_ROLES.
   'api::rol.rol.find',
   'api::rol.rol.findOne',
+  'api::permission.permission.find',
+  'api::permission.permission.findOne',
+  'api::setting.setting.find',
+  'api::setting.setting.findOne',
+  'api::setting.setting.update',
+
+  // Auditoría: lectura y exportación, nunca escritura. La pista de auditoría
+  // solo la escribe el backend; permitir create/update/delete desde el cliente
+  // destruiría el no repudio que justifica el módulo. El controller exige
+  // además VIEW_AUDIT_LOGS.
+  'api::audit.audit.find',
+  'api::audit.audit.findOne',
+  'api::audit.audit.export',
+
+  'plugin::users-permissions.user.find',
+  'plugin::users-permissions.user.findOne',
+  'plugin::users-permissions.user.me',
 ];
+
+// Sin sesión no se lee nada: `user.find` público exponía el correo de todos los
+// usuarios a cualquiera que llamara a GET /api/users.
+const PUBLIC_ACTIONS = [];
 
 async function main() {
   const strapi = await strapiFactory().load();
@@ -149,6 +185,11 @@ async function main() {
         provider: 'local',
         confirmed: true,
         blocked: false,
+        // Explícito: dejarlo sin valor guardaba NULL, y los filtros por
+        // `isInstitutional = false` no encuentran NULL (por ejemplo el que usa
+        // el selector de tutores al crear un proyecto).
+        isInstitutional: false,
+        isActive: true,
         role: authRole ? authRole.id : undefined,
         rols: [rolByType[u.rolType]],
       };
@@ -157,34 +198,60 @@ async function main() {
         console.log(`  + usuario ${u.email} (${u.rolType})`);
       } else {
         await strapi.entityService.update('plugin::users-permissions.user', existing.id, {
-          data: { password: u.password, confirmed: true, blocked: false, role: data.role, rols: data.rols },
+          data: {
+            password: u.password,
+            confirmed: true,
+            blocked: false,
+            isInstitutional: false,
+            isActive: true,
+            role: data.role,
+            rols: data.rols,
+          },
         });
         console.log(`  ~ usuario ${u.email} actualizado`);
       }
     }
 
     // 4) Permisos users-permissions
-    const grant = async (roleType, actions) => {
-      const role = await strapi.db.query('plugin::users-permissions.role').findOne({ where: { type: roleType } });
-      for (const action of actions) {
-        const exists = await strapi.db.query('plugin::users-permissions.permission').findOne({
-          where: { action, role: role.id },
-        });
-        if (!exists) {
-          await strapi.db.query('plugin::users-permissions.permission').create({
-            data: { action, role: role.id },
-          });
+    // Sincroniza (no solo añade): concede las acciones que faltan y revoca las
+    // que sobran dentro de MANAGED_PREFIXES, para que ejecutar el seed sobre una
+    // base antigua cierre los permisos que se hubieran abierto de más.
+    const syncPermissions = async (roleType, actions) => {
+      const role = await strapi.db
+        .query('plugin::users-permissions.role')
+        .findOne({ where: { type: roleType } });
+
+      const desired = new Set(actions);
+      const current = await strapi.db
+        .query('plugin::users-permissions.permission')
+        .findMany({ where: { role: role.id } });
+
+      let granted = 0;
+      for (const action of desired) {
+        if (!current.some((p) => p.action === action)) {
+          await strapi.db
+            .query('plugin::users-permissions.permission')
+            .create({ data: { action, role: role.id } });
+          granted += 1;
         }
       }
-      console.log(`  = ${actions.length} permisos otorgados a ${roleType}`);
+
+      let revoked = 0;
+      for (const perm of current) {
+        const isManaged = MANAGED_PREFIXES.some((prefix) => perm.action.startsWith(prefix));
+        if (isManaged && !desired.has(perm.action)) {
+          await strapi.db
+            .query('plugin::users-permissions.permission')
+            .delete({ where: { id: perm.id } });
+          revoked += 1;
+        }
+      }
+
+      console.log(`  = ${roleType}: ${desired.size} permisos (+${granted} nuevos, -${revoked} revocados)`);
     };
 
-    const authActions = [];
-    for (const uid of API_UIDS) for (const a of CRUD) authActions.push(`${uid}.${a}`);
-    authActions.push('plugin::users-permissions.user.find', 'plugin::users-permissions.user.findOne', 'plugin::users-permissions.user.me');
-
-    await grant('public', PUBLIC_ACTIONS);
-    await grant('authenticated', authActions);
+    await syncPermissions('public', PUBLIC_ACTIONS);
+    await syncPermissions('authenticated', AUTH_ACTIONS);
 
     console.log('\n✅ Seed completado.');
   } catch (err) {
