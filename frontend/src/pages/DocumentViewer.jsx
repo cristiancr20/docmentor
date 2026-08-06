@@ -18,6 +18,7 @@ import Button from "../components/ui/Button";
 import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
 import CommentsPanel from "../components/CommentsPanel";
+import { errorAlert, successAlert } from "../components/Alerts/Alerts";
 import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 import { getDocumentById, getDocumentsByProjectId } from "../core/Document";
 import {
@@ -98,8 +99,17 @@ const DocumentoViewer = () => {
     }
   };
 
+  // Va al proyecto, no atrás en el historial: con la navegación entre versiones
+  // dentro de la propia página, `navigate(-1)` retrocedía a la versión anterior
+  // en lugar de salir al proyecto.
   const handleBackClick = () => {
-    navigate(-1);
+    const projectId = document?.data?.attributes?.project?.data?.id;
+
+    if (projectId) {
+      navigate(`/project/${projectId}`);
+    } else {
+      navigate(-1);
+    }
   };
 
   // Se selecciona siempre, tenga o no resaltado: así la tarjeta se marca en el
@@ -137,21 +147,26 @@ const DocumentoViewer = () => {
         quote
       );
 
-      fetchComments();
-      fetchDocument();
+      await Promise.all([fetchComments(), fetchDocument()]);
+      successAlert("Comentario agregado");
     } catch (error) {
       console.error("Error adding comment:", error);
+      errorAlert("No se pudo guardar el comentario");
     }
   };
 
+  // Marcar como revisado solo cambiaba la etiqueta de estado, sin ninguna otra
+  // señal: no quedaba claro si la acción se había aplicado o no.
   const handleRevisadoClick = async () => {
     setIsSubmitting(true);
 
     try {
       await updateDocumentStatusRevisado(documentId);
-      fetchDocument();
+      await fetchDocument();
+      successAlert("Documento marcado como revisado");
     } catch (error) {
       console.error("Error updating document status:", error);
+      errorAlert("No se pudo actualizar el estado del documento");
     } finally {
       setIsSubmitting(false);
     }
