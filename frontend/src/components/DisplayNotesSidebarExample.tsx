@@ -9,6 +9,7 @@ import {
 } from "@react-pdf-viewer/core";
 
 import { toolbarPlugin, ToolbarSlot } from "@react-pdf-viewer/toolbar";
+import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 
 /* import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout'; */
 import {
@@ -28,6 +29,13 @@ interface Note {
   content: string;
   highlightAreas: HighlightArea[];
   quote: string;
+  // Color del resaltado. Sin valor se pinta amarillo, que es el de los
+  // comentarios; el comparador lo usa para marcar en rojo lo eliminado y en
+  // verde lo agregado.
+  color?: string;
+  // Los resaltados del comparador son informativos: no abren el panel de
+  // comentario al pulsarlos.
+  readOnly?: boolean;
 }
 
 interface HighlightExampleProps {
@@ -36,6 +44,9 @@ interface HighlightExampleProps {
   onAddNote: (note: Note) => void;
   canComment: boolean;
   selectedHighlightId?: number | null;
+  // Número de página (base 1) al que saltar. Lo usa el comparador para llevar
+  // la vista al cambio que se acaba de pulsar en la lista.
+  goToPage?: number | null;
 }
 
 const HighlightExample: React.FC<HighlightExampleProps> = ({
@@ -44,112 +55,66 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   onAddNote,
   canComment,
   selectedHighlightId,
+  goToPage,
 }) => {
   const [message, setMessage] = React.useState("");
   let noteId = notes.length;
-  const viewerRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    if (selectedHighlightId !== null && selectedHighlightId !== undefined) {
-      const selectedNote = notes.find(
-        (note) => note.id === selectedHighlightId
-      );
-      if (selectedNote && selectedNote.highlightAreas.length > 0) {
-        const area = selectedNote.highlightAreas[0];
-        const pageIndex = area.pageIndex;
+  // `Viewer` es un componente de función: no acepta ref, así que el
+  // `viewerRef.current.jumpToPage(...)` anterior nunca llegaba a ejecutarse
+  // (React avisaba con "Function components cannot be given refs") y pulsar un
+  // comentario no saltaba a su resaltado. La navegación va por su plugin.
+  const pageNavigationPluginInstance = pageNavigationPlugin();
+  const { jumpToPage } = pageNavigationPluginInstance;
 
-        // Scroll to the page first
-        if (viewerRef.current) {
-          viewerRef.current.jumpToPage(pageIndex);
-
-          // Wait for the page to be rendered
-          setTimeout(() => {
-            const pageElement = document.querySelector(
-              `[data-page-number="${pageIndex + 1}"]`
-            );
-            if (pageElement) {
-              const pageHeight = pageElement.clientHeight;
-              const scrollPosition = pageHeight * (area.top / 100);
-
-              pageElement.scrollIntoView({ behavior: "smooth" });
-              window.scrollBy(0, scrollPosition - window.innerHeight / 3);
-            }
-          }, 300);
-        }
-      }
-    }
-  }, [selectedHighlightId, notes]);
-
+  /**
+   * Lleva la vista al resaltado seleccionado.
+   *
+   * Antes había dos efectos duplicados intentando lo mismo, ambos apoyados en
+   * el ref inoperante del Viewer.
+   */
   const scrollToHighlight = React.useCallback(
-    (highlightAreas: any[]) => {
-      if (!highlightAreas || highlightAreas.length === 0) return;
-
-      // Encontrar el primer área válida (con dimensiones no nulas)
-      const validArea = highlightAreas.find(
+    (highlightAreas: HighlightArea[]) => {
+      const validArea = (highlightAreas || []).find(
         (area) => area.height > 0 && area.width > 0 && area.pageIndex >= 0
       );
 
       if (!validArea) return;
 
-      const pageIndex = validArea.pageIndex;
+      jumpToPage(validArea.pageIndex);
 
-      if (viewerRef.current) {
-        // Primero, navegar a la página correcta
-        viewerRef.current.jumpToPage(pageIndex);
+      // La página tiene que renderizarse antes de poder ajustar el scroll fino.
+      setTimeout(() => {
+        const pageElement = document.querySelector(
+          `[data-page-number="${validArea.pageIndex + 1}"]`
+        );
+        if (!pageElement || !containerRef.current) return;
 
-        // Esperar a que la página se renderice
-        setTimeout(() => {
-          const pageElement = document.querySelector(
-            `[data-page-number="${pageIndex + 1}"]`
-          );
+        const containerHeight = containerRef.current.clientHeight;
+        const scrollPosition = (pageElement.clientHeight * validArea.top) / 100;
 
-          if (pageElement) {
-            const containerHeight =
-              containerRef.current?.clientHeight || window.innerHeight;
-            const pageHeight = pageElement.clientHeight;
-
-            // Calcular la posición de scroll basada en el porcentaje de la página
-            const scrollPosition = (pageHeight * validArea.top) / 100;
-
-            // Ajustar el scroll del contenedor
-            if (containerRef.current) {
-              containerRef.current.scrollTop =
-                scrollPosition - containerHeight / 3;
-            }
-
-            // Resaltar visualmente el área
-            const highlight = document.querySelector(
-              `[data-highlight-id="${selectedHighlightId}"]`
-            );
-            if (highlight) {
-              highlight.classList.add("highlight-flash");
-              setTimeout(() => {
-                highlight.classList.remove("highlight-flash");
-              }, 2000);
-            }
-            console.log("Scrolling to:", {
-              pageIndex: validArea.pageIndex,
-              top: validArea.top,
-              scrollPosition,
-            });
-          }
-        }, 300);
-      }
+        containerRef.current.scrollTop =
+          pageElement.getBoundingClientRect().top + scrollPosition - containerHeight / 3;
+      }, 300);
     },
-    [selectedHighlightId]
+    [jumpToPage]
   );
 
   React.useEffect(() => {
-    if (selectedHighlightId !== null && selectedHighlightId !== undefined) {
-      const selectedNote = notes.find(
-        (note) => note.id === selectedHighlightId
-      );
-      if (selectedNote && selectedNote.highlightAreas) {
-        scrollToHighlight(selectedNote.highlightAreas);
-      }
+    if (selectedHighlightId === null || selectedHighlightId === undefined) return;
+
+    const selectedNote = notes.find((note) => note.id === selectedHighlightId);
+    if (selectedNote?.highlightAreas) {
+      scrollToHighlight(selectedNote.highlightAreas);
     }
   }, [selectedHighlightId, notes, scrollToHighlight]);
+
+  React.useEffect(() => {
+    if (!goToPage) return;
+    // El plugin trabaja con índices base 0.
+    jumpToPage(goToPage - 1);
+  }, [goToPage, jumpToPage]);
 
   const renderHighlightTarget = (props: RenderHighlightTargetProps) => (
 
@@ -245,13 +210,16 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
                 key={idx}
                 data-highlight-id={note.id}
                 className={`highlight-area ${note.id === selectedHighlightId ? "selected" : ""}`}
+                title={note.content}
                 style={Object.assign(
                   {},
                   {
                     background:
-                      note.id === selectedHighlightId ? "#ffeb3b" : "yellow",
+                      note.color ??
+                      (note.id === selectedHighlightId ? "#ffeb3b" : "yellow"),
                     opacity: note.id === selectedHighlightId ? 0.7 : 0.4,
                     transition: "all 0.3s ease",
+                    pointerEvents: note.readOnly ? "none" : undefined,
                   },
                   props.getCssProperties(area, props.rotation)
                 )}
@@ -342,9 +310,12 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
         }}
       >
         <Viewer
-          ref={viewerRef}
           fileUrl={fileUrl}
-          plugins={[highlightPluginInstance, toolbarPluginInstance]}
+          plugins={[
+            highlightPluginInstance,
+            toolbarPluginInstance,
+            pageNavigationPluginInstance,
+          ]}
         />
       </div>
 
