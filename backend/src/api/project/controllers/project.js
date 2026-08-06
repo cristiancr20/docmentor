@@ -6,10 +6,38 @@
 
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
+const {
+  isElevated,
+  projectScopeFilter,
+  applyFilter,
+  requireProjectAccess,
+} = require('../../../utils/ownership');
 
 module.exports = createCoreController('api::project.project', ({ strapi }) => ({
+  // El `find` del core devolvía todos los proyectos a cualquier usuario con
+  // sesión. Se limita a los propios salvo para coordinación y superadmin.
+  async find(ctx) {
+    const user = await authenticate(ctx, strapi);
+    if (!user) return;
+
+    if (!(await isElevated(user.id, strapi))) {
+      applyFilter(ctx, projectScopeFilter(user.id));
+    }
+
+    return super.find(ctx);
+  },
+
+  async findOne(ctx) {
+    const user = await authenticate(ctx, strapi);
+    if (!user) return;
+
+    if (!(await requireProjectAccess(ctx, ctx.params.id, user.id, strapi))) return;
+
+    return super.findOne(ctx);
+  },
+
   async create(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'CREATE_PROJECT', strapi);
@@ -33,13 +61,15 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async update(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'UPDATE_PROJECT', strapi);
     if (!hasPermission) return;
 
     const { id } = ctx.params;
+    if (!(await requireProjectAccess(ctx, id, user.id, strapi))) return;
+
     const oldProject = await strapi.entityService.findOne('api::project.project', id);
 
     const result = await super.update(ctx);
@@ -60,13 +90,15 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async delete(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'DELETE_PROJECT', strapi);
     if (!hasPermission) return;
 
     const { id } = ctx.params;
+    if (!(await requireProjectAccess(ctx, id, user.id, strapi))) return;
+
     const project = await strapi.entityService.findOne('api::project.project', id);
 
     const result = await super.delete(ctx);
@@ -87,13 +119,15 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async changeStatus(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'CHANGE_PROJECT_STATUS', strapi);
     if (!hasPermission) return;
 
     const { id } = ctx.params;
+    if (!(await requireProjectAccess(ctx, id, user.id, strapi))) return;
+
     const { status } = ctx.request.body;
 
     const validStatuses = ['Creado', 'En Revisión', 'Aprobado', 'Finalizado', 'Rechazado'];

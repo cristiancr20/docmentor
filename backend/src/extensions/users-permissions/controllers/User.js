@@ -2,7 +2,7 @@ module.exports = {
   async getMyPermissions(ctx) {
     const { authenticate } = require('../../../utils/protectedController');
 
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const userWithRoles = await strapi.entityService.findOne('plugin::users-permissions.user', user.id, {
@@ -39,7 +39,7 @@ module.exports = {
   async adminListUsers(ctx) {
     const { authenticate, authorize } = require('../../../utils/protectedController');
 
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'VIEW_USERS', strapi);
@@ -69,7 +69,7 @@ module.exports = {
   async adminCreateUser(ctx) {
     const { authenticate, authorize } = require('../../../utils/protectedController');
 
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_USERS', strapi);
@@ -129,7 +129,7 @@ module.exports = {
   async adminUpdateUser(ctx) {
     const { authenticate, authorize } = require('../../../utils/protectedController');
 
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_USERS', strapi);
@@ -187,7 +187,7 @@ module.exports = {
   async adminDeleteUser(ctx) {
     const { authenticate, authorize } = require('../../../utils/protectedController');
 
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_USERS', strapi);
@@ -226,7 +226,7 @@ module.exports = {
   async anonymize(ctx) {
     const { authenticate, authorize } = require('../../../utils/protectedController');
 
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'ANONYMIZE_USER', strapi);

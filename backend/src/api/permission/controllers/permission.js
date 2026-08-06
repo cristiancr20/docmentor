@@ -5,7 +5,7 @@ const { authenticate, authorize } = require('../../../utils/protectedController'
 
 module.exports = createCoreController('api::permission.permission', ({ strapi }) => ({
   async create(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
@@ -15,7 +15,7 @@ module.exports = createCoreController('api::permission.permission', ({ strapi })
   },
 
   async update(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
@@ -25,7 +25,7 @@ module.exports = createCoreController('api::permission.permission', ({ strapi })
   },
 
   async delete(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);

@@ -10,7 +10,7 @@ const { generatePDF, generateXLSX } = require('../../../utils/exportReports');
 
 module.exports = createCoreController('api::audit.audit', ({ strapi }) => ({
   async find(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'VIEW_AUDIT_LOGS', strapi);
@@ -35,7 +35,7 @@ module.exports = createCoreController('api::audit.audit', ({ strapi }) => ({
   },
 
   async export(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'VIEW_AUDIT_LOGS', strapi);

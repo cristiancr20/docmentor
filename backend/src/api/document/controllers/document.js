@@ -6,14 +6,50 @@
 
 const { createCoreController } = require('@strapi/strapi').factories;
 const { authenticate, authorize } = require('../../../utils/protectedController');
+const {
+  isElevated,
+  projectScopeFilter,
+  applyFilter,
+  requireDocumentAccess,
+  requireProjectAccess,
+} = require('../../../utils/ownership');
 
 module.exports = createCoreController('api::document.document', ({ strapi }) => ({
+  // Sin este filtro, GET /api/documents devolvía todos los documentos del
+  // sistema a cualquier usuario autenticado.
+  async find(ctx) {
+    const user = await authenticate(ctx, strapi);
+    if (!user) return;
+
+    if (!(await isElevated(user.id, strapi))) {
+      applyFilter(ctx, { project: projectScopeFilter(user.id) });
+    }
+
+    return super.find(ctx);
+  },
+
+  async findOne(ctx) {
+    const user = await authenticate(ctx, strapi);
+    if (!user) return;
+
+    if (!(await requireDocumentAccess(ctx, ctx.params.id, user.id, strapi))) return;
+
+    return super.findOne(ctx);
+  },
+
   async create(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'CREATE_DOCUMENT', strapi);
     if (!hasPermission) return;
+
+    // Sin esto se podía subir un documento al proyecto de otro indicando su id.
+    const targetProject = ctx.request.body?.data?.project;
+    if (targetProject) {
+      const projectId = typeof targetProject === 'object' ? targetProject.id : targetProject;
+      if (!(await requireProjectAccess(ctx, projectId, user.id, strapi))) return;
+    }
 
     const result = await super.create(ctx);
 
@@ -37,13 +73,15 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async update(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'UPDATE_DOCUMENT', strapi);
     if (!hasPermission) return;
 
     const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
     const oldDocument = await strapi.entityService.findOne('api::document.document', id);
 
     const result = await super.update(ctx);
@@ -64,13 +102,15 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async delete(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'DELETE_DOCUMENT', strapi);
     if (!hasPermission) return;
 
     const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
     const document = await strapi.entityService.findOne('api::document.document', id);
 
     const result = await super.delete(ctx);
@@ -91,13 +131,15 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async changeStatus(ctx) {
-    const user = authenticate(ctx, strapi);
+    const user = await authenticate(ctx, strapi);
     if (!user) return;
 
     const hasPermission = await authorize(ctx, user.id, 'REVIEW_DOCUMENT', strapi);
     if (!hasPermission) return;
 
     const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
     const { status } = ctx.request.body;
 
     const validStatuses = ['Subido', 'En Revisión', 'Aprobado', 'Cambios Solicitados', 'Archivado'];
