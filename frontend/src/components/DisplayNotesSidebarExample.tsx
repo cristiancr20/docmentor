@@ -47,6 +47,10 @@ interface HighlightExampleProps {
   // Número de página (base 1) al que saltar. Lo usa el comparador para llevar
   // la vista al cambio que se acaba de pulsar en la lista.
   goToPage?: number | null;
+  // Entrega el elemento que hace scroll de verdad una vez cargado el PDF. El
+  // comparador lo necesita para sincronizar el desplazamiento entre los dos
+  // documentos.
+  onScrollerReady?: (element: HTMLElement | null) => void;
 }
 
 const HighlightExample: React.FC<HighlightExampleProps> = ({
@@ -56,6 +60,7 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   canComment,
   selectedHighlightId,
   goToPage,
+  onScrollerReady,
 }) => {
   const [message, setMessage] = React.useState("");
   let noteId = notes.length;
@@ -115,6 +120,25 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
     // El plugin trabaja con índices base 0.
     jumpToPage(goToPage - 1);
   }, [goToPage, jumpToPage]);
+
+  /**
+   * El scroll no ocurre en nuestro contenedor sino en el que monta el visor por
+   * dentro, así que hay que localizarlo una vez cargado el documento.
+   */
+  const handleDocumentLoad = React.useCallback(() => {
+    if (!onScrollerReady) return;
+
+    const inner = containerRef.current?.querySelector<HTMLElement>(".rpv-core__inner-pages");
+    onScrollerReady(inner ?? containerRef.current);
+  }, [onScrollerReady]);
+
+  // Solo al desmontar: con `onScrollerReady` en las dependencias, cualquier
+  // render habría anulado el registro recién hecho. Se guarda en una ref para
+  // no capturar una versión obsoleta de la función.
+  const scrollerReadyRef = React.useRef(onScrollerReady);
+  scrollerReadyRef.current = onScrollerReady;
+
+  React.useEffect(() => () => scrollerReadyRef.current?.(null), []);
 
   const renderHighlightTarget = (props: RenderHighlightTargetProps) => (
 
@@ -240,23 +264,10 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   const { Toolbar } = toolbarPluginInstance;
 
   return (
-    <div
-      style={{
-        height: "100%",
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <div
-        style={{
-          alignItems: "center",
-          backgroundColor: "#f3f4f6",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
-          display: "flex",
-          padding: "4px",
-        }}
-      >
+    <div className="relative flex h-full flex-col">
+      {/* La barra usaba un gris fijo (#f3f4f6) que en tema oscuro quedaba como
+          una franja clara. Va con los tokens del sistema. */}
+      <div className="flex items-center gap-0.5 border-b border-line bg-surface-2 px-2 py-1 text-content">
         <Toolbar>
           {(slots) => {
             const {
@@ -272,45 +283,31 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
 
             return (
               <>
-                <div style={{ padding: "0px 2px" }}>
-                  <GoToPreviousPage />
-                </div>
-                <div style={{ padding: "0px 2px", width: "50px" }}>
+                <GoToPreviousPage />
+                <div className="w-12">
                   <CurrentPageInput />
                 </div>
-                <div style={{ padding: "0px 2px" }}>
+                <span className="whitespace-nowrap font-mono text-xs text-muted">
                   / <NumberOfPages />
-                </div>
-                <div style={{ padding: "0px 2px" }}>
-                  <GoToNextPage />
-                </div>
-                <div style={{ marginLeft: "auto", padding: "0px 2px" }}>
+                </span>
+                <GoToNextPage />
+                <div className="ml-auto">
                   <ShowSearchPopover />
                 </div>
-                <div style={{ padding: "0px 2px" }}>
-                  <ZoomOut />
-                </div>
-                <div style={{ padding: "0px 2px" }}>
+                <ZoomOut />
+                <div className="font-mono text-xs">
                   <Zoom />
                 </div>
-                <div style={{ padding: "0px 2px" }}>
-                  <ZoomIn />
-                </div>
+                <ZoomIn />
               </>
             );
           }}
         </Toolbar>
       </div>
-      <div
-        ref={containerRef}
-        style={{
-          flexGrow: 1,
-          position: "relative",
-          overflow: "auto",
-        }}
-      >
+      <div ref={containerRef} className="relative flex-1 overflow-auto">
         <Viewer
           fileUrl={fileUrl}
+          onDocumentLoad={handleDocumentLoad}
           plugins={[
             highlightPluginInstance,
             toolbarPluginInstance,

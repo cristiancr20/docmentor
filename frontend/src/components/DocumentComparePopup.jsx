@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import {
   AlertTriangle,
@@ -41,6 +41,28 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
   const [tab, setTab] = useState("changes"); // changes | side-by-side
   // Página a la que saltar cuando se pulsa "página N" en la lista de cambios.
   const [targetPage, setTargetPage] = useState(null);
+
+  const contentRef = useRef(null);
+
+  const [syncScroll, setSyncScroll] = useState(true);
+  // Los visores avisan de su contenedor de scroll cuando terminan de cargar el
+  // PDF. Va en estado y no en una ref porque el enlace de los listeners tiene
+  // que rehacerse en cuanto aparecen, no antes.
+  const [scrollers, setScrollers] = useState({ before: null, after: null });
+  // Evita el rebote: al mover un panel movemos el otro, y ese movimiento
+  // dispararía a su vez el listener contrario en bucle.
+  const syncingRef = useRef(false);
+
+  // Identidad estable: si cambiara en cada render, el visor volvería a
+  // registrarse sin parar y el efecto de sincronía no llegaría a enlazarse.
+  const registerBefore = useCallback(
+    (element) => setScrollers((current) => ({ ...current, before: element })),
+    []
+  );
+  const registerAfter = useCallback(
+    (element) => setScrollers((current) => ({ ...current, after: element })),
+    []
+  );
 
   const sortedDocuments = [...documents].sort((a, b) => a.id - b.id);
   const doc1 = sortedDocuments[currentIndex];
@@ -114,6 +136,54 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
 
     loadNotes();
   }, [doc1Id, doc2Id]);
+
+  // Al cambiar de pestaña se conservaba el desplazamiento de la anterior, así
+  // que se entraba a mitad de la vista nueva.
+  useEffect(() => {
+    contentRef.current?.parentElement?.scrollTo({ top: 0 });
+  }, [tab]);
+
+  /**
+   * Desplazamiento sincronizado entre los dos visores.
+   *
+   * Se sincroniza en proporción, no en píxeles: las dos versiones rara vez
+   * miden lo mismo, y copiar el scrollTop tal cual desalinea en cuanto una
+   * tiene una página de más.
+   */
+  useEffect(() => {
+    if (tab !== "side-by-side" || !syncScroll) return undefined;
+
+    const { before, after } = scrollers;
+    if (!before || !after) return undefined;
+
+    const mirror = (source, target) => () => {
+      if (syncingRef.current) return;
+
+      const sourceRange = source.scrollHeight - source.clientHeight;
+      const targetRange = target.scrollHeight - target.clientHeight;
+      if (sourceRange <= 0 || targetRange <= 0) return;
+
+      syncingRef.current = true;
+      target.scrollTop = (source.scrollTop / sourceRange) * targetRange;
+
+      // Se libera en el siguiente frame: el scroll que acabamos de provocar
+      // emite su propio evento.
+      requestAnimationFrame(() => {
+        syncingRef.current = false;
+      });
+    };
+
+    const onBefore = mirror(before, after);
+    const onAfter = mirror(after, before);
+
+    before.addEventListener("scroll", onBefore, { passive: true });
+    after.addEventListener("scroll", onAfter, { passive: true });
+
+    return () => {
+      before.removeEventListener("scroll", onBefore);
+      after.removeEventListener("scroll", onAfter);
+    };
+  }, [tab, syncScroll, scrollers]);
 
   const handlePrevious = () => setCurrentIndex(currentIndex - 1);
   const handleNext = () => setCurrentIndex(currentIndex + 1);
@@ -216,16 +286,13 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
     }
 
     return (
-      <div className="flex flex-col gap-4">
-        <CompareSummary summary={result.summary} activeFilter={filter} onFilterChange={setFilter} />
-        <ChangeList
-          hunks={visibleHunks}
-          onGoToPage={(page) => {
-            setTargetPage(page);
-            setTab("side-by-side");
-          }}
-        />
-      </div>
+      <ChangeList
+        hunks={visibleHunks}
+        onGoToPage={(page) => {
+          setTargetPage(page);
+          setTab("side-by-side");
+        }}
+      />
     );
   };
 
@@ -233,6 +300,11 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
     { key: "changes", label: "Cambios", icon: FileSearch },
     { key: "side-by-side", label: "Lado a lado", icon: Columns2 },
   ];
+
+  // El resumen vive junto a las pestañas, en la zona fija: los filtros tienen
+  // que seguir alcanzables mientras se recorre una lista larga de cambios.
+  const showSummary =
+    tab === "changes" && status === "done" && !result?.textLayerMissing && hunks.length > 0;
 
   return (
     <Modal
@@ -243,6 +315,38 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       description={`${nameDocumento1}${version1 ? ` (v${version1})` : ""} → ${nameDocumento2}${
         version2 ? ` (v${version2})` : ""
       }`}
+      subHeader={
+        <>
+          <div className="flex gap-1 border-b border-line">
+            {tabs.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={[
+                  "-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+                  tab === key
+                    ? "border-accent text-accent"
+                    : "border-transparent text-muted hover:text-content",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.8} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {showSummary && (
+            <div className="pt-4">
+              <CompareSummary
+                summary={result.summary}
+                activeFilter={filter}
+                onFilterChange={setFilter}
+              />
+            </div>
+          )}
+        </>
+      }
       footer={
         <div className="flex w-full items-center justify-between gap-3">
           <Button variant="secondary" onClick={handlePrevious} disabled={currentIndex === 0}>
@@ -271,25 +375,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
         </div>
       }
     >
-      <div className="mb-4 flex gap-1 border-b border-line">
-        {tabs.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={[
-              "-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors",
-              tab === key
-                ? "border-accent text-accent"
-                : "border-transparent text-muted hover:text-content",
-            ].join(" ")}
-          >
-            <Icon className="h-4 w-4" strokeWidth={1.8} />
-            {label}
-          </button>
-        ))}
-      </div>
-
+      <div ref={contentRef}>
       {tab === "changes" ? (
         renderChanges()
       ) : (
@@ -313,6 +399,16 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
                 />
                 Comentario de revisión
               </span>
+
+              <label className="ml-auto flex cursor-pointer items-center gap-2 text-content">
+                <input
+                  type="checkbox"
+                  checked={syncScroll}
+                  onChange={(event) => setSyncScroll(event.target.checked)}
+                  className="h-3.5 w-3.5 accent-accent"
+                />
+                Desplazar ambos a la vez
+              </label>
             </div>
           )}
 
@@ -350,6 +446,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
                     canComment={false}
                     selectedHighlightId={null}
                     goToPage={targetPage}
+                    onScrollerReady={pane.side === "before" ? registerBefore : registerAfter}
                   />
                 </div>
               </div>
@@ -357,6 +454,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
           </div>
         </div>
       )}
+      </div>
     </Modal>
   );
 };
