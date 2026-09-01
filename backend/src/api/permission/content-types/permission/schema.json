@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "permissions",
+  "info": {
+    "singularName": "permission",
+    "pluralName": "permissions",
+    "displayName": "Permission"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "module": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "rols": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::rol.rol",
+      "mappedBy": "permissions"
+    }
+  }
+}

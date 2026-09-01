@@ -1,0 +1,141 @@
+# Iteration 5 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: Agregar Estados de Workflow a Documentos
+- **Description**: Como tutor, quiero que los documentos tengan estados, para ver si están revisados, aprobados o requieren cambios.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-11T14:37:22.946Z
+- **Ended At**: 2026-07-11T14:38:42.849Z
+- **Duration**: 1m 19s
+- **Input Tokens**: 488
+- **Output Tokens**: 5293
+- **Total Tokens**: 5781
+- **Agent**: claude
+- **Model**: claude-haiku-4-5-20251001
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll help you implement US-005 - Agregar Estados de Workflow a Documentos. Let me start by reviewing the current progress and understanding what's already been done.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+Now let me check the current document schema and controller to understand what exists:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document[0m
+
+[91m[Error: EISDIR: illegal operation on a directory, read '/Users/cristian/orca/docmentor/backend/src/api/document'][0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/content-types/document/schema.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/routes/document.js[0m
+Now let me check the current index.js to see what permissions are already seeded:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m
+Now I'll implement US-005. I need to:
+
+1. Add status field to document schema
+2. Add changeStatus method to document controller
+3. Add custom route for status change
+4. Add REVIEW_DOCUMENT permission
+
+Let me start by updating the document schema:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/content-types/document/schema.json[0m edit: "    "next_version": {
+      "type": "relation",
+  ..." → "    "next_version": {
+      "type": "relation",
+  ..."
+Now let me update the document controller to add the changeStatus method:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m edit: "  async delete(ctx) {
+    const user = authenticat..." → "  async delete(ctx) {
+    const user = authenticat..."
+Now let me update the document routes to add the custom endpoint:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/routes/document.js[0m edit: "'use strict';
+
+/**
+ * document router
+ */
+
+const {..." → "'use strict';
+
+/**
+ * document router
+ */
+
+const {..."
+Let me look at how the project router was implemented to fix the document router properly:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m
+Now I need to fix the document router to properly combine core routes with the custom route:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/routes/document.js[0m edit: "'use strict';
+
+/**
+ * document router
+ */
+
+const {..." → "'use strict';
+
+/**
+ * document router
+ */
+
+const {..."
+Now let me add the REVIEW_DOCUMENT permission to the seeder:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m edit: "            { code: 'DELETE_DOCUMENT', description..." → "            { code: 'DELETE_DOCUMENT', description..."
+Now let me run the quality checks to ensure everything passes:
+[94m[Bash][0m $ npm run lint 2>&1
+[94m[Bash][0m $ npm run typecheck 2>&1
+
+[91m[Error: Exit code 254
+npm error code ENOENT
+npm error syscall open
+npm error path /Users/cristian/orca/docmentor/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/Users/cristian/orca/docmentor/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /Users/cristian/.npm/_logs/2026-07-11T14_38_21_389Z-debug-0.log][0m
+
+[91m[Error: Exit code 254
+npm error code ENOENT
+npm error syscall open
+npm error path /Users/cristian/orca/docmentor/package.json
+npm error errno -2
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/Users/cristian/orca/docmentor/package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: /Users/cristian/.npm/_logs/2026-07-11T14_38_22_376Z-debug-0.log][0m
+Let me find the correct location of package.json:
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor -name "package.json" -type f
+Now let me run the quality checks from the backend directory:
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/backend && npm run lint 2>&1
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/backend && npm run typecheck 2>&1
+Perfect! Now let me update the progress.md file with the implementation details:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "---
+
+## [2026-07-11] - US-004" → "---
+
+## [2026-07-11] - US-005
+
+### Implementation
+..."
+Excellent! I have successfully implemented US-005 - Agregar Estados de Workflow a Documentos. Here's a summary of what was done:
+
+## Implementation Summary
+
+**Files Changed:**
+1. **schema.json** - Added status field with enum values (Subido, En Revisión, Aprobado, Cambios Solicitados, Archivado) with default "Subido"
+2. **document.js controller** - Added changeStatus method with:
+   - JWT authentication check
+   - REVIEW_DOCUMENT permission validation
+   - State transition validation
+   - Proper error handling
+3. **document.js routes** - Added custom PUT /documents/:id/status endpoint
+4. **index.js** - Added REVIEW_DOCUMENT permission to seeder
+
+**Acceptance Criteria Met:**
+- ✅ Status field with 5 valid states added to documents
+- ✅ State transitions configured: Subido → En Revisión → Aprobado → Archivado + alternative En Revisión → Cambios Solicitados → En Revisión
+- ✅ Only users with REVIEW_DOCUMENT permission can change status
+- ✅ Custom endpoint PUT /api/documents/:id/status implemented
+- ✅ npm run lint passes
+- ✅ npm run typecheck passes
+
+<promise>COMPLETE</promise>

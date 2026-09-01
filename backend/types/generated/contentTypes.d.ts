@@ -362,6 +362,43 @@ export interface AdminUser extends Schema.CollectionType {
   };
 }
 
+export interface ApiAuditAudit extends Schema.CollectionType {
+  collectionName: 'audits';
+  info: {
+    description: '';
+    displayName: 'Audit';
+    pluralName: 'audits';
+    singularName: 'audit';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    action: Attribute.String & Attribute.Required;
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::audit.audit',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    entityId: Attribute.Integer & Attribute.Required;
+    entityType: Attribute.String & Attribute.Required;
+    ipAddress: Attribute.String;
+    newValue: Attribute.JSON;
+    oldValue: Attribute.JSON;
+    timestamp: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::audit.audit',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    userId: Attribute.Integer & Attribute.Required;
+  };
+}
+
 export interface ApiCommentComment extends Schema.CollectionType {
   collectionName: 'comments';
   info: {
@@ -456,6 +493,22 @@ export interface ApiDocumentDocument extends Schema.CollectionType {
       'api::project.project'
     >;
     publishedAt: Attribute.DateTime;
+    restoredFrom: Attribute.Relation<
+      'api::document.document',
+      'manyToOne',
+      'api::document.document'
+    >;
+    status: Attribute.Enumeration<
+      [
+        'Subido',
+        'En Revisi\u00F3n',
+        'Aprobado',
+        'Cambios Solicitados',
+        'Archivado'
+      ]
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'Subido'>;
     title: Attribute.String;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
@@ -477,7 +530,7 @@ export interface ApiNotificationNotification extends Schema.CollectionType {
     singularName: 'notification';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Attribute.DateTime;
@@ -492,17 +545,57 @@ export interface ApiNotificationNotification extends Schema.CollectionType {
       'manyToMany',
       'api::document.document'
     >;
-    isRead: Attribute.Boolean;
+    isRead: Attribute.Boolean & Attribute.DefaultTo<false>;
     message: Attribute.String;
-    publishedAt: Attribute.DateTime;
     tutor: Attribute.Relation<
       'api::notification.notification',
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    type: Attribute.Enumeration<
+      ['document_uploaded', 'status_changed', 'comment_received', 'general']
+    > &
+      Attribute.DefaultTo<'general'>;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
       'api::notification.notification',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiPermissionPermission extends Schema.CollectionType {
+  collectionName: 'permissions';
+  info: {
+    displayName: 'Permission';
+    pluralName: 'permissions';
+    singularName: 'permission';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Attribute.String & Attribute.Required & Attribute.Unique;
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::permission.permission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    description: Attribute.Text;
+    isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
+    module: Attribute.String;
+    rols: Attribute.Relation<
+      'api::permission.permission',
+      'manyToMany',
+      'api::rol.rol'
+    >;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::permission.permission',
       'oneToOne',
       'admin::user'
     > &
@@ -538,6 +631,11 @@ export interface ApiProjectProject extends Schema.CollectionType {
     itinerary: Attribute.String;
     projectType: Attribute.String;
     publishedAt: Attribute.DateTime;
+    status: Attribute.Enumeration<
+      ['Creado', 'En Revisi\u00F3n', 'Aprobado', 'Finalizado', 'Rechazado']
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'Creado'>;
     students: Attribute.Relation<
       'api::project.project',
       'manyToMany',
@@ -567,13 +665,20 @@ export interface ApiRolRol extends Schema.CollectionType {
     singularName: 'rol';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Attribute.DateTime;
     createdBy: Attribute.Relation<'api::rol.rol', 'oneToOne', 'admin::user'> &
       Attribute.Private;
-    publishedAt: Attribute.DateTime;
+    description: Attribute.Text;
+    isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
+    name: Attribute.String & Attribute.Required & Attribute.Unique;
+    permissions: Attribute.Relation<
+      'api::rol.rol',
+      'manyToMany',
+      'api::permission.permission'
+    >;
     rolType: Attribute.String;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<'api::rol.rol', 'oneToOne', 'admin::user'> &
@@ -598,6 +703,17 @@ export interface ApiSettingSetting extends Schema.CollectionType {
     draftAndPublish: true;
   };
   attributes: {
+    audit_log_retention_days: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 1825;
+        },
+        number
+      > &
+      Attribute.DefaultTo<1825>;
+    backup_enabled: Attribute.Boolean & Attribute.DefaultTo<true>;
+    backup_frequency: Attribute.Enumeration<['Diario', 'Semanal', 'Mensual']> &
+      Attribute.DefaultTo<'Semanal'>;
     createdAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
       'api::setting.setting',
@@ -1020,7 +1136,10 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    isActive: Attribute.Boolean & Attribute.DefaultTo<true>;
     isInstitutional: Attribute.Boolean;
+    notificationPreference: Attribute.Enumeration<['email', 'in_app', 'both']> &
+      Attribute.DefaultTo<'both'>;
     notifications: Attribute.Relation<
       'plugin::users-permissions.user',
       'oneToMany',
@@ -1079,9 +1198,11 @@ declare module '@strapi/types' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::audit.audit': ApiAuditAudit;
       'api::comment.comment': ApiCommentComment;
       'api::document.document': ApiDocumentDocument;
       'api::notification.notification': ApiNotificationNotification;
+      'api::permission.permission': ApiPermissionPermission;
       'api::project.project': ApiProjectProject;
       'api::rol.rol': ApiRolRol;
       'api::setting.setting': ApiSettingSetting;

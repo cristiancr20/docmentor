@@ -1,394 +1,481 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { API_URL } from "../core/config.js";
-import { compareDocumentsAlert } from "./Alerts/Alerts";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Columns2,
+  FileSearch,
+  GitCompare,
+  RefreshCw,
+  ScanLine,
+} from "lucide-react";
 
-import { diffWords } from "diff";
-import * as pdfjsLib from "pdfjs-dist";
-import "pdfjs-dist/build/pdf.worker.entry";
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import { API_URL } from "../core/config.js";
+import { getCommentsByDocument } from "../core/Comments";
+import { comparePdfDocuments } from "../utils/pdfCompare";
+import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
 
 import DisplayNotesSidebarExample from "./DisplayNotesSidebarExample.tsx";
+import Modal from "./ui/Modal";
+import Button from "./ui/Button";
+import EmptyState from "./ui/EmptyState";
+import { SkeletonRows } from "./ui/Skeleton";
+import ChangeList from "./compare/ChangeList";
+import CompareSummary, { SimilarityBadge } from "./compare/CompareSummary";
 
-import { MdOutlineNavigateNext, MdOutlineNavigateBefore } from "react-icons/md";
-import { FaCodeCompare } from "react-icons/fa6";
-import { getCommentsByDocument } from "../core/Comments";
-
-const DocumentComparePopup = ({
-  documents,
-  onClose,
-  currentIndex,
-  setCurrentIndex,
-}) => {
+/**
+ * Comparador de versiones.
+ *
+ * El worker de pdf.js lo configura src/setupPdfWorker.js al arrancar la
+ * aplicación. Antes este archivo lo reasignaba a un CDN y además importaba
+ * `pdf.worker.entry`, así que había tres configuraciones compitiendo y la
+ * comparación dependía de que cdnjs estuviera accesible.
+ */
+const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentIndex }) => {
   const [notesDocument1, setNotesDocument1] = useState([]);
   const [notesDocument2, setNotesDocument2] = useState([]);
-  const [isComparing, setIsComparing] = useState(true);
-  const [differences, setDifferences] = useState([]);
+
+  const [result, setResult] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle | loading | done | error
+  const [filter, setFilter] = useState("all");
+  const [tab, setTab] = useState("changes"); // changes | side-by-side
+  // Página a la que saltar cuando se pulsa "página N" en la lista de cambios.
+  const [targetPage, setTargetPage] = useState(null);
+
+  const contentRef = useRef(null);
+
+  const [syncScroll, setSyncScroll] = useState(true);
+  // Los visores avisan de su contenedor de scroll cuando terminan de cargar el
+  // PDF. Va en estado y no en una ref porque el enlace de los listeners tiene
+  // que rehacerse en cuanto aparecen, no antes.
+  const [scrollers, setScrollers] = useState({ before: null, after: null });
+  // Evita el rebote: al mover un panel movemos el otro, y ese movimiento
+  // dispararía a su vez el listener contrario en bucle.
+  const syncingRef = useRef(false);
+
+  // Identidad estable: si cambiara en cada render, el visor volvería a
+  // registrarse sin parar y el efecto de sincronía no llegaría a enlazarse.
+  const registerBefore = useCallback(
+    (element) => setScrollers((current) => ({ ...current, before: element })),
+    []
+  );
+  const registerAfter = useCallback(
+    (element) => setScrollers((current) => ({ ...current, after: element })),
+    []
+  );
 
   const sortedDocuments = [...documents].sort((a, b) => a.id - b.id);
   const doc1 = sortedDocuments[currentIndex];
   const doc2 = sortedDocuments[currentIndex + 1];
 
-  const documento1 = `${API_URL}${doc1.attributes.documentFile.data[0].attributes.url}`;
-  const documento2 = `${API_URL}${doc2.attributes.documentFile.data[0].attributes.url}`;
-
-  const doc1Id = doc1.id;
-  const doc2Id = doc2.id;
-
-  const nameDocumento1 = doc1.attributes.title;
-  const nameDocumento2 = doc2.attributes.title;
-
-  useEffect(() => {
-    getHighlightedAreas();
-    console.log(nameDocumento1, nameDocumento2);
-  }, [documento1, documento2]);
-
-  const handlePrevious = () => {
-    setDifferences([]);
-    setCurrentIndex(currentIndex - 1);
+  // Sin guardas, un índice fuera de rango o un documento sin archivo adjunto
+  // dejaban la pantalla en blanco.
+  const fileUrl = (doc) => {
+    const url = doc?.attributes?.documentFile?.data?.[0]?.attributes?.url;
+    return url ? `${API_URL}${url}` : null;
   };
 
-  const handleNext = () => {
-    setDifferences([]);
-    setCurrentIndex(currentIndex + 1);
-  };
+  const documento1 = fileUrl(doc1);
+  const documento2 = fileUrl(doc2);
 
-  //OBTENER LAS ÁREAS RESALTADAS DE LOS DOCUMENTOS
-  const getHighlightedAreas = async () => {
+  const doc1Id = doc1?.id;
+  const doc2Id = doc2?.id;
+
+  const nameDocumento1 = doc1?.attributes?.title ?? "Versión anterior";
+  const nameDocumento2 = doc2?.attributes?.title ?? "Versión reciente";
+  const version1 = doc1?.attributes?.version;
+  const version2 = doc2?.attributes?.version;
+
+  const canCompare = Boolean(documento1 && documento2);
+
+  const runComparison = useCallback(async () => {
+    if (!documento1 || !documento2) return;
+
+    setStatus("loading");
     try {
-      const data1 = await getCommentsByDocument(doc1Id);
-      const data2 = await getCommentsByDocument(doc2Id);
-
-      const notesWithHighlightsDocumento1 = data1.map((comment) => ({
-        id: comment.id,
-        content: comment.attributes.correction,
-        highlightAreas: JSON.parse(comment.attributes.highlightAreas) || [],
-        quote: comment.attributes.quote || "",
-      }));
-
-      const notesWithHighlightsDocumento2 = data2.map((comment) => ({
-        id: comment.id,
-        content: comment.attributes.correction,
-        highlightAreas: JSON.parse(comment.attributes.highlightAreas) || [],
-        quote: comment.attributes.quote || "",
-      }));
-
-      setNotesDocument1(notesWithHighlightsDocumento1);
-      setNotesDocument2(notesWithHighlightsDocumento2);
-      return data1, data2;
-    } catch (error) {
-      /*  setError("Error fetching comments"); */
-      console.log(error);
-    }
-  };
-
-  const extractTextAndPositions = async (fileUrl) => {
-    const pdf = await pdfjsLib.getDocument(fileUrl).promise;
-    const textWithPositions = [];
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const content = await page.getTextContent();
-
-      content.items.forEach((item) => {
-        textWithPositions.push({
-          text: item.str,
-          x: item.transform[4], // Coordenada X
-          y: item.transform[5], // Coordenada Y
-          width: item.width, // Ancho del texto
-          height: item.height, // Alto del texto
-        });
-      });
-    }
-
-    return textWithPositions;
-  };
-
-  const compareDocuments = async () => {
-    try {
-      // Extraer el texto y posiciones de ambos documentos
-      const text1 = await extractTextAndPositions(documento1);
-      const text2 = await extractTextAndPositions(documento2);
-
-      // Función para normalizar el texto (eliminar guiones y espacios extra)
-      const normalizeText = (text) => {
-        return text
-          .replace(/(\w+)-\s*(\w+)/g, '$1$2') // Elimina guiones entre palabras
-          .replace(/\s*-\s*/g, '') // Elimina guiones sueltos
-          .replace(/\s+/g, ' ') // Reemplaza múltiples espacios por uno solo
-          .trim();
-      };
-
-      // Combinar el texto en un solo string por documento y normalizarlo
-      const text1Str = normalizeText(text1.map((item) => item.text).join(" "));
-      const text2Str = normalizeText(text2.map((item) => item.text).join(" "));
-
-      // Encuentra las diferencias entre los documentos
-      const differences = diffWords(text1Str, text2Str);
-      const result = [];
-
-      // Procesar diferencias con análisis más preciso
-      differences.forEach((part, index) => {
-        if (part.added) {
-          result.push({
-            type: "added",
-            value: part.value.trim(),
-            document: nameDocumento2,
-          });
-        } else if (part.removed) {
-          result.push({
-            type: "removed",
-            value: part.value.trim(),
-            document: nameDocumento1,
-          });
-        }
-      });
-
-      // Actualizar el estado con las diferencias procesadas
-      setDifferences(result);
-
-      // Mostrar alerta según si se encontraron diferencias o no
-      if (result.length > 0) {
-        compareDocumentsAlert("Se encontraron diferencias entre los documentos", true);
-      } else {
-        compareDocumentsAlert("No se encontraron diferencias entre los documentos", false);
-      }
-
+      setResult(await comparePdfDocuments(documento1, documento2));
+      setStatus("done");
     } catch (error) {
       console.error("Error comparando documentos:", error);
-      compareDocumentsAlert("Error al comparar los documentos", false);
-    } finally {
-      setIsComparing(false);
+      setStatus("error");
     }
+  }, [documento1, documento2]);
+
+  // La comparación arranca sola al abrir y al cambiar de par de versiones:
+  // antes había que pulsar un botón para que la vista dejara de estar vacía.
+  useEffect(() => {
+    setResult(null);
+    setFilter("all");
+    runComparison();
+  }, [runComparison]);
+
+  useEffect(() => {
+    const loadNotes = async () => {
+      if (!doc1Id || !doc2Id) return;
+
+      try {
+        const [comments1, comments2] = await Promise.all([
+          getCommentsByDocument(doc1Id),
+          getCommentsByDocument(doc2Id),
+        ]);
+
+        const toNotes = (comments) =>
+          comments.map((comment) => ({
+            id: comment.id,
+            content: comment.attributes.correction,
+            highlightAreas: JSON.parse(comment.attributes.highlightAreas || "[]") || [],
+            quote: comment.attributes.quote || "",
+          }));
+
+        setNotesDocument1(toNotes(comments1));
+        setNotesDocument2(toNotes(comments2));
+      } catch (error) {
+        console.error("Error al cargar los comentarios:", error);
+      }
+    };
+
+    loadNotes();
+  }, [doc1Id, doc2Id]);
+
+  // Al cambiar de pestaña se conservaba el desplazamiento de la anterior, así
+  // que se entraba a mitad de la vista nueva.
+  useEffect(() => {
+    contentRef.current?.parentElement?.scrollTo({ top: 0 });
+  }, [tab]);
+
+  /**
+   * Desplazamiento sincronizado entre los dos visores.
+   *
+   * Se sincroniza en proporción, no en píxeles: las dos versiones rara vez
+   * miden lo mismo, y copiar el scrollTop tal cual desalinea en cuanto una
+   * tiene una página de más.
+   */
+  useEffect(() => {
+    if (tab !== "side-by-side" || !syncScroll) return undefined;
+
+    const { before, after } = scrollers;
+    if (!before || !after) return undefined;
+
+    const mirror = (source, target) => () => {
+      if (syncingRef.current) return;
+
+      const sourceRange = source.scrollHeight - source.clientHeight;
+      const targetRange = target.scrollHeight - target.clientHeight;
+      if (sourceRange <= 0 || targetRange <= 0) return;
+
+      syncingRef.current = true;
+      target.scrollTop = (source.scrollTop / sourceRange) * targetRange;
+
+      // Se libera en el siguiente frame: el scroll que acabamos de provocar
+      // emite su propio evento.
+      requestAnimationFrame(() => {
+        syncingRef.current = false;
+      });
+    };
+
+    const onBefore = mirror(before, after);
+    const onAfter = mirror(after, before);
+
+    before.addEventListener("scroll", onBefore, { passive: true });
+    after.addEventListener("scroll", onAfter, { passive: true });
+
+    return () => {
+      before.removeEventListener("scroll", onBefore);
+      after.removeEventListener("scroll", onAfter);
+    };
+  }, [tab, syncScroll, scrollers]);
+
+  const handlePrevious = () => setCurrentIndex(currentIndex - 1);
+  const handleNext = () => setCurrentIndex(currentIndex + 1);
+
+  /**
+   * Los resaltados del comparador viajan como "notas" porque es lo que sabe
+   * pintar el visor, pero llevan color propio y son de solo lectura: rojo para
+   * lo que desaparece en la versión anterior, verde para lo que se añade en la
+   * nueva. Los ids van en negativo para no chocar con los de los comentarios.
+   */
+  const diffNotes = (areas, tone) =>
+    (areas ?? []).map((area, index) => ({
+      id: -(index + 1),
+      content: tone === "removed" ? "Texto eliminado en la nueva versión" : "Texto agregado",
+      quote: "",
+      highlightAreas: [area],
+      color: tone === "removed" ? HIGHLIGHT_COLORS.removed : HIGHLIGHT_COLORS.added,
+      readOnly: true,
+    }));
+
+  const showDiffOverlay = status === "done" && !result?.textLayerMissing;
+
+  const notesForPane = (baseNotes, side) => {
+    if (!showDiffOverlay) return baseNotes;
+
+    const areas = side === "before" ? result?.highlights?.before : result?.highlights?.after;
+    return [...baseNotes, ...diffNotes(areas, side === "before" ? "removed" : "added")];
   };
 
+  // Hacen falta dos versiones con archivo para poder comparar.
+  if (!canCompare) {
+    return (
+      <Modal
+        open
+        onClose={onClose}
+        size="sm"
+        title="No hay versiones que comparar"
+        footer={
+          <Button variant="secondary" onClick={onClose}>
+            Cerrar
+          </Button>
+        }
+      >
+        <EmptyState
+          icon={GitCompare}
+          title="Faltan versiones"
+          description="Se necesitan al menos dos versiones con archivo adjunto para usar el comparador."
+        />
+      </Modal>
+    );
+  }
+
+  const hunks = result?.hunks ?? [];
+  const visibleHunks = filter === "all" ? hunks : hunks.filter((hunk) => hunk.type === filter);
+
+  const renderChanges = () => {
+    if (status === "loading") {
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted">Extrayendo el texto de ambas versiones…</p>
+          <SkeletonRows count={4} />
+        </div>
+      );
+    }
+
+    if (status === "error") {
+      return (
+        <EmptyState
+          icon={AlertTriangle}
+          title="No se pudo comparar"
+          description="Falló la lectura de alguno de los archivos. Comprueba que ambos sean PDF válidos."
+          action={
+            <Button variant="secondary" onClick={runComparison}>
+              <RefreshCw className="h-4 w-4" strokeWidth={1.8} />
+              Reintentar
+            </Button>
+          }
+        />
+      );
+    }
+
+    if (result?.textLayerMissing) {
+      return (
+        <EmptyState
+          icon={ScanLine}
+          title="Los documentos no contienen texto"
+          description="Parecen escaneados o generados como imagen. Sin una capa de texto no hay nada que comparar; haría falta pasarlos por OCR."
+        />
+      );
+    }
+
+    if (hunks.length === 0) {
+      return (
+        <EmptyState
+          icon={GitCompare}
+          title="Las dos versiones son idénticas"
+          description="No se encontró ninguna diferencia de contenido entre ellas."
+        />
+      );
+    }
+
+    return (
+      <ChangeList
+        hunks={visibleHunks}
+        onGoToPage={(page) => {
+          setTargetPage(page);
+          setTab("side-by-side");
+        }}
+      />
+    );
+  };
+
+  const tabs = [
+    { key: "changes", label: "Cambios", icon: FileSearch },
+    { key: "side-by-side", label: "Lado a lado", icon: Columns2 },
+  ];
+
+  // Hay resultado utilizable en cuanto la comparación termina y los PDF traen
+  // texto, aunque no haya ninguna diferencia (100% en común es un dato válido).
+  const hasResult = status === "done" && !result?.textLayerMissing && Boolean(result?.summary);
+
+  // Los filtros solo tienen sentido si hay algo que filtrar, y viven en la
+  // zona fija para seguir alcanzables con listas largas.
+  const showFilters = hasResult && tab === "changes" && hunks.length > 0;
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50"
-    >
-      <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 md:w-4/5 lg:w-11/12 h-11/12 overflow-hidden">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Comparador de Documentos
-          </h2>
-          <motion.button
-            onClick={onClose}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-lg p-2 hover:bg-red-100"
-          >
-            <svg
-              className="w-6 h-6 md:w-7 md:h-7"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </motion.button>
-        </div>
+    <Modal
+      open
+      onClose={onClose}
+      size="xl"
+      title="Comparador de versiones"
+      description={`${nameDocumento1}${version1 ? ` (v${version1})` : ""} → ${nameDocumento2}${
+        version2 ? ` (v${version2})` : ""
+      }`}
+      subHeader={
+        <>
+          <div className="flex items-center gap-1 border-b border-line">
+            {tabs.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={[
+                  "-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+                  tab === key
+                    ? "border-accent text-accent"
+                    : "border-transparent text-muted hover:text-content",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.8} />
+                {label}
+              </button>
+            ))}
 
-        <div className="flex space-x-4 h-full">
-          <motion.div className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-2">
-              {doc1.attributes.title}
-            </h3>
-            <div style={{ height: "650px", overflow: "auto" }}>
-              {/* <Worker workerUrl={WORKER_URL}>
-                <Viewer
-                  fileUrl={documento1}
-                  plugins={[highlightPluginInstance]}
-                />
-              </Worker> */}
-              <DisplayNotesSidebarExample
-                fileUrl={documento1}
-                notes={notesDocument1}
-                onAddNote=""
-                isTutor={false}
-                selectedHighlightId=""
+            {/* La similitud acompaña a las pestañas, no al panel de cambios:
+                sigue siendo el dato de referencia en la vista lado a lado. */}
+            {hasResult && (
+              <div className="ml-auto pb-2 pr-1">
+                <SimilarityBadge summary={result.summary} />
+              </div>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="pt-4">
+              <CompareSummary
+                summary={result.summary}
+                activeFilter={filter}
+                onFilterChange={setFilter}
               />
             </div>
-          </motion.div>
+          )}
+        </>
+      }
+      footer={
+        <div className="flex w-full items-center justify-between gap-3">
+          <Button variant="secondary" onClick={handlePrevious} disabled={currentIndex === 0}>
+            <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
+            Par anterior
+          </Button>
 
-          <motion.div className="relative flex-1 bg-gray-100 p-2 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-2">
-              {doc2.attributes.title}
-            </h3>
-            <div style={{ height: "650px", overflow: "auto" }}>
-              {/* <Worker workerUrl={WORKER_URL}>
-                <Viewer
-                  fileUrl={documento2}
-                  plugins={[highlightPluginInstance]}
-                />
-              </Worker> */}
-
-              <DisplayNotesSidebarExample
-                fileUrl={documento2}
-                notes={notesDocument2}
-                onAddNote=""
-                isTutor={false}
-                selectedHighlightId=""
-              />
-            </div>
-          </motion.div>
-          <motion.div className="relative flex-1 bg-gray-100 p-4 rounded-lg shadow-md">
-            <h3 className="text-lg font-medium mb-4">Diferencias</h3>
-
-            {/* Contenedor con scroll y altura fija */}
-            <div
-              className="grid grid-cols-2 gap-4 mb-6"
-              style={{ height: "400px", overflowY: "auto" }}
-            >
-              {/* Columna izquierda - Eliminados */}
-              <div>
-                <h4 className="text-md font-semibold mb-2 text-red-600">
-                  Eliminado
-                </h4>
-                {differences.filter((diff) => diff.type === "removed").length >
-                0 ? (
-                  differences
-                    .filter((diff) => diff.type === "removed")
-                    .map((diff, index) => (
-                      <motion.div
-                        key={index}
-                        className="p-3 mb-2 rounded bg-red-50 border border-red-300"
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: 50 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <p className="text-sm text-gray-700 mb-1">
-                          {diff.value}
-                        </p>
-                        <p className="text-xs text-gray-500 italic font-semibold">
-                          Documento: {diff.document}
-                        </p>
-                      </motion.div>
-                    ))
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    No se encontraron elementos eliminados.
-                  </p>
-                )}
-              </div>
-
-              {/* Columna derecha - Agregados */}
-              <div>
-                <h4 className="text-md font-semibold mb-2 text-green-600">
-                  Agregado
-                </h4>
-                {differences.filter((diff) => diff.type === "added").length >
-                0 ? (
-                  differences
-                    .filter((diff) => diff.type === "added")
-                    .map((diff, index) => (
-                      <motion.div
-                        key={index}
-                        className="p-3 mb-2 rounded bg-green-50 border border-green-300"
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: 50 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <p className="text-sm text-gray-700 mb-1">
-                          {diff.value}
-                        </p>
-                        <p className="text-xs text-gray-500 italic font-semibold">
-                          Documento: {diff.document}
-                        </p>
-                      </motion.div>
-                    ))
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    No se encontraron elementos agregados.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Mensaje centrado */}
-            <p className="col-span-2 text-center text-gray-600">
-              Haz clic en "Comparar" para ver las diferencias.
-            </p>
-
-            {/* Sección de instrucciones */}
-            <div className="bg-gray-700 p-3 rounded-lg border border-red-300">
-              <h4 className="text-md font-semibold mb-2 text-yellow-600">
-                Instrucciones
-              </h4>
-              <div className="grid grid-cols-2 gap-2">
-                <ul className="list-disc list-inside text-sm text-white">
-                  <li className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    Secciones señaladas para corrección.
-                  </li>
-                  <li className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    Texto eliminado.
-                  </li>
-                  <li className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    Texto agregado.
-                  </li>
-                </ul>
-                <div className="text-sm text-white">
-                  <p className="mb-1">
-                    <span className="text-green-400">Verde (Agregado):</span> Texto que está en el documento más reciente (derecha) pero no en el anterior (izquierda).
-                  </p>
-                  <p className="mb-1">
-                    <span className="text-red-400">Rojo (Eliminado):</span> Texto que estaba en el documento anterior (izquierda) pero no en el más reciente (derecha).
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            
-          </motion.div>
-        </div>
-
-        <div className="mt-4 flex justify-between">
-          <button
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 disabled:opacity-50"
+          <Button
+            variant="ghost"
+            onClick={runComparison}
+            loading={status === "loading"}
+            disabled={status === "loading"}
           >
-            <MdOutlineNavigateBefore className="ml-2" /> Anterior
-          </button>
+            <RefreshCw className="h-4 w-4" strokeWidth={1.8} />
+            Recalcular
+          </Button>
 
-          <button
-            onClick={compareDocuments}
-            className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-          >
-            <motion.div
-              animate={isComparing ? { rotate: 360 } : { rotate: 0 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="mr-2"
-            >
-              <FaCodeCompare />
-            </motion.div>
-            Comparar
-          </button>
-
-          <button
+          <Button
+            variant="secondary"
             onClick={handleNext}
             disabled={currentIndex >= documents.length - 2}
-            className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-900 disabled:opacity-50"
           >
-            Siguiente <MdOutlineNavigateNext className="ml-2" />
-          </button>
+            Par siguiente
+            <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+          </Button>
         </div>
+      }
+    >
+      <div ref={contentRef}>
+      {tab === "changes" ? (
+        renderChanges()
+      ) : (
+        <div className="flex flex-col gap-3">
+          {showDiffOverlay && (
+            <div className="flex flex-wrap items-center gap-4 rounded-lg border border-line bg-surface-2 px-4 py-2 text-xs text-muted">
+              <span className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-danger" />
+                Se eliminó en la versión nueva
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-ok" />
+                Se agregó en la versión nueva
+              </span>
+              <span className="flex items-center gap-2">
+                {/* Amarillo literal: es el color con el que el visor pinta los
+                    comentarios, así que la leyenda debe coincidir. */}
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ background: "yellow" }}
+                />
+                Comentario de revisión
+              </span>
+
+              <label className="ml-auto flex cursor-pointer items-center gap-2 text-content">
+                <input
+                  type="checkbox"
+                  checked={syncScroll}
+                  onChange={(event) => setSyncScroll(event.target.checked)}
+                  className="h-3.5 w-3.5 accent-accent"
+                />
+                Desplazar ambos a la vez
+              </label>
+            </div>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {[
+              {
+                side: "before",
+                title: nameDocumento1,
+                version: version1,
+                url: documento1,
+                notes: notesDocument1,
+              },
+              {
+                side: "after",
+                title: nameDocumento2,
+                version: version2,
+                url: documento2,
+                notes: notesDocument2,
+              },
+            ].map((pane) => (
+              <div key={pane.url} className="rounded-xl border border-line bg-surface-2 p-3">
+                <h3 className="mb-2 flex items-center gap-2 font-display text-sm font-semibold text-content">
+                  {pane.title}
+                  {pane.version && (
+                    <span className="font-mono text-xs font-normal text-muted">
+                      v{pane.version}
+                    </span>
+                  )}
+                </h3>
+                <div className="h-[60vh] overflow-auto rounded-lg bg-surface">
+                  <DisplayNotesSidebarExample
+                    fileUrl={pane.url}
+                    notes={notesForPane(pane.notes, pane.side)}
+                    onAddNote={() => {}}
+                    canComment={false}
+                    selectedHighlightId={null}
+                    goToPage={targetPage}
+                    onScrollerReady={pane.side === "before" ? registerBefore : registerAfter}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       </div>
-    </motion.div>
+    </Modal>
   );
+};
+
+DocumentComparePopup.propTypes = {
+  documents: PropTypes.array.isRequired,
+  onClose: PropTypes.func,
+  currentIndex: PropTypes.number.isRequired,
+  setCurrentIndex: PropTypes.func,
 };
 
 export default DocumentComparePopup;

@@ -7,18 +7,36 @@
     "displayName": "Rol"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
     "rolType": {
       "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
     },
     "users": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
       "mappedBy": "rols"
+    },
+    "permissions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::permission.permission",
+      "inversedBy": "rols"
     }
   }
 }

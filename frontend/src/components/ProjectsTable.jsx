@@ -1,15 +1,28 @@
-// ProjectsTable.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import { FaEye, FaPen } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
-import { deleteProject } from "../core/Projects";
 import { motion } from "framer-motion";
 import PropTypes from "prop-types";
-
+import { Eye, FolderKanban, Pencil, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
-import { decryptData } from "../utils/encryption";
+import { deleteProject } from "../core/Projects";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
+import EmptyState from "./ui/EmptyState";
+import { usePermission } from "../context/PermissionContext";
+
+// Entrada corta y uniforme: sin retardo por índice, que con listas largas dejaba
+// las últimas filas apareciendo segundos después.
+const fadeIn = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.18 },
+};
+
+const publishedAtOf = (project) =>
+  new Date(project.attributes?.publishedAt ?? project.publishedAt ?? 0);
+
+const iconButtonClass =
+  "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line " +
+  "bg-surface-2 text-muted transition-colors hover:border-line-strong hover:text-content";
 
 const ProjectsTable = ({
   projects,
@@ -17,175 +30,118 @@ const ProjectsTable = ({
   linkBase,
   fetchProjects,
   onEdit,
+  emptyTitle = "No hay proyectos disponibles",
+  emptyDescription = "Cuando existan registros aparecerán en esta tabla.",
 }) => {
-  const formattedProjects = Array.isArray(projects) ? projects : [projects];
+  const rows = Array.isArray(projects) ? projects : [projects];
 
-  // Ordena los proyectos por la fecha de `publishedAt` (más reciente primero)
+  // `sort` ordena en sitio: aplicado directamente sobre el array de props mutaba
+  // el estado del componente padre. Se copia antes de ordenar.
+  const sortedProjects = [...rows].sort((a, b) => publishedAtOf(b) - publishedAtOf(a));
 
-  const sortedProjects = formattedProjects.sort((a, b) => {
-    // Verifica si `publishedAt` está en `attributes` o directamente en el objeto
-    const dateA = a.attributes?.publishedAt
-      ? new Date(a.attributes.publishedAt)
-      : new Date(a.publishedAt || 0); // Si no existe, usa una fecha mínima
-    const dateB = b.attributes?.publishedAt
-      ? new Date(b.attributes.publishedAt)
-      : new Date(b.publishedAt || 0);
-
-    return dateB - dateA; // Orden descendente (más reciente primero)
-  });
-
-  const encryptedUserData = localStorage.getItem("userData");
-  let rol = null;
-
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rol;
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
+  const { hasPermission } = usePermission();
 
   const handleDelete = async (projectId) => {
-    // Muestra la alerta de confirmación antes de eliminar
-    Swal.fire({
+    // SweetAlert2 pinta sus botones en línea, así que las utilidades llevan `!`
+    // y `buttonsStyling` se desactiva. El botón destructivo replica la variante
+    // `danger` de ui/Button, la única que usa blanco literal sobre rojo.
+    const result = await Swal.fire({
       title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción!",
+      text: "No podrás revertir esta acción.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar!",
+      confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await deleteProject(projectId);
-          fetchProjects(); // Recarga los proyectos después de la eliminación
-          //Swal.fire("Eliminado!", "El proyecto ha sido eliminado.", "success");
-          const mensaje = "El proyecto ha sido eliminado";
-          successAlert(mensaje);
-        } catch (error) {
-          console.error("Error al eliminar el proyecto:", error);
-          Swal.fire(
-            "Error!",
-            "Hubo un problema al eliminar el proyecto.",
-            "error"
-          );
-
-          const mensaje =
-            error.response?.data?.message || "Error al eliminar el proyecto";
-
-          errorAlert(mensaje);
-        }
-      }
+      buttonsStyling: false,
+      customClass: {
+        popup: "!rounded-xl !border !border-line !bg-surface !shadow-pop",
+        title: "!font-display !text-lg !font-semibold !text-content",
+        htmlContainer: "!text-sm !text-muted",
+        confirmButton:
+          "!rounded-lg !bg-danger !px-4 !py-2 !text-sm !font-medium !text-white !shadow-none",
+        cancelButton:
+          "!ml-3 !rounded-lg !border !border-line !bg-surface-2 !px-4 !py-2 !text-sm !font-medium !text-content !shadow-none",
+      },
     });
-  };
 
-  const handleEdit = async (projectId) => {
-    if (onEdit) {
-      onEdit(projectId);
+    if (!result.isConfirmed) return;
+
+    try {
+      await deleteProject(projectId);
+      fetchProjects(); // Recarga los proyectos después de la eliminación
+      successAlert("El proyecto ha sido eliminado");
+    } catch (error) {
+      console.error("Error al eliminar el proyecto:", error);
+      errorAlert(error.response?.data?.message || "Error al eliminar el proyecto");
     }
   };
 
+  const handleEdit = (projectId) => {
+    if (onEdit) onEdit(projectId);
+  };
+
+  if (sortedProjects.length === 0) {
+    return (
+      <EmptyState icon={FolderKanban} title={emptyTitle} description={emptyDescription} />
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
-      <motion.table
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="min-w-full bg-white shadow-md rounded-lg overflow-hidden text-gray-800"
-      >
-        <thead>
+      <motion.table {...fadeIn} className="w-full min-w-full text-sm">
+        <thead className="bg-surface-2 text-xs uppercase tracking-wide text-muted">
           <tr>
             {columns.map((column) => (
-              <th
-                key={column.key}
-                className="px-4 py-2 bg-gray-800 text-center text-sm font-medium text-white uppercase tracking-wider"
-              >
+              <th key={column.key} className="px-4 py-3 text-left font-medium">
                 {column.label}
               </th>
             ))}
-            {linkBase && (
-              <th className="px-4 py-2 bg-gray-800 text-center text-sm font-medium text-white uppercase tracking-wider">
-                Acciones
-              </th>
-            )}
+            {linkBase && <th className="px-4 py-3 text-left font-medium">Acciones</th>}
           </tr>
         </thead>
-        <tbody>
-          {Array.isArray(formattedProjects) && projects.length === 0 ? (
-            <tr className="bg-gray-800 text-white">
-              <td
-                colSpan={columns.length + (linkBase ? 1 : 0)}
-                className="px-4 py-4 text-center"
-              >
-                No hay proyectos disponibles
-              </td>
-            </tr>
-          ) : (
-            sortedProjects.map((project) => {
-              // Verifica si el atributo 'revisado' existe antes de determinar el color de la fila
-              const rowColor =
-                project.attributes?.isRevised === false
-                  ? "bg-yellow-100 border-b hover:bg-gray-300" // Pendiente
-                  : project.attributes?.isRevised === true
-                    ? "bg-green-100 border-b hover:bg-gray-300" // Revisado
-                    : "bg-gray-50 border-b hover:bg-gray-300"; // Por defecto
 
-              return (
-                <motion.tr
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  key={project.id}
-                  className={`${rowColor}`}
-                >
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className="px-4 py-2 whitespace-nowrap text-base font-medium text-gray-900 text-center cursor-pointer "
-                    >
-                      {column.render
-                        ? column.render(project)
-                        : project[column.key]}
-                    </td>
-                  ))}
-                  {linkBase && (
-                    <td className="p-4 whitespace-nowrap text-base font-medium text-red-900  space-x-4 justify-center flex items-center ">
-                      <Link
-                        to={`${linkBase}/${project.id}`}
-                        className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
+        <tbody className="divide-y divide-line">
+          {sortedProjects.map((project) => (
+            <tr key={project.id} className="transition-colors hover:bg-surface-2">
+              {columns.map((column) => (
+                <td key={column.key} className="px-4 py-3 align-top text-content">
+                  {column.render ? column.render(project) : project[column.key]}
+                </td>
+              ))}
+
+              {linkBase && (
+                <td className="px-4 py-3 align-top">
+                  <div className="flex items-center gap-2">
+                    <Link to={`${linkBase}/${project.id}`} className={iconButtonClass} title="Ver">
+                      <Eye className="h-4 w-4" strokeWidth={1.8} />
+                    </Link>
+
+                    {hasPermission("UPDATE_PROJECT") && (
+                      <button
+                        type="button"
+                        className={iconButtonClass}
+                        onClick={() => handleEdit(project.id)}
+                        title="Editar"
                       >
-                        <FaEye className="text-blue-600 text-lg" title="Ver" />
-                      </Link>
+                        <Pencil className="h-4 w-4" strokeWidth={1.8} />
+                      </button>
+                    )}
 
-                      {rol === "estudiante" && (
-                        <>
-                          <button
-                            className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                            onClick={() => handleEdit(project.id)}
-                            title="Editar"
-                          >
-                            <FaPen className="text-yellow-600 text-lg" />
-                          </button>
-
-                          <button
-                            className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg"
-                            onClick={() => handleDelete(project.id)}
-                            title="Eliminar"
-                          >
-                            <MdDelete className="text-red-600 text-lg" />
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  )}
-                </motion.tr>
-              );
-            })
-          )}
+                    {hasPermission("DELETE_PROJECT") && (
+                      <button
+                        type="button"
+                        className={`${iconButtonClass} hover:text-danger`}
+                        onClick={() => handleDelete(project.id)}
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
         </tbody>
       </motion.table>
     </div>
@@ -198,7 +154,9 @@ ProjectsTable.propTypes = {
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       attributes: PropTypes.shape({
-        revisado: PropTypes.bool,
+        // El campo real del backend es `isRevised`; el propType declaraba
+        // `revisado`, que no existe en ninguna respuesta.
+        isRevised: PropTypes.bool,
       }),
     })
   ).isRequired,
@@ -212,6 +170,8 @@ ProjectsTable.propTypes = {
   linkBase: PropTypes.string,
   fetchProjects: PropTypes.func,
   onEdit: PropTypes.func,
+  emptyTitle: PropTypes.node,
+  emptyDescription: PropTypes.node,
 };
 
 export default ProjectsTable;

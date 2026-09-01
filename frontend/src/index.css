@@ -1,3 +1,171 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Tokens de diseño de DocMentor.
+ *
+ * Un único vocabulario semántico (bg / surface / surface-2 / line / content /
+ * muted / accent + estados) declarado dos veces: una para claro y otra para
+ * oscuro. El markup usa siempre el mismo nombre de clase (`bg-surface`,
+ * `text-muted`, `border-line`) y nunca `dark:`, así que cambiar de tema no
+ * exige tocar ni un componente.
+ *
+ * Las superficies se separan con bordes de 1px, no con sombras. En oscuro las
+ * sombras se desvanecen y el borde hace todo el trabajo.
+ */
+
+:root,
+:root.light {
+  color-scheme: light;
+
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --line: rgba(22, 24, 29, 0.1);
+  --line-strong: rgba(22, 24, 29, 0.18);
+  --content: #16181d;
+  --muted: #5c6470;
+
+  /* Índigo. 6.29:1 sobre blanco — si se cambia el tono, recalcular ambos. */
+  --accent: #4f46e5;
+  --accent-soft: #4338ca;
+  --accent-wash: rgba(79, 70, 229, 0.08);
+  --on-accent: #ffffff;
+
+  --ok: #047857;
+  --warn: #b45309;
+  --danger: #b91c1c;
+  --info: #1d4ed8;
+  --ok-wash: rgba(4, 120, 87, 0.1);
+  --warn-wash: rgba(180, 83, 9, 0.1);
+  --danger-wash: rgba(185, 28, 28, 0.1);
+  --info-wash: rgba(29, 78, 216, 0.1);
+
+  --shadow-card: 0 1px 2px rgba(22, 24, 29, 0.05);
+  --shadow-pop: 0 12px 32px rgba(22, 24, 29, 0.12);
+
+  /* Carriles del grafo de versiones. Paleta categórica de tres tonos: es el
+     máximo que supera las comprobaciones de separación con todas las parejas en
+     juego (los carriles se ven en paralelo, así que cualquier par puede acabar
+     comparándose). Se asignan en orden fijo, nunca se ciclan. */
+  --lane-1: #2a78d6;
+  --lane-2: #eb6834;
+  --lane-3: #1baf7a;
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --bg: #0b0c0e;
+  --surface: #16181d;
+  --surface-2: #1e2127;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --content: #e6e7e9;
+  --muted: #9aa0a6;
+
+  /* 6.64:1 sobre el fondo oscuro. */
+  --accent: #818cf8;
+  --accent-soft: #a5b4fc;
+  --accent-wash: rgba(129, 140, 248, 0.1);
+  --on-accent: #1e1b4b;
+
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+  --ok-wash: rgba(52, 211, 153, 0.1);
+  --warn-wash: rgba(251, 191, 36, 0.1);
+  --danger-wash: rgba(248, 113, 113, 0.1);
+  --info-wash: rgba(96, 165, 250, 0.1);
+
+  --shadow-card: 0 1px 2px transparent;
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Los mismos tres tonos, escalonados para el fondo oscuro. */
+  --lane-1: #3987e5;
+  --lane-2: #d95926;
+  --lane-3: #199e70;
+}
+
+/**
+ * Isla oscura: la barra lateral se mantiene oscura en ambos temas, así que
+ * necesita su propia rampa fija en lugar de los tokens que cambian.
+ */
+:root {
+  --dark-surface: #16181d;
+  --dark-surface-2: #1e2127;
+  --dark-line: rgba(255, 255, 255, 0.08);
+  --dark-content: #e6e7e9;
+  --dark-muted: #9aa0a6;
+  --dark-accent: #818cf8;
+  --dark-accent-wash: rgba(129, 140, 248, 0.12);
+  --dark-on-accent: #1e1b4b;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-content font-sans antialiased;
+  }
+
+  /* Un solo anillo de foco declarado aquí en vez de repetir clases por componente. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--accent-wash);
+    color: var(--content);
+  }
+}
+
+@layer components {
+  /* Toda métrica se alinea en columna. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Grid tipo plano, heredado del portafolio. Solo para las vistas públicas. */
+  .grid-bg {
+    background-image: linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .hero-glow {
+    background: radial-gradient(
+      600px circle at 20% 20%,
+      var(--accent-wash),
+      transparent 60%
+    );
+  }
+}
+
+/* Scrollbar teñido, discreto en ambos temas. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

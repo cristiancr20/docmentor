@@ -1,22 +1,36 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileWarning,
+} from "lucide-react";
+import AppLayout from "../components/layout/AppLayout";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Skeleton from "../components/ui/Skeleton";
+import EmptyState from "../components/ui/EmptyState";
 import CommentsPanel from "../components/CommentsPanel";
-import { getDocumentById } from "../core/Document";
+import { errorAlert, successAlert } from "../components/Alerts/Alerts";
+import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
+import { getDocumentById, getDocumentsByProjectId } from "../core/Document";
 import {
   getCommentsByDocument,
   addCommentToDocument,
   updateDocumentStatusRevisado,
 } from "../core/Comments.js";
-import { motion } from "framer-motion";
-import { Calendar, CheckCircle, XCircle } from "lucide-react";
-import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
 import { API_URL } from "../core/config.js";
 import { decryptData } from "../utils/encryption.js";
-import Header from "../components/Header";
-import { IoArrowBack } from "react-icons/io5";
-import { getUserByEmail, getUserIdByEmail } from "../core/Autentication.js";
-
+import { formatDateTime } from "../utils/format";
+import { getUserByEmail } from "../core/Autentication.js";
+import { usePermission } from "../context/PermissionContext";
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -27,22 +41,21 @@ const DocumentoViewer = () => {
   const [selectedHighlightId, setSelectedHighlightId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [strapiUserId, setStrapiUserId] = useState(null);
+  const [siblings, setSiblings] = useState([]);
   const navigate = useNavigate();
+  const { hasPermission } = usePermission();
 
+  const canApproveDocument = hasPermission("APPROVE_DOCUMENT");
+  const canComment = hasPermission("COMMENT_DOCUMENT");
 
   let tutorEmail = null;
-  let rol = null;
 
   const encryptedUserData = localStorage.getItem("userData");
 
   if (encryptedUserData) {
     // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rols || decryptedUserData.rol;
+    const decryptedUserData = decryptData(encryptedUserData);
     tutorEmail = decryptedUserData.email;
-
   } else {
     console.log("No se encontró el userData en localStorage");
   }
@@ -57,7 +70,7 @@ const DocumentoViewer = () => {
   }, [tutorEmail]);
 
   const fetchStrapiUser = async () => {
-    if (tutorEmail) { 
+    if (tutorEmail) {
       const user = await getUserByEmail(tutorEmail);
       if (user) {
         setStrapiUserId(user.id);
@@ -66,35 +79,44 @@ const DocumentoViewer = () => {
     }
   };
 
-
   const fetchDocument = async () => {
     try {
       const data = await getDocumentById(documentId);
       setDocument(data);
+
+      // Las demás versiones del mismo proyecto, para poder saltar entre ellas
+      // sin volver al detalle del proyecto cada vez.
+      const projectId = data?.data?.attributes?.project?.data?.id;
+      if (projectId) {
+        const response = await getDocumentsByProjectId(projectId);
+        const ordered = [...(response?.data ?? [])].sort(
+          (a, b) => (a.attributes.version ?? 0) - (b.attributes.version ?? 0)
+        );
+        setSiblings(ordered);
+      }
     } catch (error) {
       setError("Error fetching document details");
     }
   };
 
+  // Va al proyecto, no atrás en el historial: con la navegación entre versiones
+  // dentro de la propia página, `navigate(-1)` retrocedía a la versión anterior
+  // en lugar de salir al proyecto.
   const handleBackClick = () => {
-    navigate(-1);
+    const projectId = document?.data?.attributes?.project?.data?.id;
+
+    if (projectId) {
+      navigate(`/project/${projectId}`);
+    } else {
+      navigate(-1);
+    }
   };
 
+  // Se selecciona siempre, tenga o no resaltado: así la tarjeta se marca en el
+  // panel. Si además hay áreas válidas, el visor salta hasta ellas. Antes, un
+  // comentario sin resaltado no daba ninguna señal al pulsarlo.
   const handleCommentClick = (comment) => {
-    try {
-      const highlightAreas = JSON.parse(comment.attributes.highlightAreas);
-
-      // Verificar si hay áreas válidas
-      const validAreas = highlightAreas.filter(
-        (area) => area.height > 0 && area.width > 0 && area.pageIndex >= 0
-      );
-
-      if (validAreas.length > 0) {
-        setSelectedHighlightId(comment.id);
-      }
-    } catch (error) {
-      console.error("Error parsing highlight areas:", error);
-    }
+    setSelectedHighlightId(comment.id);
   };
 
   const fetchComments = async () => {
@@ -117,7 +139,7 @@ const DocumentoViewer = () => {
 
   const handleAddComment = async (newComment, highlightAreas, quote) => {
     try {
-      const responseComment=await addCommentToDocument(
+      await addCommentToDocument(
         documentId,
         newComment,
         strapiUserId,
@@ -125,21 +147,26 @@ const DocumentoViewer = () => {
         quote
       );
 
-      fetchComments();
-      fetchDocument();
+      await Promise.all([fetchComments(), fetchDocument()]);
+      successAlert("Comentario agregado");
     } catch (error) {
       console.error("Error adding comment:", error);
+      errorAlert("No se pudo guardar el comentario");
     }
   };
 
+  // Marcar como revisado solo cambiaba la etiqueta de estado, sin ninguna otra
+  // señal: no quedaba claro si la acción se había aplicado o no.
   const handleRevisadoClick = async () => {
     setIsSubmitting(true);
 
     try {
       await updateDocumentStatusRevisado(documentId);
-      fetchDocument();
+      await fetchDocument();
+      successAlert("Documento marcado como revisado");
     } catch (error) {
       console.error("Error updating document status:", error);
+      errorAlert("No se pudo actualizar el estado del documento");
     } finally {
       setIsSubmitting(false);
     }
@@ -149,175 +176,176 @@ const DocumentoViewer = () => {
     handleAddComment(note.content, note.highlightAreas, note.quote);
   };
 
+  const backButton = (
+    <Button variant="secondary" onClick={handleBackClick}>
+      <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
+      Volver al proyecto
+    </Button>
+  );
+
+  // Navegación entre versiones sin salir de la vista.
+  const currentPosition = siblings.findIndex((doc) => String(doc.id) === String(documentId));
+  const previousVersion = currentPosition > 0 ? siblings[currentPosition - 1] : null;
+  const nextVersion =
+    currentPosition >= 0 && currentPosition < siblings.length - 1
+      ? siblings[currentPosition + 1]
+      : null;
+
+  const versionNav = siblings.length > 1 && (
+    <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1">
+      <button
+        type="button"
+        disabled={!previousVersion}
+        onClick={() => previousVersion && navigate(`/document/${previousVersion.id}`)}
+        title={
+          previousVersion
+            ? `Versión ${previousVersion.attributes.version}`
+            : "No hay versión anterior"
+        }
+        className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
+      </button>
+
+      <span className="px-1 font-mono text-xs text-muted">
+        v{document?.data?.attributes?.version ?? "?"} de {siblings.length}
+      </span>
+
+      <button
+        type="button"
+        disabled={!nextVersion}
+        onClick={() => nextVersion && navigate(`/document/${nextVersion.id}`)}
+        title={
+          nextVersion ? `Versión ${nextVersion.attributes.version}` : "No hay versión posterior"
+        }
+        className="rounded-md p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+      </button>
+    </div>
+  );
+
   if (error) {
-    return <p className="text-red-500 mb-4">{error}</p>;
+    return (
+      <AppLayout title="Documento" actions={backButton}>
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-line bg-danger-wash px-4 py-3 text-sm text-danger"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
+          {error}
+        </div>
+      </AppLayout>
+    );
   }
 
   if (!document) {
-    return <p>Cargando documento...</p>;
+    return (
+      <AppLayout title="Documento">
+        <div className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-[86px]" />
+            <Skeleton className="h-[86px]" />
+          </div>
+          <Skeleton className="h-[600px]" />
+        </div>
+      </AppLayout>
+    );
   }
 
   const { title, publishedAt, isRevised, documentFile } =
     document?.data?.attributes || {};
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    if (isNaN(date)) {
-      return "Fecha no válida";
-    }
-    return date.toLocaleString("es-ES", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-  };
 
   const documentUrl = documentFile
     ? `${API_URL}${documentFile.data?.[0]?.attributes?.url}`
     : null;
 
   if (!documentUrl) {
-    return <p>No se encontró el archivo del documento.</p>;
+    return (
+      <AppLayout title={title || "Documento"} actions={backButton}>
+        <EmptyState
+          icon={FileWarning}
+          title="No se encontró el archivo del documento"
+          description="La versión no tiene un archivo adjunto o se eliminó del servidor."
+        />
+      </AppLayout>
+    );
   }
 
-
   return (
-    <div>
-      <Navbar />
-      <Header />
-      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-        <div className="mb-2">
-          <motion.button
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-
-            className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            <IoArrowBack className="text-white text-xl mr-2" />
-            <span className="text-lg font-bold" onClick={handleBackClick}>Volver a los detalles del proyecto</span>
-          </motion.button>
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-3xl font-bold mb-2 pb-3 border-b border-gray-200 mt-2"
-          >
-            {title}
-          </motion.h1>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Fecha de creación */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4"
-            >
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-sm font-medium text-gray-500">
-                  Fecha de Creación
-                </h2>
-                <p className="text-sm md:text-lg font-semibold text-gray-900">
-                  {publishedAt
-                    ? formatDate(publishedAt)
-                    : "Fecha no disponible"}
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Estado de revisión */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className={`p-4 rounded-xl shadow-sm border flex items-center space-x-4 ${
-                isRevised
-                  ? "bg-green-50 border-green-100"
-                  : "bg-red-50 border-red-100"
-              }`}
-            >
-              <div
-                className={`p-3 rounded-lg ${
-                  isRevised ? "bg-green-100" : "bg-red-100"
-                }`}
-              >
-                {isRevised ? (
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                ) : (
-                  <XCircle className="w-6 h-6 text-red-600" />
-                )}
-              </div>
-              <div>
-                <h2 className="text-sm font-medium text-gray-500">
-                  Estado de Revisión
-                </h2>
-                <p
-                  className={`text-sm md:text-lg font-semibold ${
-                    isRevised ? "text-green-700" : "text-red-700"
-                  }`}
-                >
-                  {isRevised ? "Revisado" : "Pendiente"}
-                </p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Botón para tutor */}
-          {(rol.includes("tutor") || rol.includes("superadmin"))&& (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="col-span-3 flex justify-end m-2"
-            >
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
-                onClick={handleRevisadoClick}
-              >
-                {isSubmitting
-                  ? "Actualizando estado..."
-                  : "Marcar como Revisado"}
-              </button>
-            </motion.div>
+    <AppLayout
+      fullHeight
+      title={title}
+      description="Revisa el documento y gestiona las correcciones."
+      actions={
+        <>
+          {versionNav}
+          {backButton}
+          {canApproveDocument && (
+            <Button onClick={handleRevisadoClick} loading={isSubmitting}>
+              <CheckCircle2 className="h-4 w-4" strokeWidth={1.8} />
+              {isSubmitting ? "Actualizando estado..." : "Marcar como revisado"}
+            </Button>
           )}
-        </div>
+        </>
+      }
+    >
+      {/* Metadatos en una sola franja: antes ocupaban dos tarjetas grandes que
+          empujaban el documento fuera de la pantalla. */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15 }}
+        className="mb-4 flex shrink-0 flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3"
+      >
+        <span className="flex items-center gap-2 text-sm text-muted">
+          <Calendar className="h-4 w-4" strokeWidth={1.8} />
+          <span className="font-mono text-xs">{formatDateTime(publishedAt)}</span>
+        </span>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 ">
-          <div className="gap-2 border rounded-lg overflow-auto">
-            <CommentsPanel
-              comments={comments}
-              onUpdateComments={fetchComments}
-              onCommentClick={handleCommentClick}
-            />
-          </div>
+        <span className="flex items-center gap-2 text-sm text-muted">
+          {isRevised ? (
+            <CheckCircle2 className="h-4 w-4 text-ok" strokeWidth={1.8} />
+          ) : (
+            <Clock className="h-4 w-4 text-warn" strokeWidth={1.8} />
+          )}
+          <Badge tone={isRevised ? "ok" : "warn"}>
+            {isRevised ? "Revisado" : "Pendiente"}
+          </Badge>
+        </span>
 
-          <div
-            className="bg-gray-900 rounded-lg p-2 h-full overflow-auto"
-            style={{ height: "100vh", overflow: "auto" }}
-          >
-            <DisplayNotesSidebarExample
-              fileUrl={documentUrl}
-              notes={notes}
-              onAddNote={handleAddNote}
-              canComment={(rol.includes("tutor") ||
-                rol.includes("superadmin"))}
-              selectedHighlightId={selectedHighlightId}
-            />
-          </div>
-        </div>
+        {canComment && (
+          <span className="ml-auto text-xs text-muted">
+            Selecciona texto en el documento para comentarlo.
+          </span>
+        )}
+      </motion.div>
+
+      {/* El documento manda y ocupa dos tercios; las correcciones viven a su
+          derecha, como en cualquier editor colaborativo. */}
+      {/* `min-h-0` es lo que permite que los hijos se encojan y hagan scroll
+          por dentro en lugar de estirar la página. */}
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-3">
+        <Card padded={false} className="min-h-0 overflow-hidden bg-surface-2 lg:col-span-2">
+          <DisplayNotesSidebarExample
+            fileUrl={documentUrl}
+            notes={notes}
+            onAddNote={handleAddNote}
+            canComment={canComment}
+            selectedHighlightId={selectedHighlightId}
+          />
+        </Card>
+
+        <Card padded={false} className="min-h-0 overflow-hidden">
+          <CommentsPanel
+            comments={comments}
+            onUpdateComments={fetchComments}
+            onCommentClick={handleCommentClick}
+            selectedCommentId={selectedHighlightId}
+          />
+        </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

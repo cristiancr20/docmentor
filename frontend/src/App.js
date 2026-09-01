@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import {
   Routes,
   Route,
@@ -7,6 +8,8 @@ import {
 } from "react-router-dom";
 
 import { useAuth, AuthProvider } from "./context/AuthContext";
+import { PermissionProvider } from "./context/PermissionContext";
+import { ROLE_ROUTES } from "./utils/auth.utils";
 
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/ErrorNotFound";
@@ -29,6 +32,10 @@ import DocumentoViewer from "./pages/DocumentViewer";
 /* ADMIN */
 import AdminDashboard from "./pages/Administration";
 
+/* COORDINATOR */
+import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+import AuditLogs from "./pages/AuditLogs";
+
 
 /* COMPONENTE RUTAS PROTEGIDAS */
 const ProtectedRoute = ({ requiredRole }) => {
@@ -38,10 +45,13 @@ const ProtectedRoute = ({ requiredRole }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  // Verificar si requiredRole es un array o string y si user.rols existe
-  if (requiredRole && user.rols) {
+  // Se comprueba el rol fallando cerrado: si el usuario no trae roles, se
+  // deniega. Antes la condición era `requiredRole && user.rols`, así que un
+  // usuario sin `rols` se saltaba la verificación y entraba a cualquier panel.
+  if (requiredRole) {
     const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!user.rols.some(role => requiredRoles.includes(role))) {
+    const userRoles = user.rols ?? (user.rol ? [user.rol] : []);
+    if (!userRoles.some((role) => requiredRoles.includes(role))) {
       return <Navigate to="/" replace />;
     }
   }
@@ -49,42 +59,87 @@ const ProtectedRoute = ({ requiredRole }) => {
   return <Outlet />;
 };
 
+ProtectedRoute.propTypes = {
+  requiredRole: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.arrayOf(PropTypes.string),
+  ]),
+};
+
+/**
+ * Portada pública.
+ *
+ * Con sesión iniciada lleva al panel que corresponde al rol. Mostrar aquí la
+ * landing de bienvenida, con sus botones de "Iniciar sesión", hacía creer que
+ * la sesión se había cerrado cada vez que se llegaba a "/".
+ */
+const PublicHome = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Cargando...</div>;
+
+  const role = (user?.rols ?? (user?.rol ? [user.rol] : []))[0];
+  const target = ROLE_ROUTES[role];
+
+  if (target) return <Navigate to={target} replace />;
+
+  return <Dashboard />;
+};
+
 
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        {/* Rutas públicas */}
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/login-institucional" element={<LoginInstitucional />} />
-        <Route path="/sign-up" element={<SignUp />} />
-        {/* ROL TUTOR-ESTUDIANTE */}
-        <Route path="/document/:documentId" element={<DocumentoViewer />} />
-        <Route path="/project/:projectId" element={<ProjectDetalle />} />
+      <PermissionProvider>
+        <Routes>
+          {/* Rutas públicas */}
+          <Route path="/" element={<PublicHome />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/login-institucional" element={<LoginInstitucional />} />
+          <Route path="/sign-up" element={<SignUp />} />
 
+          {/* Rutas protegidas */}
+          {/* Detalle de proyecto y documento: cualquier usuario con sesión.
+              Estaban fuera del bloque protegido, así que con IDs correlativos
+              se podían enumerar proyectos y documentos ajenos sin iniciar sesión. */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/document/:documentId" element={<DocumentoViewer />} />
+            <Route path="/project/:projectId" element={<ProjectDetalle />} />
+          </Route>
 
-        {/* Rutas protegidas */}
-        {/* ROL TUTOR y SUPERADMIN */}
-        <Route element={<ProtectedRoute requiredRole={["superadmin","tutor"]} />}>
-          <Route path="/tutor/dashboard" element={<TutorDashboard />} />
-          <Route path="/tutor/projects/view" element={<ProjectsAsignedTutor />} />
-        </Route>
-        {/* ROL ESTUIANE*/}
-        <Route element={<ProtectedRoute requiredRole="estudiante" />}>
-          <Route path="/student/dashboard" element={<StudentsDashboard />} />
-          <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
-        </Route>
+          {/* ROL TUTOR y SUPERADMIN */}
+          <Route element={<ProtectedRoute requiredRole={["superadmin","tutor"]} />}>
+            <Route path="/tutor/dashboard" element={<TutorDashboard />} />
+            <Route path="/tutor/projects/view" element={<ProjectsAsignedTutor />} />
+          </Route>
+          {/* ROL ESTUDIANTE */}
+          <Route element={<ProtectedRoute requiredRole="estudiante" />}>
+            <Route path="/student/dashboard" element={<StudentsDashboard />} />
+            <Route path="/student/projects/view" element={<ViewProjectsStudents />} />
+          </Route>
 
-        {/* ROL SUPERADMIN */}
-        <Route element={<ProtectedRoute requiredRole="superadmin" />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        </Route>
+          {/* ROL SUPERADMIN */}
+          <Route element={<ProtectedRoute requiredRole="superadmin" />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
 
+          {/* ROL COORDINADOR */}
+          <Route element={<ProtectedRoute requiredRole="coordinador" />}>
+            <Route path="/coordinator/dashboard" element={<CoordinatorDashboard />} />
+          </Route>
 
-        {/* Ruta 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* La auditoría la consultan coordinación y superadmin. Estaba
+              restringida solo a coordinador, así que al superadmin el enlace de
+              la barra lateral lo devolvía a la portada: parecía un cierre de
+              sesión cuando en realidad era un rebote de ruta. */}
+          <Route element={<ProtectedRoute requiredRole={["coordinador", "superadmin"]} />}>
+            <Route path="/audit-logs" element={<AuditLogs />} />
+          </Route>
+
+          {/* Ruta 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PermissionProvider>
     </AuthProvider>
   );
 }
