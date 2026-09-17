@@ -1,0 +1,123 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-016
+- **Task Title**: Exportar Reporte de Proyecto a PDF
+- **Description**: Como estudiante/tutor, quiero generar un PDF con el proyecto completo, para archivo o entrega.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-12T21:39:04.782Z
+- **Ended At**: 2026-07-12T21:44:55.922Z
+- **Duration**: 5m 51s
+- **Input Tokens**: 195
+- **Output Tokens**: 24256
+- **Total Tokens**: 24451
+- **Agent**: claude
+- **Model**: claude-opus-4-8
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the project context and current status.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Bash][0m Inspect package.json and structure $ cat package.json && echo "---STRUCTURE---" && ls -la && echo "---SCRIPTS---" && cat package.json | g...
+[94m[Bash][0m List root and find package.json files $ ls -la && echo "---" && find . -name package.json -maxdepth 3 -not -path '*/node_modules/*' 2>/dev/n...
+I'll explore the project structure to understand the codebase and check what already exists for US-016.
+[94m[Bash][0m Read both package.json files $ echo "===FRONTEND PKG===" && cat frontend/package.json && echo "" && echo "===BACKEND PKG===" && cat...
+[94m[Bash][0m List frontend src and backend api $ echo "===FRONTEND SRC===" && ls -R frontend/src 2>/dev/null | head -80 && echo "===BACKEND API===" &...
+There's already a `GeneratePdfButton.jsx`. Let me examine it and related files.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/GeneratePdfButton.jsx[0m
+[94m[Bash][0m List pages and read Projects/config core $ echo "===pages===" && ls frontend/src/pages && echo "===core/Projects===" && cat frontend/src/core/P...
+There's an existing button but it doesn't meet all US-016 criteria (no tutor comments, no integrity hash, no "generado por" metadata). Let me look at where it's used and the comments/documents data.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/ProyectoDetalle.jsx[0m
+[94m[Bash][0m Read Comments core and find button usage $ echo "===Comments core===" && cat frontend/src/core/Comments.js && echo "===grep GeneratePdfButton u...
+[94m[Bash][0m Read Document core and AuthContext $ echo "===Document core===" && cat frontend/src/core/Document.js && echo "===AuthContext===" && cat f...
+[94m[Bash][0m Read encryption util and permissions $ echo "===permissions list===" && grep -rn "PERMISSIONS\|rolType\|permissions" frontend/src/context/P...
+[94m[Bash][0m Check tests and logo sizes $ ls -la frontend/src/assets/
+I have enough context. Let me check the ESLint config to match conventions, then rewrite the component.
+[94m[Bash][0m Read eslint config $ cat frontend/eslint.config.* frontend/.eslintrc* 2>/dev/null | head -60
+[94m[Bash][0m Find eslint config $ find frontend -maxdepth 2 -name "*eslint*" -not -path "*/node_modules/*"
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/eslint.config.mjs[0m
+Now I have a complete picture. Let me rewrite the `GeneratePdfButton.jsx` to meet all US-016 acceptance criteria (tutor comments, integrity hash, generation metadata, image compression, and available to both students and tutors).
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/GeneratePdfButton.jsx[0m "import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import CryptoJS from "crypto-js";
+import { motion } from "framer-motion";
+import LogoCarrera from "../assets/logo_carrera.png";
+... (9056 chars)"
+Now update `ProyectoDetalle.jsx` to use the new props and make it available to both students and tutors:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/ProyectoDetalle.jsx[0m edit: "import { IoArrowBack } from "react-icons/io5";
+imp..." → "import { IoArrowBack } from "react-icons/io5";
+imp..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/ProyectoDetalle.jsx[0m edit: "  const { hasPermission } = usePermission();
+
+  co..." → "  const { hasPermission } = usePermission();
+  con..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/ProyectoDetalle.jsx[0m edit: "          {hasPermission("REVIEW_DOCUMENT") && (
+ ..." → "          {(canReviewDocuments || canUploadDocumen..."
+Now let me write a test following the existing patterns, then run quality checks.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/__tests__/NotificationBell.test.jsx[0m
+[94m[Bash][0m Check node_modules $ ls frontend/node_modules/jspdf >/dev/null 2>&1 && echo "jspdf present"
+I'll add a test that mocks the PDF libs and image assets (following existing conventions):
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/__tests__/GeneratePdfButton.test.jsx[0m "import React from "react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import GeneratePdfButton from "../GeneratePdfButton";
+
+// Mock ... (3199 chars)"
+Now let me run the quality checks and the new test:
+[94m[Bash][0m Run eslint directly for console output $ echo "===EXIT $?==="
+[94m[Bash][0m Run typecheck $ echo "===TSC EXIT ${PIPESTATUS[0]}==="
+[94m[Bash][0m Run npm typecheck in frontend $ echo "===TYPECHECK EXIT ${PIPESTATUS[0]}==="
+[94m[Bash][0m Run typecheck and lint capturing exit codes $ echo "LINT EXIT=$?"
+Both pass. Now let me run the test suite for the new component:
+[94m[Bash][0m Run GeneratePdfButton test $ echo "EXIT=${PIPESTATUS[0]}"
+[94m[Bash][0m See top of test error $ npx react-scripts test --watchAll=false --testPathPattern="GeneratePdfButton" 2>&1 | head -30
+[94m[Bash][0m Rename pdfInstance to mockPdfInstance $ sed -i '' 's/pdfInstance/mockPdfInstance/g' src/components/__tests__/GeneratePdfButton.test.jsx && g...
+[94m[Bash][0m Rerun GeneratePdfButton test $ echo "EXIT=${PIPESTATUS[0]}"
+[94m[Bash][0m Get specific error for one test $ npx react-scripts test --watchAll=false --testPathPattern="GeneratePdfButton" -t "nombre de archivo"...
+[94m[Bash][0m Check CRA jest resetMocks default $ cat node_modules/jest/package.json | grep '"version"'
+CRA sets `resetMocks: true`, which wipes mock implementations before each test. I'll set the implementation in `beforeEach`:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/__tests__/GeneratePdfButton.test.jsx[0m "import React from "react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { jsPDF } from "jspdf";
+import GeneratePdfButton from ".... (3298 chars)"
+[94m[Bash][0m Rerun test suite $ echo "EXIT=${PIPESTATUS[0]}"
+All 4 tests pass. Let me re-run lint/typecheck to confirm the test file didn't break them, and run the full test suite to ensure no regressions:
+[94m[Bash][0m Lint, typecheck, and full test suite $ npx react-scripts test --watchAll=false --coverage=false 2>&1 | tail -12
+All checks pass (lint=0, typecheck=0, 25/25 tests). The `act()` warning is the pre-existing benign NotificationBell one. Now let me update the progress log:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "- **Frontend polling + JWT desencriptado:** `core/..." → "- **Frontend polling + JWT desencriptado:** `core/..."
+[94m[Bash][0m Append US-016 progress entry $ renderiza el botón para `canReviewDocuments || canUploadDocuments` (tutores y estudiantes) pasándole...
+US-016 is complete. Here's a summary of what I implemented:
+
+## US-016 — Exportar Reporte de Proyecto a PDF
+
+I found an existing `GeneratePdfButton.jsx` ("Generar Informe de revisión", tutor-only) that met only part of the criteria. I reworked it into a full project-report export available to **both students and tutors**.
+
+### Changes
+- **`frontend/src/components/GeneratePdfButton.jsx`** — rewritten:
+  - Button label → **"Descargar PDF"**
+  - Professional header with **university logos** (`logo_carrera` + `logo_universidad`), inserted with `addImage(..., "MEDIUM")` compression to optimize image size (keeps PDF well under 10MB)
+  - Includes **title, description, itinerary, dates, tutor, students**
+  - **Documents table** with version + **states** (Revisado / Pendiente de revisión)
+  - **Tutor comments table** (pulled from each document's populated `comments`)
+  - **Metadata block**: generation date, generated-by, and **SHA-256 integrity hash** (via `crypto-js`, over a canonical JSON of the report content) — also embedded in PDF properties (`keywords`)
+  - New props: `project`, `documents`, `generatedBy`
+- **`frontend/src/pages/ProyectoDetalle.jsx`** — imports `useAuth`, shows the button for `canReviewDocuments || canUploadDocuments`, and passes `documents` (which already carry populated comments) + `generatedBy`.
+- **`frontend/src/components/__tests__/GeneratePdfButton.test.jsx`** — 4 new tests.
+
+### Acceptance criteria
+- ✅ Botón Descargar PDF en vista de proyecto
+- ✅ PDF incluye título, descripción, lista de documentos, estados, comentarios tutores
+- ✅ Formato profesional con logo universidad
+- ✅ Metadatos: fecha generación, generado por, hash de integridad
+- ✅ Tamaño < 10MB (imágenes con compresión MEDIUM)
+- ✅ `npm run lint` passes (0)
+- ✅ `npm run typecheck` passes (0)
+
+Full test suite: **25/25 passing across 7 suites**. No commits created (per workflow).
+
+<promise>COMPLETE</promise>

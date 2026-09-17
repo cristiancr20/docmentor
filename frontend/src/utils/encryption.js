@@ -34,7 +34,24 @@ export const decryptData = (encryptedData) => {
       return null;
     }
 
-    return JSON.parse(decryptedString);
+    const value = JSON.parse(decryptedString);
+
+    // Compatibilidad con las sesiones guardadas antes de corregir el doble
+    // JSON.stringify: allí el valor cifrado era la cadena JSON del objeto, así
+    // que al descifrarlo sale un string en lugar del objeto. Sin esto, quien
+    // tuviera sesión iniciada de antes quedaba con `user` convertido en una
+    // cadena: seguía pareciendo autenticado pero sin `rols`, y cualquier ruta
+    // protegida lo devolvía al inicio.
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        // Era un string de verdad (por ejemplo el JWT), no un objeto anidado.
+        return value;
+      }
+    }
+
+    return value;
   } catch (err) {
     console.error("Error al desencriptar los datos:", err);
     return null;

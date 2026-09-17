@@ -8,7 +8,7 @@
     "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -22,7 +22,18 @@
       "type": "string"
     },
     "isRead": {
-      "type": "boolean"
+      "type": "boolean",
+      "default": false
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "document_uploaded",
+        "status_changed",
+        "comment_received",
+        "general"
+      ],
+      "default": "general"
     },
     "documents": {
       "type": "relation",

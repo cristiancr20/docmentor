@@ -1,218 +1,236 @@
 import React, { useState } from "react";
-import { updateComment, deleteComment } from "../core/Comments";
-import Swal from "sweetalert2";
-import { FaArrowDown, FaPen } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
-import { motion, AnimatePresence } from "framer-motion";
-import { decryptData } from "../utils/encryption";
 import PropTypes from "prop-types";
-import { errorAlert, successAlert } from "./Alerts/Alerts";
+import { motion } from "framer-motion";
+import { Check, GraduationCap, MessageSquare, Pencil, Trash2, X } from "lucide-react";
+import { updateComment, deleteComment } from "../core/Comments";
+import { confirmAlert, errorAlert, successAlert } from "./Alerts/Alerts";
+import { usePermission } from "../context/PermissionContext";
+import Button from "./ui/Button";
+import { Textarea } from "./ui/Input";
+import EmptyState from "./ui/EmptyState";
+import { formatDateTime, initialsOf } from "../utils/format";
 
-const CommentsPanel = ({ comments = [], onUpdateComments, onCommentClick }) => {
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [updatedContent, setUpdatedContent] = useState("");
-  const [isDropdownOpenComments, setIsDropdownOpenComments] = useState(true);
+/** "hace 5 min", "ayer"... Para fechas lejanas cae a la fecha completa. */
+const relativeTime = (value) => {
+  if (!value) return "";
 
-  const encryptedUserData = localStorage.getItem("userData");
-  let rol = null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
 
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000);
 
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rols || decryptedUserData.rol;
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
+  if (minutes < 1) return "ahora mismo";
+  if (minutes < 60) return `hace ${minutes} min`;
 
-  const handleEditClick = (comment) => {
-    setEditingCommentId(comment.id);
-    setUpdatedContent(comment.attributes.correction);
-  };
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
 
-  const handleEditSubmit = async (commentId) => {
+  const days = Math.round(hours / 24);
+  if (days === 1) return "ayer";
+  if (days < 7) return `hace ${days} días`;
+
+  return formatDateTime(value);
+};
+
+const authorOf = (comment) =>
+  comment.attributes.correctionTutor?.data?.attributes?.username ?? "Tutor";
+
+const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.attributes.correction);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const author = authorOf(comment);
+  const { correction, quote, createdAt, updatedAt } = comment.attributes;
+  const wasEdited = updatedAt && createdAt && updatedAt !== createdAt;
+
+  const handleSave = async () => {
+    if (!draft.trim()) return;
+
+    setIsSaving(true);
     try {
-      await updateComment(commentId, updatedContent);
-      onUpdateComments();
-      setEditingCommentId(null);
+      await updateComment(comment.id, draft);
+      await onUpdated();
+      setIsEditing(false);
     } catch (error) {
       console.error("Error updating comment", error);
+      errorAlert("No se pudo guardar el comentario");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDeleteClick = async (commentId) => {
-    Swal.fire({
-      title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar!",
-      cancelButtonText: "Cancelar",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await deleteComment(commentId);
-          onUpdateComments();
-          const mensaje = "El comentario ha sido eliminado.";
-          successAlert(mensaje);
-        } catch (error) {
-          console.error("Error deleting comment", error);
-          const mensaje = "Error al eliminar el comentario";
-          errorAlert(mensaje);
-        }
-      }
-    });
-  };
+  const handleDelete = async () => {
+    const confirmed = await confirmAlert(
+      "¿Eliminar el comentario?",
+      "Esta acción no se puede deshacer.",
+      "Sí, eliminar"
+    );
+    if (!confirmed) return;
 
-  const handleDropdownToggleComments = () => {
-    setIsDropdownOpenComments(!isDropdownOpenComments);
+    try {
+      await deleteComment(comment.id);
+      await onUpdated();
+      successAlert("El comentario ha sido eliminado.");
+    } catch (error) {
+      console.error("Error deleting comment", error);
+      errorAlert("Error al eliminar el comentario");
+    }
   };
 
   return (
-    <div className="comments-panel p-4 rounded">
-      <div className="relative">
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          type="button"
-          className="flex p-2 items-center space-x-2 bg-gray-800 rounded-lg focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-          onClick={handleDropdownToggleComments}
-        >
-          <span className="text-white font-bold">Ver Comentarios</span>
-          <motion.div
-            animate={{ rotate: isDropdownOpenComments ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FaArrowDown className="text-white" />
-          </motion.div>
-        </motion.button>
+    <motion.article
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15 }}
+      onClick={() => !isEditing && onSelect(comment)}
+      className={[
+        "group cursor-pointer rounded-xl border bg-surface p-3 transition-colors",
+        isSelected
+          ? "border-accent shadow-card ring-1 ring-accent"
+          : "border-line hover:border-line-strong",
+      ].join(" ")}
+    >
+      <header className="mb-2 flex items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-wash font-mono text-[11px] font-medium text-accent">
+          {initialsOf(author)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium leading-tight text-content">{author}</p>
+          <p className="font-mono text-[11px] leading-tight text-muted">
+            {relativeTime(createdAt)}
+            {wasEdited && " · editado"}
+          </p>
+        </div>
 
-        <AnimatePresence>
-          {isDropdownOpenComments && (
-            <div className="rounded-lg p-2 h-screen ">
-              {comments.length === 0 ? (
-                <p className="text-gray-900 text-lg text-center font-bold">
-                  No hay comentarios
-                </p>
-              ) : (
-                comments.map((comment, index) => (
-                  <motion.div
-                    key={comment.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.2 }}
-                    className="m-2 rounded-lg  border transition-all duration-300 cursor-pointer"
-                    onClick={() => onCommentClick(comment)}
-                  >
-                    {editingCommentId === comment.id ? (
-                      <div>
-                        <textarea
-                          value={updatedContent}
-                          onChange={(e) => setUpdatedContent(e.target.value)}
-                          className="w-full p-2 border rounded"
-                        />
-                        <div className="flex space-x-2 m-2">
-                          <button
-                            onClick={() => handleEditSubmit(comment.id)}
-                            className="bg-blue-500 text-white px-4 py-2 rounded"
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            onClick={() => setEditingCommentId(null)}
-                            className="bg-red-500 text-white px-4 py-2 rounded"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg p-4 ">
-                        <div className="flex-grow">
-                          <p className="text-gray-800 text-base">
-                            <strong className="font-semibold">
-                              Comentario:
-                            </strong>{" "}
-                            {comment.attributes.correction}
-                          </p>
-                          {comment.attributes.quote && (
-                            <p className="text-gray-600 text-sm mt-1 italic border-l-4 border-blue-900 pl-2 bg-blue-50 rounded p-2">
-                              <strong className="font-semibold">
-                                Texto seleccionado:
-                              </strong>{" "}
-                              {comment.attributes.quote}
-                            </p>
-                          )}
-                          <div className="date-option grid grid-cols-1 md:grid-cols-2 items-center">
-                            <div className="date">
-                              <p className="text-gray-600 text-sm mt-1">
-                                <strong className="font-semibold">
-                                  Fecha de Creación:
-                                </strong>{" "}
-                                <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                                  {new Date(
-                                    comment.attributes.createdAt
-                                  ).toLocaleDateString("es-ES", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              </p>
-                              <p className="text-gray-600 text-sm mt-1">
-                                <strong className="font-semibold">
-                                  Fecha de Modificación:
-                                </strong>{" "}
-                                <span className="inline-flex items-center px-4 py-2 rounded-full bg-yellow-50 text-yellow-700">
-                                  {new Date(
-                                    comment.attributes.updatedAt
-                                  ).toLocaleDateString("es-ES", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="option ">
-                              {(rol.includes("tutor") ||
-                                rol.includes("superadmin")) && (
-                                <div className="flex justify-start gap-2 m-2">
-                                  <button
-                                    onClick={() => handleEditClick(comment)}
-                                    className="text-yellow-500 hover:text-yellow-600 bg-gray-900 p-2 rounded-lg flex items-center justify-center w-12 h-12"
-                                    title="Editar"
-                                  >
-                                    <FaPen size={24} />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteClick(comment.id)
-                                    }
-                                    className="text-red-500 hover:text-red-600 bg-gray-900 p-2 rounded-lg flex items-center justify-center w-12 h-12"
-                                    title="Eliminar"
-                                  >
-                                    <MdDelete size={24} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                ))
-              )}
-            </div>
-          )}
-        </AnimatePresence>
+        {canManage && !isEditing && (
+          <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <button
+              type="button"
+              title="Editar"
+              onClick={(event) => {
+                event.stopPropagation();
+                setDraft(correction);
+                setIsEditing(true);
+              }}
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            >
+              <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              title="Eliminar"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleDelete();
+              }}
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-danger-wash hover:text-danger"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
+            </button>
+          </div>
+        )}
+      </header>
+
+      {quote && (
+        <p className="mb-2 border-l-2 border-accent bg-accent-wash px-2.5 py-1.5 text-xs italic leading-relaxed text-muted">
+          {quote}
+        </p>
+      )}
+
+      {isEditing ? (
+        <div
+          className="flex flex-col gap-2"
+          onClick={(event) => event.stopPropagation()}
+          role="presentation"
+        >
+          <Textarea
+            id={`comment-${comment.id}`}
+            rows={3}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSave} loading={isSaving}>
+              <Check className="h-3.5 w-3.5" strokeWidth={2} />
+              Guardar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>
+              <X className="h-3.5 w-3.5" strokeWidth={2} />
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        // El icono deja claro de un vistazo que lo que sigue es la indicación
+        // del tutor sobre qué hay que mejorar, y no una nota cualquiera.
+        <div className="flex gap-2">
+          <GraduationCap
+            className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+            strokeWidth={1.8}
+            aria-hidden="true"
+          />
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-content">{correction}</p>
+        </div>
+      )}
+    </motion.article>
+  );
+};
+
+CommentCard.propTypes = {
+  comment: PropTypes.object.isRequired,
+  isSelected: PropTypes.bool,
+  canManage: PropTypes.bool,
+  onSelect: PropTypes.func.isRequired,
+  onUpdated: PropTypes.func.isRequired,
+};
+
+/**
+ * Panel lateral de correcciones.
+ *
+ * Se apoya en la convención de los editores colaborativos: el documento manda y
+ * los comentarios viven a su derecha, cada uno con su autor y anclado a la cita
+ * que corrige. Pulsar uno lleva al resaltado correspondiente.
+ */
+const CommentsPanel = ({
+  comments = [],
+  onUpdateComments,
+  onCommentClick,
+  selectedCommentId,
+}) => {
+  const { hasPermission } = usePermission();
+  const canManageComments = hasPermission("MANAGE_COMMENTS");
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
+        <MessageSquare className="h-4 w-4 text-muted" strokeWidth={1.8} />
+        <h2 className="font-display text-sm font-semibold text-content">Comentarios</h2>
+        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs tabular text-muted">
+          {comments.length}
+        </span>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+        {comments.length === 0 ? (
+          <EmptyState
+            icon={MessageSquare}
+            title="Sin comentarios"
+            description="Selecciona un fragmento del documento para dejar la primera corrección."
+          />
+        ) : (
+          comments.map((comment) => (
+            <CommentCard
+              key={comment.id}
+              comment={comment}
+              isSelected={comment.id === selectedCommentId}
+              canManage={canManageComments}
+              onSelect={onCommentClick}
+              onUpdated={onUpdateComments}
+            />
+          ))
+        )}
       </div>
     </div>
   );
@@ -222,6 +240,7 @@ CommentsPanel.propTypes = {
   comments: PropTypes.array,
   onUpdateComments: PropTypes.func,
   onCommentClick: PropTypes.func,
+  selectedCommentId: PropTypes.number,
 };
 
 export default CommentsPanel;

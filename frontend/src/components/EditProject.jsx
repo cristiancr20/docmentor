@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { updateProject } from "../core/Projects";
-import Swal from "sweetalert2";
-import { getTutors } from "../core/Projects";
-import { motion } from "framer-motion";
-import { errorAlert, successAlert } from "./Alerts/Alerts";
 import PropTypes from "prop-types";
+import { motion } from "framer-motion";
+import { updateProject, getTutors } from "../core/Projects";
+import { errorAlert, successAlert } from "./Alerts/Alerts";
 import { decryptData } from "../utils/encryption";
+import Input, { Select, Textarea } from "./ui/Input";
+import Button from "./ui/Button";
+
+const fadeIn = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.18 },
+};
 
 const EditProject = ({ project, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -19,7 +25,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
   useEffect(() => {
     const encryptedUserData = localStorage.getItem("userData");
     if (encryptedUserData) {
-      const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
+      const decryptedUserData = decryptData(encryptedUserData);
       setUserData(decryptedUserData);
     }
   }, []);
@@ -61,7 +67,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
     e.preventDefault();
     try {
       if (!formData.tutor) {
-        Swal.fire("Error!", "Debes seleccionar un tutor.", "error");
+        errorAlert("Debes seleccionar un tutor.");
         return;
       }
 
@@ -69,118 +75,59 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       onUpdate(); // Notifica al componente padre que se actualizó el proyecto
       onClose(); // Cierra el modal
 
-      const mensaje = "El proyecto ha sido editado.";
-      successAlert(mensaje);
+      successAlert("El proyecto ha sido editado.");
     } catch (error) {
       console.error("Error al actualizar el proyecto:", error);
-      const mensaje =
-        error.response?.data?.message || "Error al actualizar el proyecto";
+      const mensaje = error.response?.data?.message || "Error al actualizar el proyecto";
       errorAlert(mensaje);
     }
   };
 
   return (
-    <motion.form
-      onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl p-6 md:p-8"
-      initial={{ scale: 0.95 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="space-y-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <label
-            htmlFor="title"
-            className="block text-gray-700 text-sm font-bold mb-2"
-          >
-            Título
-          </label>
-          <input
-            type="text"
-            name="title"
-            id="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-          />
-        </motion.div>
+    <motion.form {...fadeIn} onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <Input
+        id="title"
+        name="title"
+        label="Título"
+        value={formData.title}
+        onChange={handleChange}
+      />
 
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <label 
-            htmlFor="description"
-          className="block text-gray-700 text-sm font-bold mb-2">
-            Descripción
-          </label>
-          <textarea
-            name="description"
-            id="description"
-            value={formData.description}
-            onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700"
-          />
-        </motion.div>
+      <Textarea
+        id="description"
+        name="description"
+        label="Descripción"
+        rows={4}
+        value={formData.description}
+        onChange={handleChange}
+      />
 
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <label
-            htmlFor="tutor"
-            className="block text-gray-700 font-semibold mb-2"
-          >
-            Seleccionar Tutor
-          </label>
-          <select
-            id="tutor"
-            name="tutor"
-            data-testid="tutor-select"
-            value={formData.tutor}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
-            required
-          >
-            <option value="">Selecciona un tutor</option>
-            {Array.isArray(tutores) && tutores.length > 0 ? (
-              tutores.map((tutor) => (
-                <option key={tutor.id} value={tutor.id}>
-                  {tutor.username}
-                </option>
-              ))
-            ) : (
-              <option disabled>Cargando tutores...</option>
-            )}
-          </select>
-        </motion.div>
+      <Select
+        id="tutor"
+        name="tutor"
+        label="Tutor"
+        data-testid="tutor-select"
+        value={formData.tutor}
+        onChange={handleChange}
+        required
+      >
+        <option value="">Selecciona un tutor</option>
+        {Array.isArray(tutores) && tutores.length > 0 ? (
+          tutores.map((tutor) => (
+            <option key={tutor.id} value={tutor.id}>
+              {tutor.username}
+            </option>
+          ))
+        ) : (
+          <option disabled>Cargando tutores...</option>
+        )}
+      </Select>
 
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="flex items-center justify-between m-2"
-        >
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 px-4 m-2 rounded"
-          >
-            Guardar Cambios
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-red-500 hover:bg-red-700 text-white font-bold p-2 px-4 m-2 rounded"
-          >
-            Cancelar
-          </button>
-        </motion.div>
+      <div className="flex justify-end gap-3 border-t border-line pt-4">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button type="submit">Guardar cambios</Button>
       </div>
     </motion.form>
   );

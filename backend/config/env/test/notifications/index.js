@@ -1,11 +1,13 @@
 
 const request = require('supertest');
+const { authHeader } = require('../helpers/strapi');
 
 describe('GET-POST /notification', () => {
 
     it("should return Notifications", async () => {
         const response = await request(strapi.server.httpServer)
             .get("/api/notifications")
+            .set(authHeader())
             .expect(200) // Expect response http code 200
 
         const { data } = response.body;
@@ -31,6 +33,7 @@ describe('GET-POST /notification', () => {
 
         const response = await request(strapi.server.httpServer)
             .get("/api/notifications")
+            .set(authHeader())
             .expect(200);
 
         const newNotification = response.body;

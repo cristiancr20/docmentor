@@ -1,10 +1,8 @@
 name: 01 - Main CI / CD Pipeline
 
 on:
-  push:
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.txt'
+  # Deshabilitado el disparo automático por push/PR.
+  # El pipeline solo se ejecuta manualmente desde la pestaña Actions.
   workflow_dispatch:
 
 

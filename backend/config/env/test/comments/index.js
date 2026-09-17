@@ -1,9 +1,11 @@
 const request = require('supertest');
+const { authHeader } = require('../helpers/strapi');
 
 describe('GET-POST-UPDATE-DELETE /comments', () => {
     it("should return Comments", async () => {
         const response = await request(strapi.server.httpServer)
             .get("/api/comments")
+            .set(authHeader())
             .expect(200)
 
         const { data } = response.body;
@@ -28,6 +30,7 @@ describe('GET-POST-UPDATE-DELETE /comments', () => {
 
         const response = await request(strapi.server.httpServer)
             .get("/api/comments")
+            .set(authHeader())
             .expect(200);
 
         const newComment = response.body;
@@ -58,6 +61,7 @@ describe('GET-POST-UPDATE-DELETE /comments', () => {
 
         const response = await request(strapi.server.httpServer)
             .get("/api/comments")
+            .set(authHeader())
             .expect(200);
 
         const newComment = response.body;
@@ -73,6 +77,7 @@ describe('GET-POST-UPDATE-DELETE /comments', () => {
 
         const response = await request (strapi.server.httpServer)
             .get("/api/comments")
+            .set(authHeader())
             .expect(200);
 
         const deleteComment = response.body;

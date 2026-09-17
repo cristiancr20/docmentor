@@ -1,177 +1,157 @@
 import React, { useEffect, useState } from "react";
-import Navbar from "../components/Navbar";
-import Header from "../components/Header";
-import { motion } from "framer-motion";
-import { getEmail, saveEmail, updateEmail } from "../core/Setting";
-import { errorAlert, successAlert } from "../components/Alerts/Alerts";
+import { AlertTriangle, ScrollText, Shield, UserCheck, Users } from "lucide-react";
+import AppLayout from "../components/layout/AppLayout";
+import Card from "../components/ui/Card";
+import StatCard from "../components/ui/StatCard";
+import { SkeletonStats, SkeletonRows } from "../components/ui/Skeleton";
+import { useAuth } from "../context/AuthContext";
+import {
+  getAdminUsers,
+  getRols,
+  getAllPermissions,
+  getAdminAuditLogs,
+  getSettings,
+} from "../core/Admin";
+import UsersTab from "./administration/UsersTab";
+import RolesTab from "./administration/RolesTab";
+import AuditTab from "./administration/AuditTab";
+import SettingsTab from "./administration/SettingsTab";
 
+const SECTIONS = [
+  { key: "usuarios", label: "Usuarios" },
+  { key: "roles", label: "Roles" },
+  { key: "auditoria", label: "Auditoría" },
+  { key: "configuracion", label: "Configuración" },
+];
+
+/**
+ * Contenedor del panel de administración.
+ *
+ * Carga en paralelo los datos de las cuatro pestañas y delega el render de cada
+ * una en `src/pages/administration/`. Antes todo vivía en este archivo, mil
+ * líneas con las cuatro secciones mezcladas.
+ */
 function Administration() {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailsSMTP, setEmailsSMTP] = useState([]);
+  const { user } = useAuth();
+
+  const [activeSection, setActiveSection] = useState("usuarios");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [users, setUsers] = useState([]);
+  const [rols, setRols] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [settings, setSettings] = useState([]);
 
   useEffect(() => {
-    fetchsEmails();
-  }, []);
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const results = await Promise.allSettled([
+          getAdminUsers(),
+          getRols(),
+          getAllPermissions(),
+          getAdminAuditLogs({ pageSize: 100 }),
+          getSettings(),
+        ]);
 
-  /* Listar emails */
-  const fetchsEmails = async () => {
-    try {
-      const response = await getEmail();
-      setEmailsSMTP(response.data);
-    } catch (error) {
-      console.error("Error al obtener el email:", error);
-    }
-  };
+        const [usersRes, rolsRes, permissionsRes, auditRes, settingsRes] = results;
 
-  /* CAMBIAR EMAILS EN USO */
-  const handleSetActual = async (emailId) => {
-    try {
-      await updateEmail(emailId);
-  
-      // Actualizar el estado localmente sin reorganizar la tabla
-      setEmailsSMTP((prevEmails) =>
-        prevEmails.map((email) => ({
-          ...email,
-          attributes: {
-            ...email.attributes,
-            isActual: email.id === emailId, // Solo el email seleccionado será true
-          },
-        }))
-      );
-  
-      successAlert("Email actualizado correctamente");
-    } catch (error) {
-      console.error(
-        "Error al actualizar el email:",
-        error.response ? error.response.data : error.message
-      );
-      errorAlert();
-    }
-  };
-  
+        if (usersRes.status === "fulfilled") setUsers(usersRes.value);
+        if (rolsRes.status === "fulfilled") setRols(rolsRes.value);
+        if (permissionsRes.status === "fulfilled") setPermissions(permissionsRes.value);
+        if (auditRes.status === "fulfilled") setAuditLogs(auditRes.value);
+        if (settingsRes.status === "fulfilled") setSettings(settingsRes.value);
 
-  /* Guardar emails */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const email_notifications = {
-      email_notifications: email,
+        const failed = results.filter((r) => r.status === "rejected");
+        if (failed.length > 0) {
+          console.error("Errores al cargar el dashboard:", failed);
+          setError("Algunas secciones no pudieron cargarse correctamente");
+        }
+      } catch (err) {
+        console.error("Error cargando el dashboard de administración:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    try {
-      await saveEmail(email_notifications);
-      successAlert("Email creado correctamente");
-      setEmail("");
-      fetchsEmails(); // Recargar la lista después de guardar
-    } catch (error) {
-      console.error(
-        "Error al crear el email:",
-        error.response ? error.response.data : error.message
-      );
-      errorAlert();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <AppLayout title="Panel de administración" description="Cargando los datos del sistema…">
+        <div className="flex flex-col gap-6">
+          <SkeletonStats count={4} />
+          <Card>
+            <SkeletonRows count={6} />
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
-    <div>
-      <Navbar />
-      <Header />
-      <div className="container mx-auto px-4 mt-10 mb-10 flex flex-col lg:flex-row gap-8 justify-center items-start">
-        {/* Formulario */}
-        <motion.div
-          className="bg-gray-800 p-6 rounded-lg shadow-lg text-white w-full lg:w-1/3"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="text-2xl font-semibold mb-4 text-center">
-            Configuración de Correo
-          </h2>
-          <label className="block mb-4">
-            <span className="text-gray-300">Correo de notificación:</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full p-2 border border-gray-700 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-gray-600"
-            />
-          </label>
-          <motion.button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 text-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isSubmitting ? "Guardando..." : "Guardar Correo"}
-          </motion.button>
-        </motion.div>
-
-        {/* Tabla */}
-        <div className="w-full lg:w-2/3 overflow-x-auto">
-          <motion.table
-            className="min-w-full bg-gray-900 text-white border border-gray-700 rounded-lg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <thead>
-              <tr className="bg-gray-700">
-                <th className="py-2 px-4 border-b">Correo Electrónico</th>
-                <th className="py-2 px-4 border-b">Estado</th>
-                <th className="py-2 px-4 border-b">Acción</th>
-              </tr>
-            </thead>
-            <motion.tbody>
-              {emailsSMTP.length > 0 ? (
-                emailsSMTP.map((email, index) => (
-                  <motion.tr
-                    key={email.id}
-                    className="border-b border-gray-700 hover:bg-gray-800 transition-all"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <td className="py-2 px-4 text-center">
-                      {email.attributes.email_notifications}
-                    </td>
-                    <td className="py-2 px-4 text-center">
-                      {email.attributes.isActual ? (
-                        <span className="text-green-400 font-semibold">
-                          En uso
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">No en uso</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4 text-center">
-                      {!email.attributes.isActual && (
-                        <button
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                          onClick={() => handleSetActual(email.id)}
-                        >
-                          Volver Actual
-                        </button>
-                      )}
-                    </td>
-                  </motion.tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="text-center py-4 text-gray-400">
-                    No hay correos registrados.
-                  </td>
-                </tr>
-              )}
-            </motion.tbody>
-          </motion.table>
-        </div>
+    <AppLayout
+      title="Panel de administración"
+      description={`Hola ${user?.username ?? ""}. Gestiona usuarios, roles, auditoría y configuración del sistema.`}
+    >
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total usuarios" value={users.length} icon={Users} tone="accent" />
+        <StatCard
+          label="Usuarios activos"
+          value={users.filter((u) => u.isActive).length}
+          icon={UserCheck}
+          tone="ok"
+        />
+        <StatCard label="Roles" value={rols.length} icon={Shield} tone="info" />
+        <StatCard label="Logs recientes" value={auditLogs.length} icon={ScrollText} tone="warn" />
       </div>
-    </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-2 rounded-xl border border-line bg-danger-wash px-4 py-3 text-sm text-danger"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.8} />
+          {error}
+        </div>
+      )}
+
+      <div className="mb-6 flex flex-wrap gap-1 border-b border-line">
+        {SECTIONS.map((section) => (
+          <button
+            key={section.key}
+            type="button"
+            onClick={() => setActiveSection(section.key)}
+            className={[
+              "-mb-px border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+              activeSection === section.key
+                ? "border-accent text-accent"
+                : "border-transparent text-muted hover:text-content",
+            ].join(" ")}
+          >
+            {section.label}
+          </button>
+        ))}
+      </div>
+
+      {activeSection === "usuarios" && (
+        <UsersTab users={users} setUsers={setUsers} rols={rols} />
+      )}
+
+      {activeSection === "roles" && <RolesTab rols={rols} permissions={permissions} />}
+
+      {activeSection === "auditoria" && (
+        <AuditTab auditLogs={auditLogs} setAuditLogs={setAuditLogs} />
+      )}
+
+      {activeSection === "configuracion" && (
+        <SettingsTab settings={settings} setSettings={setSettings} />
+      )}
+    </AppLayout>
   );
 }
 

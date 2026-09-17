@@ -19,8 +19,11 @@ export const getPrimaryRole = (roles) => {
 
 export const ROLE_ROUTES = {
   tutor: "/tutor/dashboard",
-  superadmin: "/tutor/dashboard",
+  // Apuntaba a /tutor/dashboard, así que al superadmin lo dejaba en el panel de
+  // revisión en lugar del suyo.
+  superadmin: "/admin/dashboard",
   estudiante: "/student/dashboard",
+  coordinador: "/coordinator/dashboard",
 };
 
 export const USER_STORAGE_KEYS = ["rol", "username", "email", "userId"];
@@ -35,7 +38,7 @@ export const saveUserData = (user, userRoles) => {
 
 
   // Convertir el objeto a JSON y encriptarlo
-  const encryptedUserData = encryptData(JSON.stringify(userData));
+  const encryptedUserData = encryptData(userData);
 
   // Guardar el cuerpo encriptado como un solo item en localStorage
   localStorage.setItem("userData", encryptedUserData);

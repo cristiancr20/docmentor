@@ -1,9 +1,11 @@
 const request = require('supertest');
+const { authHeader } = require('../helpers/strapi');
 
 describe("GET-POST /documents", () => {
     it("should return Documents", async () => {
         const response = await request(strapi.server.httpServer)
             .get("/api/documents")
+            .set(authHeader())
             .expect(200)
 
         const { data } = response.body;
@@ -27,6 +29,7 @@ describe("GET-POST /documents", () => {
 
         const response = await request(strapi.server.httpServer)
             .get("/api/documents")
+            .set(authHeader())
             .expect(200);
 
         const newDocument = response.body;

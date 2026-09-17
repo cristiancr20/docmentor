@@ -1,68 +1,90 @@
-/* const Strapi = require("@strapi/strapi");
-const fs = require("fs");
-
-let instance;
-
-async function setupStrapi() {
-  if (!instance) {
-    await Strapi.createStrapi().load();
-    instance = strapi;
-    
-    await instance.server.mount();
-  }
-  return instance;
-}
-
-async function cleanupStrapi() {
-  const dbSettings = strapi.config.get("database.connection");
-
-  //close server to release the db-file
-  await strapi.server.httpServer.close();
-
-  // close the connection to the database before deletion
-  await strapi.db.connection.destroy();
-
-  //delete test database after all tests have completed
-  if (dbSettings && dbSettings.connection && dbSettings.connection.filename) {
-    const tmpDbFile = dbSettings.connection.filename;
-    if (fs.existsSync(tmpDbFile)) {
-      fs.unlinkSync(tmpDbFile);
-    }
-  }
-}
-
-module.exports = { setupStrapi, cleanupStrapi }; */
-
 const fs = require('fs');
+const path = require('path');
 const strapi = require('@strapi/strapi');
 
 let instance;
-let server;
+let authToken;
+
+// Content-types sobre los que la suite hace peticiones HTTP. Se conceden al rol
+// `authenticated` al preparar el entorno, porque la base de test arranca vacía
+// y sin permisos ninguna petición pasaría del 403.
+const TEST_ACTIONS = [
+  'api::project.project',
+  'api::document.document',
+  'api::comment.comment',
+  'api::notification.notification',
+  'api::rol.rol',
+].flatMap((uid) => ['find', 'findOne', 'create', 'update', 'delete'].map((a) => `${uid}.${a}`));
+
+TEST_ACTIONS.push(
+  'plugin::users-permissions.user.find',
+  'plugin::users-permissions.user.findOne'
+);
+
+const dbFile = () => path.resolve(process.cwd(), '.tmp/test.db');
 
 async function setupStrapi() {
+  // Base limpia en cada ejecución: los tests crean y borran registros, así que
+  // arrastrar estado entre corridas hace que fallen según el orden.
+  const file = dbFile();
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+
   instance = await strapi().load();
   instance.server.mount();
   const app = instance.server.app;
-  app.use(instance.server.router.routes())
-  app.use(instance.server.router.allowedMethods())
-  server = instance.server.app.callback();
+  app.use(instance.server.router.routes());
+  app.use(instance.server.router.allowedMethods());
 
+  await grantAuthenticatedPermissions();
+  authToken = await createTestUserToken();
 }
 
-async function cleanupStrapi() {
-  const dbSettings = instance.config.get("database.connection.default.settings");
+async function grantAuthenticatedPermissions() {
+  const role = await instance.db
+    .query('plugin::users-permissions.role')
+    .findOne({ where: { type: 'authenticated' } });
 
-  //close server to release the db-file
-  await instance.destroy();
-  //delete test database after all tests have completed
-
-  if (dbSettings && dbSettings.filename) {
-    const tmpDbFile = `${__dirname}/../${dbSettings.filename}`;
-    if (fs.existsSync(tmpDbFile)) {
-      fs.unlinkSync(tmpDbFile);
+  for (const action of TEST_ACTIONS) {
+    const exists = await instance.db
+      .query('plugin::users-permissions.permission')
+      .findOne({ where: { action, role: role.id } });
+    if (!exists) {
+      await instance.db
+        .query('plugin::users-permissions.permission')
+        .create({ data: { action, role: role.id } });
     }
   }
 }
 
+async function createTestUserToken() {
+  const role = await instance.db
+    .query('plugin::users-permissions.role')
+    .findOne({ where: { type: 'authenticated' } });
 
-module.exports = { setupStrapi, cleanupStrapi }; 
+  const user = await instance.db.query('plugin::users-permissions.user').create({
+    data: {
+      username: 'test-runner',
+      email: 'test-runner@docmentor.test',
+      password: 'TestRunner123',
+      provider: 'local',
+      confirmed: true,
+      blocked: false,
+      isActive: true,
+      role: role.id,
+    },
+  });
+
+  return instance.plugins['users-permissions'].services.jwt.issue({ id: user.id });
+}
+
+// Cabecera lista para usar en supertest: `.set(authHeader())`.
+const authHeader = () => ({ Authorization: `Bearer ${authToken}` });
+
+async function cleanupStrapi() {
+  await instance.destroy();
+
+  const file = dbFile();
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+}
+
+module.exports = { setupStrapi, cleanupStrapi, authHeader };

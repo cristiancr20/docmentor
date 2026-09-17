@@ -1,0 +1,117 @@
+# Iteration 13 Log
+
+## Metadata
+
+- **Task ID**: US-013
+- **Task Title**: Refactorizar Dashboard de Admin
+- **Description**: Como administrador, quiero gestionar usuarios, roles y ver toda la actividad del sistema.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-11T15:05:38.387Z
+- **Ended At**: 2026-07-11T15:15:23.244Z
+- **Duration**: 9m 44s
+- **Input Tokens**: 207
+- **Output Tokens**: 43376
+- **Total Tokens**: 43583
+- **Agent**: claude
+- **Model**: claude-fable-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and existing dashboard structure to understand the codebase state.
+[94m[Bash][0m List repo root and read recent progress notes $ ls /Users/cristian/orca/docmentor && tail -100 /Users/cristian/orca/docmentor/.ralph-tui/progress.md
+[94m[Bash][0m Read top of progress.md with patterns and recent entries $ head -200 /Users/cristian/orca/docmentor/.ralph-tui/progress.md
+[94m[Bash][0m List frontend source tree $ ls -R /Users/cristian/orca/docmentor/frontend/src | head -80
+[94m[Bash][0m List pages and backend APIs, read App.js $ ls /Users/cristian/orca/docmentor/frontend/src/pages /Users/cristian/orca/docmentor/backend/src/api ...
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/Administration.jsx[0m
+[94m[Bash][0m Read frontend API core modules $ cat /Users/cristian/orca/docmentor/frontend/src/core/Audit.js /Users/cristian/orca/docmentor/fronten...
+[94m[Bash][0m Read rol routes/controller and users-permissions extension routes $ cat /Users/cristian/orca/docmentor/backend/src/api/rol/routes/rol.js /Users/cristian/orca/docmentor/...
+[94m[Bash][0m Read user extension, setting schema/controller, audit routes $ cat /Users/cristian/orca/docmentor/backend/src/api/audit/routes/audit.js
+[94m[Bash][0m Read user schema extension and permission context/gate $ cat /Users/cristian/orca/docmentor/frontend/src/components/PermissionGate.js
+[94m[Bash][0m Check seeded permission codes, lint scripts, Projects.js helpers $ grep -n "getAllUsers\|assignTutorToProject\|getAllProjects" /Users/cristian/orca/docmentor/frontend/...
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/CoordinatorDashboard.jsx[0m
+Now let me check how the frontend attaches JWT tokens, the encryption util, the audit controller export, and the seeder's role-permission assignment.
+[94m[Bash][0m Read Projects.js helpers, encryption util, seeder $ grep -n "Coordinador\|superadmin\|Superadmin\|assign" /Users/cristian/orca/docmentor/backend/src/ind...
+[94m[Bash][0m Check audit export controller and AuthContext roles $ grep -rn "roles\|rols" /Users/cristian/orca/docmentor/frontend/src/context/AuthContext.js | head
+[94m[Bash][0m Read seeder role assignment and audit controller $ cat /Users/cristian/orca/docmentor/backend/src/api/audit/controllers/audit.js
+Let me check the audit service return shape and rol schema.
+[94m[Bash][0m Read audit service, rol and permission schemas $ cat /Users/cristian/orca/docmentor/backend/src/api/permission/content-types/permission/schema.json
+[94m[Bash][0m Check how AuditLogs.jsx consumes the audit response $ grep -n "getAuditLogs\|response\.\|\.data\|results" /Users/cristian/orca/docmentor/frontend/src/page...
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/content-types/user/schema.json[0m edit: "    "isInstitutional": {
+      "type": "boolean"
+ ..." → "    "isInstitutional": {
+      "type": "boolean"
+ ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/content-types/setting/schema.json[0m edit: "    "audit_log_retention_days": {
+      "type": "i..." → "    "audit_log_retention_days": {
+      "type": "i..."
+
+[91m[Error: <tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>][0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/content-types/setting/schema.json[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/content-types/setting/schema.json[0m edit: "    "audit_log_retention_days": {
+      "type": "i..." → "    "audit_log_retention_days": {
+      "type": "i..."
+Now the admin user CRUD methods in the users-permissions extension controller:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/controllers/User.js[0m edit: "  async anonymize(ctx) {" → "  async adminListUsers(ctx) {
+    const { authenti..."
+
+[91m[Error: <tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>][0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/controllers/User.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/controllers/User.js[0m edit: "  async anonymize(ctx) {
+    const { authenticate,..." → "  async adminListUsers(ctx) {
+    const { authenti..."
+Now the routes for those endpoints:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/routes/index.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/routes/index.js[0m edit: "  {
+    method: 'DELETE',
+    path: '/users/:id/an..." → "  {
+    method: 'DELETE',
+    path: '/users/:id/an..."
+Now seed all permissions to the Admin role in the bootstrap seeder:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m edit: "            for (const permission of coordinatorPe..." → "            for (const permission of coordinatorPe..."
+Backend done. Now the frontend API module `core/Admin.js` with authenticated requests:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Admin.js[0m "import axios from "axios";
+import { API_URL } from "./config";
+import { decryptData } from "../utils/encryption";
+
+// Obtener headers con el JWT desencriptado desde localStorage
+const getAuthHeaders =... (7189 chars)"
+Now the main piece — rewriting `Administration.jsx` as the full admin dashboard:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/pages/Administration.jsx[0m "import React, { useEffect, useState, useCallback } from "react";
+import Navbar from "../components/Navbar";
+import Header from "../components/Header";
+import { motion } from "framer-motion";
+import { ... (43086 chars)"
+[94m[Bash][0m Read Alerts helper $ cat /Users/cristian/orca/docmentor/frontend/src/components/Alerts/Alerts.js
+Alerts are fine. Now running quality checks:
+[94m[Bash][0m Run frontend typecheck $ cd /Users/cristian/orca/docmentor/frontend && npm run typecheck 2>&1 | tail -20
+[94m[Bash][0m Lint the new/changed frontend files directly $ echo "exit: $?"
+[94m[Bash][0m Run full frontend lint and backend lint/typecheck $ cd ../backend && npm run lint && npm run typecheck
+[94m[Bash][0m Syntax-check backend files and JSON schemas, show git status $ node --check /Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/controllers/Use...
+[94m[Bash][0m Restore generated eslint report, show full status $ git checkout -- frontend/eslint-report.html && git status --short
+All changes are in place. Now documenting learnings in progress.md:
+[94m[Bash][0m No-op placeholder $ cat > /tmp/us013-entry.md << 'EOF' EOF echo done
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "- **Permission Seeding**: Bootstrap seeder should ..." → "- **Permission Seeding**: Bootstrap seeder should ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "## [2026-07-11] - US-012" → "## [2026-07-11] - US-013
+
+### Implementation
+Refac..."
+US-013 is complete. I refactored the Admin dashboard into a full administration panel meeting all acceptance criteria:
+
+**Frontend** (`Administration.jsx` rewritten + new `core/Admin.js`):
+- **Four sections as tabs**: Usuarios, Roles, Auditoría, Configuración, plus metric cards (total/active users, roles, recent logs) following the established dashboard pattern (Framer Motion, light theme like the Coordinator dashboard).
+- **Usuarios**: searchable table with create/edit modal (username, email, password, role checkboxes, active toggle) and soft-delete with confirmation — action buttons gated behind `MANAGE_USERS`.
+- **Roles**: role list with a permissions panel grouped by module; checkboxes toggle permissions via the existing `POST/DELETE /rols/:id/permissions` endpoints, read-only for users without `MANAGE_ROLES`.
+- **Auditoría**: last 100 logs with entity-type filter and PDF/XLSX export buttons that download via the authenticated `/api/audit-logs/export` endpoint (blob download).
+- **Configuración**: SMTP email management (preserving the previous functionality), audit retention days (min 1825 enforced), and backup settings (enabled toggle + Diario/Semanal/Mensual frequency), gated behind `MANAGE_SETTINGS`.
+
+**Backend**:
+- New admin user endpoints (`GET/POST /api/admin/users`, `PUT/DELETE /api/admin/users/:id`) in the users-permissions extension with `VIEW_USERS`/`MANAGE_USERS` permission checks, audit logging on every mutation, and sanitized responses. Delete is a soft delete: `isActive: false` + `blocked: true` (added `isActive` to the user schema).
+- Setting schema gained `backup_enabled` and `backup_frequency` fields.
+- Bootstrap seeder now assigns all permissions to the Admin role.
+
+**Quality checks**: frontend `npm run typecheck` and `npm run lint` pass (exit 0), backend lint/typecheck pass (echo stubs), and all backend files pass `node --check` / JSON validation. One notable fix along the way: existing Setting/Audit frontend modules never sent JWT headers even though those backend controllers require them — the new `Admin.js` module sends the decrypted Bearer token on all protected calls. Learnings appended to `.ralph-tui/progress.md`, including three new reusable patterns.
+
+<promise>COMPLETE</promise>

@@ -1,0 +1,67 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-015
+- **Task Title**: Implementar Sistema de Notificaciones en Tiempo Real
+- **Description**: Como usuario, quiero recibir notificaciones instantáneas de cambios en mis proyectos, para estar siempre actualizado.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-12T21:37:29.499Z
+- **Ended At**: 2026-07-12T21:39:03.672Z
+- **Duration**: 1m 34s
+- **Input Tokens**: 80
+- **Output Tokens**: 5599
+- **Total Tokens**: 5679
+- **Agent**: claude
+- **Model**: claude-opus-4-8
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress notes and current state of the notification-related files.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/tasks/prd.json[0m
+The progress.md is nearly empty. There are already notification-related files modified. Let me examine the current state of these files.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/content-types/notification/schema.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/controllers/notification.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/routes/notification.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/services/notification.js[0m
+Backend looks well-developed. Let me look at the frontend components and remaining modified files.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/NotificationBell.jsx[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/__tests__/NotificationBell.test.jsx[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Notification.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/Navbar.jsx[0m
+Implementation looks substantially complete. Let me verify the trigger wiring in the controllers and the user schema.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/comment/controllers/comment.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/content-types/user/schema.json[0m
+The implementation is essentially complete. Let me verify the document schema has the inverse relation and check the available quality scripts.
+[94m[Bash][0m $ cat frontend/package.json | grep -A20 '"scripts"'
+Everything is wired. Let me run the quality checks and the notification tests.
+[94m[Bash][0m $ echo "=== TYPECHECK ===" && npm run typecheck 2>&1 | tail -20
+Both pass. Let me run the notification component tests to confirm they pass.
+[94m[Bash][0m $ npx react-scripts test --watchAll=false src/components/__tests__/NotificationBell.test.jsx 2>&1 | ta...
+All acceptance criteria are met and all checks pass. The work was implemented in a previous iteration; I've verified it meets the spec. Now let me document learnings in progress.md.
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "## Codebase Patterns (Study These First)
+
+*Add reu..." → "## Codebase Patterns (Study These First)
+
+- **Noti..."
+[94m[Bash][0m $ no falla la suite. No requirió cambio.   - El backend no tiene ESLint/tsc reales (scripts hacen `ech...
+US-015 está completo. Verifiqué que todos los acceptance criteria se cumplen:
+
+| Criterio | Estado |
+|---|---|
+| Tecnología elegida | ✅ Polling cada 30s (documentado en `NotificationBell.jsx`) |
+| Notificaciones para 3 eventos | ✅ `notifyDocumentUploaded`, `notifyDocumentStatusChanged`, `notifyCommentReceived` cableados en los controllers de document/comment |
+| Visibles en navbar/bell | ✅ `<NotificationBell />` montado en `Navbar.jsx` con badge de no leídas |
+| Marcar como leídas | ✅ `/notifications/:id/read` y `/me/read-all` + UI |
+| Preferencias por usuario | ✅ enum `notificationPreference` (email/in_app/both) + endpoints GET/PUT `/me/preferences` |
+| Historial últimos 30 días | ✅ `getMyNotifications` filtra 30 días + `cleanupOldNotifications` de retención |
+| `npm run lint` | ✅ pasa (eslint frontend, sin errores) |
+| `npm run typecheck` | ✅ pasa (tsc --noEmit, sin errores) |
+
+Además, los 6 tests de `NotificationBell.test.jsx` pasan. El grueso ya se había implementado en una iteración previa; esta iteración lo verificó contra el spec y documentó los patrones reutilizables en `progress.md`.
+
+<promise>COMPLETE</promise>

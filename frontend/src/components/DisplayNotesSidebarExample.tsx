@@ -1,20 +1,13 @@
 import * as React from "react";
-import {
-  Button,
-  PdfJs,
-  Position,
-  PrimaryButton,
-  Tooltip,
-  Viewer,
-} from "@react-pdf-viewer/core";
+import { Viewer } from "@react-pdf-viewer/core";
+import { MessageSquarePlus } from "lucide-react";
 
-import { toolbarPlugin, ToolbarSlot } from "@react-pdf-viewer/toolbar";
+import { toolbarPlugin } from "@react-pdf-viewer/toolbar";
+import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 
-/* import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout'; */
 import {
   HighlightArea,
   highlightPlugin,
-  MessageIcon,
   RenderHighlightContentProps,
   RenderHighlightTargetProps,
   RenderHighlightsProps,
@@ -23,11 +16,21 @@ import {
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
+import { useAppTheme } from "../utils/useAppTheme";
+import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
+
 interface Note {
   id: number;
   content: string;
   highlightAreas: HighlightArea[];
   quote: string;
+  // Color del resaltado. Sin valor se pinta amarillo, que es el de los
+  // comentarios; el comparador lo usa para marcar en rojo lo eliminado y en
+  // verde lo agregado.
+  color?: string;
+  // Los resaltados del comparador son informativos: no abren el panel de
+  // comentario al pulsarlos.
+  readOnly?: boolean;
 }
 
 interface HighlightExampleProps {
@@ -36,6 +39,13 @@ interface HighlightExampleProps {
   onAddNote: (note: Note) => void;
   canComment: boolean;
   selectedHighlightId?: number | null;
+  // Número de página (base 1) al que saltar. Lo usa el comparador para llevar
+  // la vista al cambio que se acaba de pulsar en la lista.
+  goToPage?: number | null;
+  // Entrega el elemento que hace scroll de verdad una vez cargado el PDF. El
+  // comparador lo necesita para sincronizar el desplazamiento entre los dos
+  // documentos.
+  onScrollerReady?: (element: HTMLElement | null) => void;
 }
 
 const HighlightExample: React.FC<HighlightExampleProps> = ({
@@ -44,140 +54,165 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   onAddNote,
   canComment,
   selectedHighlightId,
+  goToPage,
+  onScrollerReady,
 }) => {
   const [message, setMessage] = React.useState("");
   let noteId = notes.length;
-  const viewerRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    if (selectedHighlightId !== null && selectedHighlightId !== undefined) {
-      const selectedNote = notes.find(
-        (note) => note.id === selectedHighlightId
-      );
-      if (selectedNote && selectedNote.highlightAreas.length > 0) {
-        const area = selectedNote.highlightAreas[0];
-        const pageIndex = area.pageIndex;
+  // El visor trae su propio tema. Sin pasárselo, en oscuro dejaba los iconos de
+  // la barra en negro sobre fondo oscuro y no se distinguían.
+  const theme = useAppTheme();
 
-        // Scroll to the page first
-        if (viewerRef.current) {
-          viewerRef.current.jumpToPage(pageIndex);
+  // `Viewer` es un componente de función: no acepta ref, así que el
+  // `viewerRef.current.jumpToPage(...)` anterior nunca llegaba a ejecutarse
+  // (React avisaba con "Function components cannot be given refs") y pulsar un
+  // comentario no saltaba a su resaltado. La navegación va por su plugin.
+  const pageNavigationPluginInstance = pageNavigationPlugin();
+  const { jumpToPage } = pageNavigationPluginInstance;
 
-          // Wait for the page to be rendered
-          setTimeout(() => {
-            const pageElement = document.querySelector(
-              `[data-page-number="${pageIndex + 1}"]`
-            );
-            if (pageElement) {
-              const pageHeight = pageElement.clientHeight;
-              const scrollPosition = pageHeight * (area.top / 100);
-
-              pageElement.scrollIntoView({ behavior: "smooth" });
-              window.scrollBy(0, scrollPosition - window.innerHeight / 3);
-            }
-          }, 300);
-        }
-      }
-    }
-  }, [selectedHighlightId, notes]);
-
+  /**
+   * Lleva la vista al resaltado seleccionado.
+   *
+   * Antes había dos efectos duplicados intentando lo mismo, ambos apoyados en
+   * el ref inoperante del Viewer.
+   */
   const scrollToHighlight = React.useCallback(
-    (highlightAreas: any[]) => {
-      if (!highlightAreas || highlightAreas.length === 0) return;
-
-      // Encontrar el primer área válida (con dimensiones no nulas)
-      const validArea = highlightAreas.find(
+    (highlightAreas: HighlightArea[]) => {
+      const validArea = (highlightAreas || []).find(
         (area) => area.height > 0 && area.width > 0 && area.pageIndex >= 0
       );
 
       if (!validArea) return;
 
-      const pageIndex = validArea.pageIndex;
+      jumpToPage(validArea.pageIndex);
 
-      if (viewerRef.current) {
-        // Primero, navegar a la página correcta
-        viewerRef.current.jumpToPage(pageIndex);
+      // La página tiene que renderizarse antes de poder ajustar el scroll fino.
+      setTimeout(() => {
+        const pageElement = document.querySelector(
+          `[data-page-number="${validArea.pageIndex + 1}"]`
+        );
+        if (!pageElement || !containerRef.current) return;
 
-        // Esperar a que la página se renderice
-        setTimeout(() => {
-          const pageElement = document.querySelector(
-            `[data-page-number="${pageIndex + 1}"]`
-          );
+        const containerHeight = containerRef.current.clientHeight;
+        const scrollPosition = (pageElement.clientHeight * validArea.top) / 100;
 
-          if (pageElement) {
-            const containerHeight =
-              containerRef.current?.clientHeight || window.innerHeight;
-            const pageHeight = pageElement.clientHeight;
-
-            // Calcular la posición de scroll basada en el porcentaje de la página
-            const scrollPosition = (pageHeight * validArea.top) / 100;
-
-            // Ajustar el scroll del contenedor
-            if (containerRef.current) {
-              containerRef.current.scrollTop =
-                scrollPosition - containerHeight / 3;
-            }
-
-            // Resaltar visualmente el área
-            const highlight = document.querySelector(
-              `[data-highlight-id="${selectedHighlightId}"]`
-            );
-            if (highlight) {
-              highlight.classList.add("highlight-flash");
-              setTimeout(() => {
-                highlight.classList.remove("highlight-flash");
-              }, 2000);
-            }
-            console.log("Scrolling to:", {
-              pageIndex: validArea.pageIndex,
-              top: validArea.top,
-              scrollPosition,
-            });
-          }
-        }, 300);
-      }
+        containerRef.current.scrollTop =
+          pageElement.getBoundingClientRect().top + scrollPosition - containerHeight / 3;
+      }, 300);
     },
-    [selectedHighlightId]
+    [jumpToPage]
   );
 
   React.useEffect(() => {
-    if (selectedHighlightId !== null && selectedHighlightId !== undefined) {
-      const selectedNote = notes.find(
-        (note) => note.id === selectedHighlightId
-      );
-      if (selectedNote && selectedNote.highlightAreas) {
-        scrollToHighlight(selectedNote.highlightAreas);
-      }
+    if (selectedHighlightId === null || selectedHighlightId === undefined) return;
+
+    const selectedNote = notes.find((note) => note.id === selectedHighlightId);
+    if (selectedNote?.highlightAreas) {
+      scrollToHighlight(selectedNote.highlightAreas);
     }
   }, [selectedHighlightId, notes, scrollToHighlight]);
 
-  const renderHighlightTarget = (props: RenderHighlightTargetProps) => (
+  React.useEffect(() => {
+    if (!goToPage) return;
+    // El plugin trabaja con índices base 0.
+    jumpToPage(goToPage - 1);
+  }, [goToPage, jumpToPage]);
 
-    <div
-      style={{
-        background: "cyan",
-        display: canComment ? "flex" : "none", 
-        position: "absolute",
-        left: `${props.selectionRegion.left}%`,
-        top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
-        transform: "translate(0, 8px)",
-        zIndex: 1,
-      }}
-    >
-      <Tooltip
-        position={Position.TopCenter}
-        target={
-          <Button onClick={props.toggle}>
-            <MessageIcon />
-          </Button>
-        }
-        content={() => <div style={{ width: "100px" }}>Agregar comentario</div>}
-        offset={{ left: 0, top: -8 }}
-      />
+  /**
+   * Descarta las selecciones que el plugin de resaltado no sabe procesar.
+   *
+   * Su manejador asume que la selección empieza y acaba en nodos de texto: hace
+   * `range.startContainer.parentNode` y usa `startOffset` como posición de
+   * carácter. Si la selección arranca en un elemento (por ejemplo al empezar a
+   * arrastrar desde un hueco entre fragmentos), ese offset es en realidad un
+   * índice de hijo y acaba lanzando
+   * "IndexSizeError: There is no child at offset N", que además rompe el
+   * arrastre.
+   *
+   * Aquí se colapsa la selección en fase de captura, antes de que llegue al
+   * plugin: al quedar vacía, su manejador sale por su propia comprobación. El
+   * efecto visible es que esa selección concreta no ofrece el botón de
+   * comentar, en lugar de reventar.
+   */
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return undefined;
 
-      
-    </div>
-  );
+    const isTextNodeInLayer = (node: Node | null) =>
+      node?.nodeType === Node.TEXT_NODE &&
+      node.parentElement?.classList.contains("rpv-core__text-layer-text");
+
+    const discardUnsupportedSelection = () => {
+      const selection = document.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+
+      // Solo se comprueba el inicio. El plugin sí contempla varios casos para el
+      // extremo final (que caiga en la capa de resaltados, o en el propio
+      // contenedor), y exigir también ahí un nodo de texto descartaba
+      // selecciones perfectamente válidas: dejaba de poder comentarse.
+      const range = selection.getRangeAt(0);
+      if (!isTextNodeInLayer(range.startContainer)) {
+        selection.removeAllRanges();
+      }
+    };
+
+    container.addEventListener("mouseup", discardUnsupportedSelection, true);
+    return () => container.removeEventListener("mouseup", discardUnsupportedSelection, true);
+  }, []);
+
+  /**
+   * El scroll no ocurre en nuestro contenedor sino en el que monta el visor por
+   * dentro, así que hay que localizarlo una vez cargado el documento.
+   */
+  const handleDocumentLoad = React.useCallback(() => {
+    if (!onScrollerReady) return;
+
+    const inner = containerRef.current?.querySelector<HTMLElement>(".rpv-core__inner-pages");
+    onScrollerReady(inner ?? containerRef.current);
+  }, [onScrollerReady]);
+
+  // Solo al desmontar: con `onScrollerReady` en las dependencias, cualquier
+  // render habría anulado el registro recién hecho. Se guarda en una ref para
+  // no capturar una versión obsoleta de la función.
+  const scrollerReadyRef = React.useRef(onScrollerReady);
+  scrollerReadyRef.current = onScrollerReady;
+
+  React.useEffect(() => () => scrollerReadyRef.current?.(null), []);
+
+  /**
+   * Botón que aparece al soltar una selección sobre el documento.
+   *
+   * Era un bloque con `background: cyan` alrededor del botón de la librería:
+   * un rectángulo de color chillón que no se parecía a nada del resto de la
+   * interfaz. Ahora es una píldora con el acento, y el color del contenedor
+   * desaparece porque el botón ya lo aporta.
+   */
+  const renderHighlightTarget = (props: RenderHighlightTargetProps) => {
+    if (!canComment) return null;
+
+    return (
+      <div
+        className="absolute z-10"
+        style={{
+          left: `${props.selectionRegion.left}%`,
+          top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
+          transform: "translate(0, 8px)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={props.toggle}
+          title="Comentar la selección"
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-2.5 py-1.5 text-xs font-medium text-on-accent shadow-pop transition-colors hover:bg-accent-soft"
+        >
+          <MessageSquarePlus className="h-3.5 w-3.5" strokeWidth={2} />
+          Comentar
+        </button>
+      </div>
+    );
+  };
   
   const renderHighlightContent = (props: RenderHighlightContentProps) => {
     const addNote = () => {
@@ -193,43 +228,50 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
       }
     };
 
-    return canComment ? (
+    if (!canComment) return null;
+
+    return (
       <div
+        className="absolute z-10 w-72 rounded-xl border border-line bg-surface p-3 shadow-pop"
         style={{
-          background: "#fff",
-          border: "1px solid rgba(0, 0, 0, .3)",
-          borderRadius: "2px",
-          padding: "8px",
-          position: "absolute",
           left: `${props.selectionRegion.left}%`,
           top: `${props.selectionRegion.top + props.selectionRegion.height}%`,
-          zIndex: 1,
         }}
       >
-        <div>
-          <textarea
-            required
-            rows={3}
-            style={{
-              border: "1px solid rgba(0, 0, 0, .3)",
-            }}
-            onChange={(e) => setMessage(e.target.value)}
-          ></textarea>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            marginTop: "8px",
-          }}
-        >
-          <div style={{ marginRight: "8px" }}>
-            <PrimaryButton onClick={addNote}>Agregar</PrimaryButton>
-          </div>
-          <Button onClick={props.cancel}>Cancelar</Button>
+        {/* La cita da contexto de qué se está corrigiendo: al escribir, el
+            fragmento seleccionado queda tapado por esta misma caja. */}
+        {props.selectedText && (
+          <p className="mb-2 line-clamp-2 border-l-2 border-accent bg-accent-wash px-2 py-1 text-xs italic text-muted">
+            {props.selectedText}
+          </p>
+        )}
+
+        <textarea
+          autoFocus
+          rows={3}
+          placeholder="Escribe la corrección…"
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-content placeholder:text-muted"
+        />
+
+        <div className="mt-2 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={props.cancel}
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-content"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={addNote}
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-on-accent transition-colors hover:bg-accent-soft"
+          >
+            Comentar
+          </button>
         </div>
       </div>
-    ) : null;
-    
+    );
   };
 
   const renderHighlights = (props: RenderHighlightsProps) => (
@@ -245,13 +287,24 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
                 key={idx}
                 data-highlight-id={note.id}
                 className={`highlight-area ${note.id === selectedHighlightId ? "selected" : ""}`}
+                title={note.content}
                 style={Object.assign(
                   {},
                   {
                     background:
-                      note.id === selectedHighlightId ? "#ffeb3b" : "yellow",
-                    opacity: note.id === selectedHighlightId ? 0.7 : 0.4,
-                    transition: "all 0.3s ease",
+                      note.color ??
+                      (note.id === selectedHighlightId
+                        ? HIGHLIGHT_COLORS.commentSelected
+                        : HIGHLIGHT_COLORS.comment),
+                    // El resaltado seleccionado lleva contorno además de color:
+                    // el cambio de tono solo se notaba con el texto encima.
+                    outline:
+                      note.id === selectedHighlightId
+                        ? `2px solid ${HIGHLIGHT_COLORS.commentBarSelected}`
+                        : "none",
+                    borderRadius: "2px",
+                    transition: "background 0.2s ease, outline-color 0.2s ease",
+                    pointerEvents: note.readOnly ? "none" : undefined,
                   },
                   props.getCssProperties(area, props.rotation)
                 )}
@@ -272,23 +325,19 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   const { Toolbar } = toolbarPluginInstance;
 
   return (
+    /* La clase de tema oscuro se repite aquí a propósito: nuestra barra de
+       herramientas se renderiza fuera del elemento del visor, así que no le
+       llegaban las variables de `.rpv-core__viewer--dark` y los iconos se
+       quedaban en negro sobre fondo oscuro, invisibles. Al ponerla en un
+       ancestro común, las variables cascadean también a la barra. */
     <div
-      style={{
-        height: "100%",
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-      }}
+      className={`relative flex h-full flex-col ${
+        theme === "dark" ? "rpv-core__viewer--dark" : ""
+      }`}
     >
-      <div
-        style={{
-          alignItems: "center",
-          backgroundColor: "#f3f4f6",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
-          display: "flex",
-          padding: "4px",
-        }}
-      >
+      {/* La barra usaba un gris fijo (#f3f4f6) que en tema oscuro quedaba como
+          una franja clara. Va con los tokens del sistema. */}
+      <div className="flex items-center gap-0.5 border-b border-line bg-surface-2 px-2 py-1 text-content">
         <Toolbar>
           {(slots) => {
             const {
@@ -304,47 +353,37 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
 
             return (
               <>
-                <div style={{ padding: "0px 2px" }}>
-                  <GoToPreviousPage />
-                </div>
-                <div style={{ padding: "0px 2px", width: "50px" }}>
+                <GoToPreviousPage />
+                <div className="w-12">
                   <CurrentPageInput />
                 </div>
-                <div style={{ padding: "0px 2px" }}>
+                <span className="whitespace-nowrap font-mono text-xs text-muted">
                   / <NumberOfPages />
-                </div>
-                <div style={{ padding: "0px 2px" }}>
-                  <GoToNextPage />
-                </div>
-                <div style={{ marginLeft: "auto", padding: "0px 2px" }}>
+                </span>
+                <GoToNextPage />
+                <div className="ml-auto">
                   <ShowSearchPopover />
                 </div>
-                <div style={{ padding: "0px 2px" }}>
-                  <ZoomOut />
-                </div>
-                <div style={{ padding: "0px 2px" }}>
+                <ZoomOut />
+                <div className="font-mono text-xs">
                   <Zoom />
                 </div>
-                <div style={{ padding: "0px 2px" }}>
-                  <ZoomIn />
-                </div>
+                <ZoomIn />
               </>
             );
           }}
         </Toolbar>
       </div>
-      <div
-        ref={containerRef}
-        style={{
-          flexGrow: 1,
-          position: "relative",
-          overflow: "auto",
-        }}
-      >
+      <div ref={containerRef} className="relative flex-1 overflow-auto">
         <Viewer
-          ref={viewerRef}
           fileUrl={fileUrl}
-          plugins={[highlightPluginInstance, toolbarPluginInstance]}
+          theme={theme}
+          onDocumentLoad={handleDocumentLoad}
+          plugins={[
+            highlightPluginInstance,
+            toolbarPluginInstance,
+            pageNavigationPluginInstance,
+          ]}
         />
       </div>
 
@@ -365,6 +404,18 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
                 
                 .highlight-flash {
                     animation: flashHighlight 1s ease-in-out;
+                }
+
+                /* En oscuro, el tema de la librería tiñe también el área donde
+                   se apoya la hoja, y el documento acababa flotando sobre un
+                   fondo casi negro. La barra se queda oscura, pero el papel y
+                   su entorno se mantienen claros: un PDF es una hoja blanca y
+                   leerlo así cansa menos. */
+                .rpv-core__viewer--dark .rpv-core__inner-page {
+                    background-color: #f7f8fa;
+                }
+                .rpv-core__viewer--dark .rpv-core__inner-pages {
+                    background-color: #f7f8fa;
                 }
             `}</style>
     </div>

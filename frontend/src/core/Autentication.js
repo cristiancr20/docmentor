@@ -1,6 +1,5 @@
-import axios from "axios";
+import api from './apiClient';
 import jwtDecode from "jwt-decode";
-import { API_URL } from "./config";
 
 // Configurar axios para que incluya cookies en cada solicitud
 /* axios.defaults.withCredentials = true; */
@@ -9,7 +8,7 @@ import { API_URL } from "./config";
 //METODO PARA REGISTRAR UN USUARIO
 export const registerUser = async (data) => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/local/register`, data);
+    const response = await api.post(`/api/auth/local/register`, data);
     return response.data;
   } catch (error) {
     // Si hay un error, lo vuelves a lanzar para que pueda ser manejado en el componente
@@ -21,7 +20,7 @@ export const registerUser = async (data) => {
 
 export const login = async (data) => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/local`, data);
+    const response = await api.post(`/api/auth/local`, data);
     return response.data;
   } catch (error) {
     // Captura y muestra detalles del error
@@ -30,10 +29,13 @@ export const login = async (data) => {
   }
 };
 
-// Método para obtener el usuario con el rol incluido
-export const getUserWithRole = async (userId) => {
+// Método para obtener el usuario con el rol incluido.
+// Requiere el JWT: /api/users ya no es accesible sin sesión.
+export const getUserWithRole = async (userId, token) => {
   try {
-    const response = await axios.get(`${API_URL}/api/users/${userId}?populate=rols`);
+    const response = await api.get(`/api/users/${userId}?populate=rols`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return response.data;
   } catch (error) {
     console.error("Error al obtener el usuario con rol:", error);
@@ -44,7 +46,7 @@ export const getUserWithRole = async (userId) => {
 //METODO PARA OBTENER LOS ROLES
 export const getRoles = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/rols`);
+    const response = await api.get(`/api/rols`);
     return response.data;
   } catch (error) {
     console.error("Error al obtener los roles:", error);
@@ -68,8 +70,8 @@ export const syncUserWithStrapi = async (token) => {
       .map((role) => role.id);
 
     // Verificar si el usuario existe
-    const { data: existingUsers } = await axios.get(
-      `${API_URL}/api/users?filters[email][$eq]=${email}`
+    const { data: existingUsers } = await api.get(
+      `/api/users?filters[email][$eq]=${email}`
     );
 
     if (existingUsers.length > 0) {
@@ -104,7 +106,7 @@ export const syncUserWithStrapi = async (token) => {
 export const assignRolesToStrapiUser = async (userId, roleIds) => {
   try {
     // Importante: enviar los roles como array
-    const response = await axios.put(`${API_URL}/api/users/${userId}`, {
+    const response = await api.put(`/api/users/${userId}`, {
       rols: roleIds, // Aquí está el cambio principal: enviamos el array completo
     });
     return response.data;
@@ -118,15 +120,11 @@ export const assignRolesToStrapiUser = async (userId, roleIds) => {
 //buscar id del usuario por el email
 export const getUserByEmail = async (email) => {
   try {
-    const response = await fetch(`${API_URL}/api/users?filters[email][$eq]=${email}`);
-    const users = await response.json();
+    const { data: users } = await api.get(
+      `/api/users?filters[email][$eq]=${encodeURIComponent(email)}`
+    );
 
-
-    if (users && users.length > 0) {
-      return users[0]; // Retorna el primer usuario encontrado
-    } else {
-      return null;
-    }
+    return users?.length > 0 ? users[0] : null;
   } catch (error) {
     console.error("Error fetching user by email:", error);
     return null;

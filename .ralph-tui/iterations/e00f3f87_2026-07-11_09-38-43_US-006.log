@@ -1,0 +1,136 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: Crear Sistema de Auditoría - Logs de Cambios
+- **Description**: Como administrador, quiero registrar todos los cambios en proyectos y documentos, para cumplir requisitos académicos y GDPR.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-11T14:38:43.982Z
+- **Ended At**: 2026-07-11T14:41:08.454Z
+- **Duration**: 2m 24s
+- **Input Tokens**: 618
+- **Output Tokens**: 12613
+- **Total Tokens**: 13231
+- **Agent**: claude
+- **Model**: claude-haiku-4-5-20251001
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll help you implement US-006 (Create Audit System). Let me start by understanding the current project status and what's already been done.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor[0m
+
+[91m[Error: EISDIR: illegal operation on a directory, read '/Users/cristian/orca/docmentor'][0m
+Now let me check if the audit entity was already created in US-004 and understand its current state:
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit[0m
+
+[91m[Error: EISDIR: illegal operation on a directory, read '/Users/cristian/orca/docmentor/backend/src/api/audit'][0m
+[94m[Bash][0m Find all schema.json files to see existing entities $ find /Users/cristian/orca/docmentor/backend/src/api -name "schema.json" | head -20
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/content-types/audit/schema.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/controllers/audit.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/routes/audit.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/content-types/setting/schema.json[0m
+[94m[Bash][0m Check if lint already passes $ npm run lint 2>&1 | head -20
+[94m[Bash][0m Find package.json files $ find /Users/cristian/orca/docmentor -name "package.json" -type f
+[94m[Bash][0m Check current lint status $ cd /Users/cristian/orca/docmentor/backend && npm run lint 2>&1 | head -30
+[94m[Bash][0m Check typecheck status $ npm run typecheck 2>&1
+Now I'll implement US-006. Let me start by updating the audit schema to add the `ipAddress` field:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/content-types/audit/schema.json[0m edit: "  "attributes": {
+    "action": {
+      "type": "s..." → "  "attributes": {
+    "action": {
+      "type": "s..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/services/audit.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/services/audit.js[0m edit: "'use strict';
+
+/**
+ * audit service
+ */
+
+const { c..." → "'use strict';
+
+/**
+ * audit service
+ */
+
+const { c..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/controllers/audit.js[0m edit: "'use strict';
+
+/**
+ * audit controller
+ */
+
+const ..." → "'use strict';
+
+/**
+ * audit controller
+ */
+
+const ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m edit: "  async changeStatus(ctx) {
+    const user = authe..." → "  async changeStatus(ctx) {
+    const user = authe..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m edit: "'use strict';
+
+/**
+ * document controller
+ */
+
+con..." → "'use strict';
+
+/**
+ * document controller
+ */
+
+con..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m edit: "        const existingPermissions = await strapi.e..." → "        const existingPermissions = await strapi.e..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/content-types/setting/schema.json[0m edit: "  "attributes": {
+    "email_notifications": {
+   ..." → "  "attributes": {
+    "email_notifications": {
+   ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m edit: "module.exports = {
+  ...coreController,
+
+  async c..." → "module.exports = {
+  ...coreController,
+
+  async c..."
+[94m[Bash][0m Run lint and typecheck $ npm run lint && npm run typecheck
+Perfect! Now let me verify the implementation by checking the created files one more time:
+[94m[Bash][0m Check git status to see modified files $ git status | head -20
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "---
+
+## [2026-07-11] - US-005" → "---
+
+## [2026-07-11] - US-006
+
+### Implementation
+..."
+Perfect! Let me verify all acceptance criteria are met:
+
+**✓ Tabla audit_logs con campos**: id, userId, action, entityType, entityId, oldValue, newValue, timestamp, ipAddress
+- All fields present in audit schema
+
+**✓ Crear entrada en audit_logs cuando**:
+- Projects: create, update, delete, changeStatus ✓
+- Documents: create, update, delete, changeStatus ✓
+
+**✓ Logs incluyen**: quién (userId), qué cambió (action, oldValue, newValue), cuándo (timestamp), IP (ipAddress)
+
+**✓ Endpoint GET /api/audit-logs**: Custom find method with pagination and VIEW_AUDIT_LOGS permission check
+
+**✓ Filtros**: por usuario (userId), por entidad (entityType, entityId), por fecha (startDate, endDate)
+
+**✓ Retención de logs**: audit_log_retention_days field in settings, default 1825 days (5 years), minimum 1825 days enforced
+
+**✓ npm run lint passes** ✓
+**✓ npm run typecheck passes** ✓
+
+<promise>COMPLETE</promise>

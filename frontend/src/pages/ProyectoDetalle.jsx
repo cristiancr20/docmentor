@@ -1,20 +1,36 @@
-import React, { useEffect, useState  } from "react";
-import { Link, useParams} from "react-router-dom";
-import { copyDocumentAsNewVersion, getDocumentsByProjectId } from "../core/Document";
-import { getProjectById } from "../core/Projects";
-import Navbar from "../components/Navbar";
-import SubirDocumento from "../components/SubirDocumento";
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Users } from "lucide-react";
-import { warningAlert } from "../components/Alerts/Alerts";
+import {
+  ArrowLeft,
+  CalendarDays,
+  GitCompare,
+  Route,
+  Upload,
+  User,
+  Users,
+} from "lucide-react";
+import { restoreDocumentVersion, getDocumentsByProjectId } from "../core/Document";
+import { getProjectById } from "../core/Projects";
+import AppLayout from "../components/layout/AppLayout";
+import Card, { CardHeader } from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Modal from "../components/ui/Modal";
+import Skeleton, { SkeletonRows } from "../components/ui/Skeleton";
+import SubirDocumento from "../components/SubirDocumento";
+import { confirmAlert, errorAlert, successAlert, warningAlert } from "../components/Alerts/Alerts";
 import GeneratePdfButton from "../components/GeneratePdfButton";
-
 import DocumentComparePopup from "../components/DocumentComparePopup";
-import { decryptData } from "../utils/encryption";
-import ProjectsTable from "../components/ProjectsTable";
-import Header from "../components/Header";
-import { IoArrowBack } from "react-icons/io5";
-import { useAuth } from "../context/AuthContext"; 
+import VersionTimeline from "../components/VersionTimeline";
+import { usePermission } from "../context/PermissionContext";
+import { useAuth } from "../context/AuthContext";
+import { formatDateTime } from "../utils/format";
+
+const fadeIn = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.18 },
+};
 
 const ProyectoDetalle = () => {
   const { projectId } = useParams(); // Obtén el ID del proyecto de la URL
@@ -23,27 +39,16 @@ const ProyectoDetalle = () => {
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
-  let rol = null;
   const [isShowComparePopupOpen, setShowIsComparePopupOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(documents.length - 2);
-  const { user } = useAuth(); // Obtiene el usuario autenticado
+  const [restoringId, setRestoringId] = useState(null);
+  // Con la lista vacía esto valía -2, un índice fuera de rango que hacía
+  // reventar el comparador.
+  const [currentIndex, setCurrentIndex] = useState(Math.max(0, documents.length - 2));
+  const { hasPermission } = usePermission();
+  const { user } = useAuth();
 
-  // Función para verificar si el usuario tiene el rol adecuado
-  const hasPermission = (roles) => {
-    return roles?.includes("tutor") || roles?.includes("superadmin");
-  };
-
-  const encryptedUserData = localStorage.getItem("userData");
-
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
-    // Acceder al rol desde los datos desencriptados
-    rol = decryptedUserData.rol;
-  } else {
-    console.log("No se encontró el userData en localStorage");
-  }
+  const canReviewDocuments = hasPermission("REVIEW_DOCUMENT");
+  const canUploadDocuments = hasPermission("CREATE_DOCUMENT");
 
   useEffect(() => {
     fetchProject();
@@ -64,11 +69,10 @@ const ProyectoDetalle = () => {
         setCurrentIndex(0); // Manejo seguro en caso de que haya solo un documento
       }
     } catch (error) {
-      setError("Error fetching project details");
+      setError("Error al cargar los detalles del proyecto");
       console.error("Error fetching project details:", error);
     }
   };
-
 
   const handleCompareClick = () => {
     if (documents.length > 1) {
@@ -79,12 +83,28 @@ const ProyectoDetalle = () => {
     }
   };
 
-  /*   const closeComparePopup = () => {
-    setShowIsComparePopupOpen(false);
-  }; */
+  const backLink = (
+    <Link
+      to={canReviewDocuments ? "/tutor/projects/view" : "/student/projects/view"}
+      className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-surface-2 px-4 text-sm font-medium text-content transition-colors hover:border-line-strong"
+    >
+      <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
+      Volver a los proyectos
+    </Link>
+  );
 
   if (!project) {
-    return <p>Cargando detalles del proyecto...</p>;
+    return (
+      <AppLayout title="Detalle del proyecto" description="Cargando información del proyecto…">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="h-52 lg:col-span-2" />
+          <Skeleton className="h-52" />
+        </div>
+        <div className="mt-6">
+          <SkeletonRows count={4} />
+        </div>
+      </AppLayout>
+    );
   }
 
   const { attributes } = project;
@@ -95,8 +115,11 @@ const ProyectoDetalle = () => {
       return estudiante.attributes;
     }) || [];
 
-  const itinerario = attributes.itinerary || {};
-  const tipoProyecto = attributes.projectType || {};
+  // Ambos son cadenas. El fallback era `{}`, que al ser truthy pasaba el
+  // `itinerario || "..."` de la vista y React reventaba con "Objects are not
+  // valid as a React child"; y `tipoProyecto === "Grupal"` nunca era cierto.
+  const itinerario = attributes.itinerary || "";
+  const tipoProyecto = attributes.projectType || "";
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -104,396 +127,198 @@ const ProyectoDetalle = () => {
     fetchProject();
   };
 
-  const copyDocumentNewVersion = async (projectId) => {
-    await copyDocumentAsNewVersion(projectId);
-    fetchProject();
-  }
+  // La versión actual va arriba: es la que se consulta a diario, y obligar a
+  // bajar hasta el final para llegar a ella no tiene sentido.
+  const orderedDocuments = [...documents].sort(
+    (a, b) => (b.attributes.version ?? 0) - (a.attributes.version ?? 0)
+  );
 
-  const columns = [
-    {
-      key: "title",
-      label: "Documento",
-      render: (doc) => doc.attributes.title,
-    },
-    {
-      key: "version",
-      label: "Versión",
-      render: (doc) => {
-        const version = doc.attributes.version;
-        const previousVersion = doc.attributes.previous_version?.data?.attributes?.version;
-    
-        return previousVersion ? (
-          <span>
-            v{version} <br />
-            <span className="text-gray-500 text-sm">(Copia de v{previousVersion})</span>
-          </span>
-        ) : (
-          <span>v{version} <br /> <span className="text-blue-500">(Documento nuevo)</span></span>
-        );
-      },
-    },
-    
-    {
-      key: "isCurrent",
-      label: "Actual",
-      render: (doc) =>
-        doc.attributes.isCurrent ? (
-          <span className="text-green-600 font-bold">Versión Actual</span>
-        ) : (
-          <span className="text-red-500">-----</span>
-        ),
-    },
+  const handleRestoreVersion = async (doc) => {
+    const version = doc.attributes.version;
 
-    {
-      key: "isRevised",
-      label: "Estado",
-      render: (doc) =>
-        doc.attributes.isRevised === false
-          ? "Pendiente de revisión"
-          : doc.attributes.isRevised === true
-            ? "Revisado"
-            : "Sin estado",
-    },
-    {
-      key: "publishedAt",
-      label: "Fecha de Subida",
-      render: (doc) => {
-        const date = new Date(doc.attributes.publishedAt);
-        // Convierte la fecha al formato local
-        return date.toLocaleString("es-ES", {
-          weekday: "long", // Día de la semana
-          year: "numeric", // Año completo
-          month: "long", // Mes completo
-          day: "numeric", // Día del mes
-          hour: "2-digit", // Hora en formato de 2 dígitos
-          minute: "2-digit", // Minutos
-          second: "2-digit", // Segundos
-          hour12: false, // Usa el formato de 24 horas
-        });
-      },
-    },
-    {
-      key: "acciones",
-      label: "Acciones",
-      render: (doc) => (
-        <div className="flex gap-2">
-          {/* Ver documento */}
-          {doc.attributes.documentFile?.data?.length > 0 ? (
-            <a
-              href={`/document/${doc.id}`}
-              className="text-blue-600 hover:underline"
-            >
-              Ver Documento
-            </a>
-          ) : (
-            <span className="text-gray-500">No hay documento</span>
-          )}
-  
-          {/* Botón para crear nueva versión */}
-          {hasPermission(user?.rols) && (
-            <button
-              onClick={() => copyDocumentNewVersion(doc.id)}
-              className="bg-red-800 text-white px-3 py-1 rounded hover:bg-red-700"
-            >
-              Nueva Versión
-            </button>
-          )}
-        </div>
-      ),
-    },
-  ];
+    const confirmed = await confirmAlert(
+      `¿Restaurar la versión ${version}?`,
+      "Se creará una versión nueva con ese contenido. Las versiones posteriores se conservan en el historial.",
+      "Sí, restaurar"
+    );
+    if (!confirmed) return;
+
+    setRestoringId(doc.id);
+    try {
+      await restoreDocumentVersion(doc.id);
+      await fetchProject();
+      successAlert(`Se restauró la versión ${version} como versión nueva`);
+    } catch (error) {
+      console.error("Error al restaurar la versión:", error);
+      errorAlert("No se pudo restaurar la versión");
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
 
   return (
-    <div>
-      <Navbar />
-      <Header />
-      <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <div className="flex items-center space-x-3 m-2">
-                {rol === "estudiante" && (
-                  <Link
-                    to="/student/projects/view"
-                    className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  >
-                    <IoArrowBack className="text-white text-xl mr-2" />
-                    <span className="text-lg font-bold">Volver a los proyectos</span>
-                  </Link>
-                )}
+    <AppLayout title={attributes.title} description={itinerario || "Detalle del proyecto"} actions={backLink}>
+      {error && (
+        <div className="mb-6 rounded-xl border border-line bg-danger-wash p-4 text-sm text-danger">
+          {error}
+        </div>
+      )}
 
-                {rol === "tutor" && (
-                  <Link
-                    to="/tutor/projects/view"
-                    className="flex items-center bg-indigo-600 text-white rounded-lg py-2 px-4 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  >
-                    <IoArrowBack className="text-white text-xl mr-2" />
-                    <span className="text-lg font-bold">Volver a los proyectos</span>
-                  </Link>
-                )}
+      <motion.div {...fadeIn} className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader title="Descripción del proyecto" />
+
+          <p className="text-sm leading-relaxed text-muted">
+            {attributes.description || "Sin descripción"}
+          </p>
+
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 p-4">
+              <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-muted" strokeWidth={1.8} />
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted">
+                  Creación del proyecto
+                </dt>
+                <dd className="mt-1 font-mono text-sm text-content">
+                  {formatDateTime(attributes.publishedAt)}
+                </dd>
               </div>
-        <div className="flex flex-col md:flex-row gap-6 p-6 bg-gray-50 rounded-lg shadow-md">
-          {/* Sección de información del proyecto */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-          >
-            
-            <div className="flex items-center border-b pb-4 mb-4">
-             
-
-              <motion.h1
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: project ? 1 : 0.5, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="inline-flex items-center text-4xl font-bold text-gray-900 text-center"
-              >
-                {project ? attributes.title : "Cargando..."}
-              </motion.h1>
             </div>
 
-            <h2 className="text-2xl font-bold ">Descripción del Proyecto:</h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-lg mb-4 text-gray-700 leading-relaxed"
-            >
-              {attributes.description}
-            </motion.p>
+            <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 p-4">
+              <Route className="mt-0.5 h-5 w-5 shrink-0 text-muted" strokeWidth={1.8} />
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted">
+                  Itinerario
+                </dt>
+                <dd className="mt-1 text-sm text-content">
+                  {itinerario || "Itinerario no especificado"}
+                </dd>
+              </div>
+            </div>
+          </dl>
+        </Card>
 
-            <div className="flex items-center ">
-              <h2 className="text-1xl font-bold mr-4">
-                Creación del Proyecto:
+        {/* Sección del tutor o de los estudiantes según el rol */}
+        {canReviewDocuments ? (
+          <Card>
+            <CardHeader
+              title="Estudiantes"
+              description={tipoProyecto === "Grupal" ? "Proyecto en pareja" : "Proyecto individual"}
+            />
+
+            <div className="mb-4 grid h-11 w-11 place-items-center rounded-full bg-accent-wash text-accent">
+              {tipoProyecto === "Grupal" ? (
+                <Users className="h-5 w-5" strokeWidth={1.8} />
+              ) : (
+                <User className="h-5 w-5" strokeWidth={1.8} />
+              )}
+            </div>
+
+            <ul className="flex flex-col gap-2">
+              {estudiantes.map((estudiante) => (
+                <li
+                  key={estudiante.email || estudiante.username}
+                  className="rounded-xl border border-line bg-surface-2 p-3"
+                >
+                  <p className="truncate text-sm font-medium text-content">
+                    {estudiante.username || "Nombre no disponible"}
+                  </p>
+                  <p className="truncate font-mono text-xs text-muted">
+                    {estudiante.email || "Correo no disponible"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader title="Tutor del proyecto" />
+
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent-wash text-accent">
+                <User className="h-5 w-5" strokeWidth={1.8} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-content">
+                  {tutor.username || "Tutor no asignado"}
+                </p>
+                <p className="truncate font-mono text-xs text-muted">{tutor.email || "—"}</p>
+              </div>
+            </div>
+          </Card>
+        )}
+      </motion.div>
+
+      <motion.div {...fadeIn} className="mt-6">
+        <Card padded={false}>
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line p-6">
+            <div>
+              <h2 className="font-display text-lg font-semibold text-content">
+                Historial de versiones
               </h2>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center p-2  md:rounded-md rounded-lg bg-blue-50 text-blue-700"
-              >
-                <span className="text-xs md:text-base">
-                  {new Date(attributes.publishedAt).toLocaleDateString(
-                    "es-ES",
-                    {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      hour12: false,
-                    }
-                  )}
-                </span>
-              </motion.div>
-            </div>
-            {/* Itinerario */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center space-x-2 text-1xl mt-2"
-            >
-              <h3 className="font-bold text-gray-800">Itinerario:</h3>
-              <p className="px-3 py-1 md:rounded-md rounded-lg bg-blue-50 text-blue-700 text-xs md:text-base ">
-                {itinerario || "Itinerario no especificado"}
+              <p className="mt-1 text-sm text-muted">
+                {documents.length} documento(s) en este proyecto
               </p>
-            </motion.div>
-          </motion.div>
-
-          <div>
-            {/* Sección del tutor o estudiante */}
-            {rol === "estudiante" && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-gray-900 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                      <User className="w-12 h-12" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <h2 className="text-xl font-bold text-gray-800">
-                        Tutor del Proyecto
-                      </h2>
-                      <p className="text-lg font-semibold text-blue-600 ">
-                        {tutor.username}
-                      </p>
-                      <div className="flex flex-col items-center text-center">
-                        <div className="flex items-center m-1">
-                          <p className="inline-flex items-center px-4 py-2  md:rounded-md rounded-lg  bg-blue-50 text-blue-700">
-                            {tutor.email}
-                          </p>
-                        </div>
-                        {/* <div className="flex items-center m-1">
-                        <h3 className="text-sm font-semibold text-gray-800">
-                          Carrera:
-                        </h3>
-                        <p className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 text-blue-700">
-                          {tutor.carrera}
-                        </p>
-                      </div> */}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-
-            {rol === "tutor" && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="lg:w-80 bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-lg p-6 border border-blue-100"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    {/* Icono condicional según el tipo de proyecto */}
-                    <div className="bg-gray-900 text-white rounded-full w-20 h-20 flex items-center justify-center mb-4 shadow-md">
-                      {tipoProyecto === "Grupal" ? (
-                        <Users className="w-12 h-12" /> // Ícono para grupo
-                      ) : (
-                        <User className="w-12 h-12" /> // Ícono para individual
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      <h2 className="text-lg font-bold text-gray-800">
-                        Estudiantes
-                      </h2>
-
-                      <div className="grid gap-4">
-                        {estudiantes.map((estudiante, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                          >
-                            <div className="flex items-center space-x-4 p-3 bg-white shadow-sm rounded-lg border border-gray-100 hover:border-blue-200 transition-colors duration-200 cursor-pointer">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-blue-700 truncate">
-                                  {estudiante.username ||
-                                    "Nombre no disponible"}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate">
-                                  {estudiante.email || "Correo no disponible"}
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl font-semibold mb-4 border-b-2 border-gray-300 pb-2 mt-5"
-          >
-            Historial de Versiones:
-          </motion.h2>
-
-          {rol === "estudiante" && (
-            <>
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                onClick={() => setIsModalOpen(true)}
-                className="font-bold mb-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Subir Nuevo Documento
-              </motion.button>
-            </>
-          )}
-
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            onClick={handleCompareClick}
-            className="font-bold mb-4 ml-4 bg-red-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-700"
-          >
-            Comparar Versiones
-          </motion.button>
-
-          {rol === "tutor" && <GeneratePdfButton userInfo={attributes} />}
-
-          <AnimatePresence>
-            {isShowComparePopupOpen && (
-              <DocumentComparePopup
-                documents={documents}
-                onClose={() => setShowIsComparePopupOpen(false)}
-                currentIndex={currentIndex}
-                setCurrentIndex={setCurrentIndex}
-              />
-            )}
-          </AnimatePresence>
-
-          <ProjectsTable projects={documents} columns={columns} />
-        </div>
-      </div>
-
-      {/* Modal Popup */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50 p-4 md:p-6"
-          >
-            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  Subir Documento
-                </h2>
-
-                <motion.button
-                  onClick={() => setIsModalOpen(false)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-lg p-2 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <svg
-                    className="w-6 h-6 md:w-7 md:h-7"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </motion.button>
-              </div>
-              <SubirDocumento projectId={projectId} onClose={closeModal} />
             </div>
-          </motion.div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {canUploadDocuments && (
+                <Button onClick={() => setIsModalOpen(true)}>
+                  <Upload className="h-4 w-4" strokeWidth={1.8} />
+                  Subir nuevo documento
+                </Button>
+              )}
+
+              <Button variant="secondary" onClick={handleCompareClick}>
+                <GitCompare className="h-4 w-4" strokeWidth={1.8} />
+                Comparar versiones
+              </Button>
+
+              {(canReviewDocuments || canUploadDocuments) && (
+                <GeneratePdfButton
+                  project={attributes}
+                  documents={documents}
+                  generatedBy={user?.name || user?.email || "Usuario"}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="p-6">
+            <VersionTimeline
+              documents={orderedDocuments}
+              canRestore={canUploadDocuments}
+              onRestore={handleRestoreVersion}
+              restoringId={restoringId}
+            />
+          </div>
+        </Card>
+      </motion.div>
+
+      <AnimatePresence>
+        {isShowComparePopupOpen && (
+          <DocumentComparePopup
+            documents={documents}
+            onClose={() => setShowIsComparePopupOpen(false)}
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+          />
         )}
       </AnimatePresence>
-    </div>
+
+      {/* Modal para subir documento */}
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Subir documento"
+        description="Adjunta la nueva versión en formato PDF"
+        size="sm"
+      >
+        <SubirDocumento projectId={projectId} onClose={closeModal} />
+      </Modal>
+    </AppLayout>
   );
 };
 

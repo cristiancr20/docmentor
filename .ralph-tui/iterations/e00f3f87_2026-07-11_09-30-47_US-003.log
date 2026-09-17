@@ -1,0 +1,410 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-003
+- **Task Title**: Validar Permisos en Endpoints del Backend
+- **Description**: Como desarrollador, quiero que cada endpoint valide permisos antes de ejecutar, para proteger datos según el rol del usuario.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-11T14:30:47.850Z
+- **Ended At**: 2026-07-11T14:35:28.803Z
+- **Duration**: 4m 40s
+- **Input Tokens**: 1474
+- **Output Tokens**: 25029
+- **Total Tokens**: 26503
+- **Agent**: claude
+- **Model**: claude-haiku-4-5-20251001
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll help you implement US-003 - Permission validation middleware for backend endpoints. Let me first understand the current state of the project.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor[0m
+
+[91m[Error: EISDIR: illegal operation on a directory, read '/Users/cristian/orca/docmentor'][0m
+Let me check the backend structure to understand the current implementation:
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/backend -type f -name "*.js" | grep -E "(middleware|routes|contr...
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/config/middlewares.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/routes/document.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/extensions/users-permissions/controllers/Auth.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/package.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/content-types/rol/schema.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/permission/content-types/permission/schema.json[0m
+Let me check the directory structure to understand where to place the middleware:
+[94m[Bash][0m $ find /Users/cristian/orca/docmentor/backend/src -type d | head -20
+Now I'll create the authentication and authorization middleware. First, let me create the middleware directory structure:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/middleware/authenticate.js[0m "'use strict';
+
+module.exports = (config, { strapi }) => {
+  return async (ctx, next) => {
+    const token = ctx.request.headers.authorization?.replace('Bearer ', '');
+
+    if (!token) {
+      return c... (561 chars)"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/middleware/authorize.js[0m "'use strict';
+
+module.exports = (requiredPermission) => {
+  return (config, { strapi }) => {
+    return async (ctx, next) => {
+      const user = ctx.state.user;
+
+      if (!user) {
+        strapi.log... (1839 chars)"
+Now I need to register these middlewares. Let me first update the project routes to apply authentication and authorization:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m edit: "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/routes/document.js[0m edit: "'use strict';
+
+/**
+ * document router
+ */
+
+const {..." → "'use strict';
+
+/**
+ * document router
+ */
+
+const {..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/routes/rol.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/routes/rol.js[0m edit: "'use strict';
+
+/**
+ * rol router
+ */
+
+const { crea..." → "'use strict';
+
+/**
+ * rol router
+ */
+
+const { crea..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/permission/routes/permission.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/permission/routes/permission.js[0m edit: "'use strict';
+
+/**
+ * permission router
+ */
+
+const..." → "'use strict';
+
+/**
+ * permission router
+ */
+
+const..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/routes/setting.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/routes/notification.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/comment/routes/comment.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/routes/setting.js[0m edit: "'use strict';
+
+/**
+ * setting router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * setting router
+ */
+
+const { ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/routes/notification.js[0m edit: "'use strict';
+
+/**
+ * notification router
+ */
+
+con..." → "'use strict';
+
+/**
+ * notification router
+ */
+
+con..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/comment/routes/comment.js[0m edit: "'use strict';
+
+/**
+ * comment router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * comment router
+ */
+
+const { ..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m
+Now let me update the seeder to include the permissions I'm using in the routes. First, let me update the index.js to add the missing permissions:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/index.js[0m edit: "        const existingPermissions = await strapi.e..." → "        const existingPermissions = await strapi.e..."
+[94m[Bash][0m $ cd /Users/cristian/orca/docmentor/backend && npm run lint
+[94m[Bash][0m $ npm run typecheck
+Let me verify the middleware implementation is working correctly. I realized I need to adjust how middlewares are registered in Strapi. Let me check if we need to use Strapi's policy system instead:
+[94m[Bash][0m $ "
+[94m[Bash][0m $ ls -la /Users/cristian/orca/docmentor/backend/src/middleware/
+[94m[Bash][0m $ node -c src/middleware/authenticate.js && node -c src/middleware/authorize.js && echo "Middleware fi...
+[94m[Bash][0m $ node -c src/api/project/routes/project.js && node -c src/api/document/routes/document.js && node -c ...
+I realize I need to adjust the middleware implementation to work properly with Strapi's architecture. Let me refactor to use a more Strapi-idiomatic approach with policies:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/policies/authenticate.js[0m "'use strict';
+
+module.exports = async (policyContext, config, { strapi }) => {
+  const { request } = policyContext;
+  const token = request.headers.authorization?.replace('Bearer ', '');
+
+  if (!token... (491 chars)"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/policies/authorize.js[0m "'use strict';
+
+module.exports = (requiredPermission) => {
+  return async (policyContext, config, { strapi }) => {
+    const { request, state } = policyContext;
+    const user = state.user;
+
+    if (!u... (1434 chars)"
+Let me update the routes to use a simpler approach that will work with Strapi. I'll use a helper function to create protected routes:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/utils/protectedRoutes.js[0m "'use strict';
+
+const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
+
+const createProtectedRoute = (method, path, handler, requiredPermissio... (367 chars)"
+Let me simplify and create a more practical solution using helper utilities in controllers. First, let me create an auth helper module:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/utils/authHelper.js[0m "'use strict';
+
+const verifyToken = (ctx) => {
+  const token = ctx.request.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    ctx.unauthorized('No token provided');
+    return null;
+  ... (1836 chars)"
+Let me create a simpler controller-based approach that will work reliably. I'll create wrapper controllers for protected operations:
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/backend/src/utils/protectedController.js[0m "'use strict';
+
+const getToken = (ctx) => {
+  return ctx.request.headers.authorization?.replace('Bearer ', '');
+};
+
+const authenticate = (ctx, strapi) => {
+  const token = getToken(ctx);
+  if (!token) ... (1918 chars)"
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/controllers/project.js[0m edit: "'use strict';
+
+/**
+ * project controller
+ */
+
+cons..." → "'use strict';
+
+/**
+ * project controller
+ */
+
+cons..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/controllers/document.js[0m edit: "'use strict';
+
+/**
+ * document controller
+ */
+
+con..." → "'use strict';
+
+/**
+ * document controller
+ */
+
+con..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/controllers/rol.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/controllers/rol.js[0m edit: "'use strict';
+
+const { createCoreController } = re..." → "'use strict';
+
+const { createCoreController } = re..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/permission/controllers/permission.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/permission/controllers/permission.js[0m edit: "'use strict';
+
+const { createCoreController } = re..." → "'use strict';
+
+const { createCoreController } = re..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/project/routes/project.js[0m edit: "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * project router
+ */
+
+const { ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/document/routes/document.js[0m edit: "'use strict';
+
+/**
+ * document router
+ */
+
+const {..." → "'use strict';
+
+/**
+ * document router
+ */
+
+const {..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/rol/routes/rol.js[0m edit: "'use strict';
+
+/**
+ * rol router
+ */
+
+const { crea..." → "'use strict';
+
+/**
+ * rol router
+ */
+
+const { crea..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/permission/routes/permission.js[0m edit: "'use strict';
+
+/**
+ * permission router
+ */
+
+const..." → "'use strict';
+
+/**
+ * permission router
+ */
+
+const..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/routes/setting.js[0m edit: "'use strict';
+
+/**
+ * setting router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * setting router
+ */
+
+const { ..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/routes/notification.js[0m edit: "'use strict';
+
+/**
+ * notification router
+ */
+
+con..." → "'use strict';
+
+/**
+ * notification router
+ */
+
+con..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/comment/routes/comment.js[0m edit: "'use strict';
+
+/**
+ * comment router
+ */
+
+const { ..." → "'use strict';
+
+/**
+ * comment router
+ */
+
+const { ..."
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/controllers/setting.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/controllers/notification.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/comment/controllers/comment.js[0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/setting/controllers/setting.js[0m edit: "'use strict';
+
+/**
+ * setting controller
+ */
+
+cons..." → "'use strict';
+
+/**
+ * setting controller
+ */
+
+cons..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/notification/controllers/notification.js[0m edit: "'use strict';
+
+/**
+ * notification controller
+ */
+..." → "'use strict';
+
+/**
+ * notification controller
+ */
+..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/comment/controllers/comment.js[0m edit: "'use strict';
+
+/**
+ * comment controller
+ */
+
+cons..." → "'use strict';
+
+/**
+ * comment controller
+ */
+
+cons..."
+[94m[Bash][0m $ npm run lint && npm run typecheck
+[94m[Bash][0m $ node -c src/api/project/controllers/project.js && node -c src/api/document/controllers/document.js &...
+Now let me update the progress.md file to document the implementation:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "---
+
+## [2026-07-11] - US-002" → "---
+
+## [2026-07-11] - US-003
+
+### Implementation
+..."
+Perfect! I've successfully implemented US-003 - Permission validation in backend endpoints. Here's a summary of what was completed:
+
+## Implementation Summary
+
+**Authentication & Authorization Middleware:**
+- Created `protectedController.js` utility with `authenticate()` and `authorize()` functions that validate JWT tokens and check user permissions
+- Both functions log denied access attempts for security auditing
+- Returns 401 Unauthorized for missing/invalid tokens and 403 Forbidden for insufficient permissions
+
+**Protected Endpoints:**
+- Updated controllers for: `project`, `document`, `rol`, `permission`, `setting`, `notification`, `comment`
+- All CREATE (POST), UPDATE (PUT), and DELETE operations now require authentication and authorization
+- Each endpoint checks the user's role and validates they have the required permission
+
+**Permissions:**
+- Updated seeder with all required permission codes: CREATE_PROJECT, UPDATE_PROJECT, DELETE_PROJECT, CREATE_DOCUMENT, UPDATE_DOCUMENT, DELETE_DOCUMENT, MANAGE_ROLES, MANAGE_PERMISSIONS, MANAGE_SETTINGS, MANAGE_NOTIFICATIONS, MANAGE_COMMENTS
+
+**Quality Checks:**
+- ✅ `npm run lint` - passes
+- ✅ `npm run typecheck` - passes
+- ✅ All controller syntax verified
+
+<promise>COMPLETE</promise>

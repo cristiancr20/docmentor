@@ -1,0 +1,105 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-017
+- **Task Title**: Exportar Reporte de Auditoría a Excel
+- **Description**: Como administrador, quiero exportar logs de auditoría a Excel para análisis en office.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-07-12T21:44:57.004Z
+- **Ended At**: 2026-07-12T21:49:38.187Z
+- **Duration**: 4m 41s
+- **Input Tokens**: 136
+- **Output Tokens**: 17942
+- **Total Tokens**: 18078
+- **Agent**: claude
+- **Model**: claude-fable-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the existing audit log implementation from US-008.
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m
+[94m[Bash][0m List project root $ ls /Users/cristian/orca/docmentor
+Now let me look at the audit log implementation from US-008 and the backend structure.
+[94m[Bash][0m List API folders and audit files $ ls /Users/cristian/orca/docmentor/backend/src/api/ && find /Users/cristian/orca/docmentor/backend/sr...
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/controllers/audit.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/routes/audit.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/content-types/audit/schema.json[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/services/audit.js[0m
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/backend/src/utils/exportReports.js[0m
+[94m[Bash][0m Show backend package.json $ cat /Users/cristian/orca/docmentor/backend/package.json
+[94m[Bash][0m Find frontend audit export usage $ grep -rn "audit-logs" /Users/cristian/orca/docmentor/frontend/src -i | head -20
+[94m[Bash][0m Find user lookup patterns in backend $ grep -rn "plugin::users-permissions.user" /Users/cristian/orca/docmentor/backend/src --include='*.js...
+[94m[Read][0m [95m/Users/cristian/orca/docmentor/frontend/src/core/Admin.js[0m
+[94m[Bash][0m Find backend test files $ ls /Users/cristian/orca/docmentor/backend/tests 2>/dev/null
+
+[91m[Error: Exit code 1
+/Users/cristian/orca/docmentor/backend/config/env/test/app.test.js][0m
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/services/audit.js[0m edit: "    const logs = await strapi.db.query('api::audit..." → "    const logs = await strapi.db.query('api::audit..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/api/audit/services/audit.js[0m edit: "      totalRecords: logs.length,
+      logs: logs...." → "      totalRecords: logs.length,
+      summary: {
+..."
+Now rewrite `generateXLSX` with the three sheets:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/utils/exportReports.js[0m edit: "const generateXLSX = (auditData, hash) => {
+  cons..." → "const DATE_FORMAT = 'yyyy-mm-dd hh:mm:ss';
+
+// Dev..."
+Small consistency update to the PDF path, which shares the same data shape:
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/backend/src/utils/exportReports.js[0m edit: "      doc.text(`   User ID: ${log.userId}`);" → "      doc.text(`   User: ${log.userName ? `${log.u..."
+Now let me verify the xlsx generation actually works by exercising it with sample data:
+[94m[Bash][0m Exercise generateXLSX/generatePDF with sample data $ "
+
+[91m[Error: Exit code 1
+node:internal/modules/cjs/loader:1478
+  throw err;
+  ^
+
+Error: Cannot find module 'pdfkit'
+Require stack:
+- /Users/cristian/orca/docmentor/backend/src/utils/exportReports.js
+- /Users/cristian/orca/docmentor/backend/[eval]
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1475:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1048:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1072:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1093:12)
+    at Module._load (node:internal/modules/cjs/loader:1261:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1575:12)
+    at require (node:internal/modules/helpers:191:16)
+    at Object.<anonymous> (/Users/cristian/orca/docmentor/backend/src/utils/exportReports.js:3:21)
+    at Module._compile (node:internal/modules/cjs/loader:1829:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/cristian/orca/docmentor/backend/src/utils/exportReports.js',
+    '/Users/cristian/orca/docmentor/backend/[eval]'
+  ]
+}
+
+Node.js v26.0.0][0m
+[94m[Bash][0m Check if backend node_modules exists $ ls /Users/cristian/orca/docmentor/backend/node_modules/xlsx 2>/dev/null | head -3
+Backend deps aren't installed. I'll install just `xlsx` and `pdfkit` in a temp dir to exercise the utility:
+[94m[Bash][0m Install xlsx and pdfkit in temp dir for testing $ mkdir -p /tmp/us017-test && cd /tmp/us017-test && npm install xlsx@0.18.5 pdfkit@0.14.0 --no-save --...
+[94m[Bash][0m Exercise generateXLSX/generatePDF with sample data $ "
+[94m[Bash][0m Run backend lint and typecheck $ cd /Users/cristian/orca/docmentor/backend && npm run lint && npm run typecheck
+[94m[Bash][0m Run frontend lint and typecheck $ cd /Users/cristian/orca/docmentor/frontend && npm run lint && npm run typecheck
+Both pass. Let me verify the modified backend files parse cleanly and check the eslint report is clean:
+[94m[Bash][0m Syntax-check modified files and inspect eslint report $ grep -c "error" /Users/cristian/orca/docmentor/frontend/eslint-report.html | head -1
+Everything checks out. Cleaning up the temp test dir and documenting learnings in progress.md:
+[94m[Bash][0m Remove temp test directory $ rm -rf /tmp/us017-test
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "- **Generación de PDF en cliente con jsPDF + hash ..." → "- **Exportes Excel de servidor con SheetJS (`xlsx`..."
+[94m[Edit][0m [95m/Users/cristian/orca/docmentor/.ralph-tui/progress.md[0m edit: "  - Los comentarios de tutores están en `documents..." → "  - Los comentarios de tutores están en `documents..."
+US-017 is complete. The export endpoint (`GET /api/audit-logs/export?format=xlsx`) already existed from US-008, but its Excel output didn't meet the acceptance criteria — it had only two generic sheets with raw user IDs and locale-dependent date strings. I reworked the backend:
+
+- **`backend/src/api/audit/services/audit.js`** — `exportAuditLogs` now resolves the logs' user IDs to real usernames/emails with a single `$in` query, and precomputes `summary` (total changes, active users, changes by action and by entity type) and `userActivity` (per-user totals, action breakdown, first/last activity). All of it feeds the canonical JSON used for the SHA-256 integrity hash.
+- **`backend/src/utils/exportReports.js`** — `generateXLSX` rewritten to produce the three required sheets: **Resumen** (total de cambios, usuarios activos, cambios por tipo, filtros, firma SHA-256), **Detalles** (timestamp, usuario, acción, entidad, valores anterior/nuevo, IP — one log per row), and **Usuarios** (activity per user). Numbers are written as real numeric cells and timestamps as real Excel date cells with a consistent `yyyy-mm-dd hh:mm:ss` format, so the file is ready for pivots and filtering. The PDF path now shows the username alongside the ID.
+
+No frontend changes were needed — `core/Admin.js#exportAuditReport` already downloads the xlsx blob from the admin page, and the controller already enforced the `VIEW_AUDIT_LOGS` permission and correct headers.
+
+Verification: I exercised the generator directly with sample data and re-read the resulting buffer with `XLSX.read` — three sheets with the correct names, numeric cells typed `n`, date cells typed `d` with the consistent format, and `generatePDF` still produces a valid PDF. Frontend `npm run lint` and `npm run typecheck` pass; backend lint/typecheck are the configured no-ops. Learnings appended to `.ralph-tui/progress.md`, including a new codebase pattern on server-side SheetJS exports with typed cells. No commits made, per the workflow.
+
+One note for the future: the export uses `findMany` with no limit, so a very large audit table would load entirely into memory — pagination/streaming is noted in progress.md as a possible follow-up.
+
+<promise>COMPLETE</promise>

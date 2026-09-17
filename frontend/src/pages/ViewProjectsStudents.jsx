@@ -1,16 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { getProjectsByEmail, getProjectsByStudents } from "../core/Projects";
-import Navbar from "../components/Navbar";
+import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
+import { getProjectsByStudents } from "../core/Projects";
+import AppLayout from "../components/layout/AppLayout";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Modal from "../components/ui/Modal";
+import { SkeletonRows } from "../components/ui/Skeleton";
 import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
-import { motion, AnimatePresence } from "framer-motion";
 import { decryptData } from "../utils/encryption";
-import Header from "../components/Header";
+import { formatDateTime } from "../utils/format";
+
+const fadeIn = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.18 },
+};
 
 const ViewProjectsStudents = () => {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -20,31 +33,32 @@ const ViewProjectsStudents = () => {
 
   if (encryptedUserData) {
     // Desencriptar los datos
-    const decryptedUserData = JSON.parse(decryptData(encryptedUserData));
-
+    const decryptedUserData = decryptData(encryptedUserData);
 
     userEmail = decryptedUserData.email;
   } else {
     console.log("No se encontró el userData en localStorage");
   }
-  
-  useEffect(() => {
-      fetchProjects();
-  }, []); 
-  
 
-const fetchProjects = async () => {
-      try {
-        if (userEmail) {
-          const userProjects = await getProjectsByStudents(userEmail);
-          setProjects(userProjects);
-        } else {
-          setError("User email is not available");
-        }
-      } catch (error) {
-        setError(error.message || "Error fetching projects");
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      if (userEmail) {
+        const userProjects = await getProjectsByStudents(userEmail);
+        setProjects(userProjects);
+      } else {
+        setError("No se pudo obtener el correo del usuario");
       }
-    };
+    } catch (error) {
+      setError(error.message || "Error al cargar los proyectos");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (projectId) => {
     const project = projects.find((project) => project.id === projectId);
@@ -67,159 +81,119 @@ const fetchProjects = async () => {
       key: "estudiante",
       label: "Estudiante",
       render: (project) => (
-        <ul>
+        <ul className="flex flex-col gap-1">
           {project.students.map((estudiante) => (
             <li key={estudiante.id}>
-              {estudiante.username}
-              <span className="text-blue-600 ml-2">({estudiante.email})</span>
+              <span className="text-content">{estudiante.username}</span>
+              <span className="ml-2 font-mono text-xs text-muted">{estudiante.email}</span>
             </li>
           ))}
         </ul>
       ),
     },
-    { key: "title", label: "Título" },
-    { key: "description", label: "Descripción" },
+    {
+      key: "title",
+      label: "Título",
+      render: (project) => <span className="font-medium text-content">{project.title}</span>,
+    },
+    {
+      key: "description",
+      label: "Descripción",
+      render: (project) => (
+        <span className="line-clamp-2 block max-w-xs text-muted">{project.description}</span>
+      ),
+    },
     {
       key: "tutor",
       label: "Tutor",
-      render: (project) => (
-        <span className="text-blue-600 ml-2">{project.tutor.username}</span>
-      ),
+      render: (project) => <span className="text-muted">{project.tutor.username}</span>,
     },
-
     {
       key: "projectType",
-      label: "Tipo de Proyecto",
-      render: (project) => project.projectType,
+      label: "Tipo de proyecto",
+      render: (project) => <Badge tone="neutral">{project.projectType || "—"}</Badge>,
+    },
+    {
+      key: "status",
+      label: "Estado",
+      render: (project) => <Badge status={project.status || "Creado"} />,
     },
     {
       key: "FechaCreacion",
-      label: "Fecha de Creación",
-      render: (project) => {
-        const date = new Date(project.publishedAt);
-        // Convierte la fecha al formato local
-        return date.toLocaleString("es-ES", {
-          weekday: "long", // Día de la semana
-          year: "numeric", // Año completo
-          month: "long", // Mes completo
-          day: "numeric", // Día del mes
-          hour: "2-digit", // Hora en formato de 2 dígitos
-          minute: "2-digit", // Minutos
-          second: "2-digit", // Segundos
-          hour12: false, // Usa el formato de 24 horas
-        });
-      },
+      label: "Fecha de creación",
+      render: (project) => (
+        <span className="whitespace-nowrap font-mono text-xs text-muted">
+          {formatDateTime(project.publishedAt)}
+        </span>
+      ),
     },
   ];
 
+  const actions = (
+    <Button onClick={() => setIsModalOpen(true)}>
+      <Plus className="h-4 w-4" strokeWidth={1.8} />
+      Crear nuevo proyecto
+    </Button>
+  );
+
   return (
-    <div>
-      <Navbar />
-      <Header />
+    <AppLayout
+      title="Mis proyectos"
+      description="Consulta, edita y crea los proyectos en los que participas"
+      actions={actions}
+    >
+      {error && (
+        <div className="mb-6 rounded-xl border border-line bg-danger-wash p-4 text-sm text-danger">
+          {error}
+        </div>
+      )}
 
-      <div className="container mx-auto p-4">
-        <motion.button
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          onClick={() => setIsModalOpen(true)}
-          className="m-4 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Crear Nuevo Proyecto
-        </motion.button>
-
-        {error && <p className="text-red-500">{error}</p>}
-        <ProjectsTable
-          projects={projects}
-          columns={columns}
-          linkBase="/project"
-          fetchProjects={handleDelete}
-          onEdit={handleEdit}
-        />
-      </div>
-
-      {/* Modal para Nuevo Proyecto */}
-
-      <AnimatePresence>
-        {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50 p-4 md:p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{
-                type: "spring",
-                duration: 0.5,
-                bounce: 0.3,
-              }}
-              className="bg-white rounded-xl shadow-2xl w-full sm:w-[500px] md:w-[600px] lg:w-[800px] xl:w-[1000px] relative overflow-hidden"
-            >
-              <div className="p-6 md:p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                    Crear Nuevo Proyecto
-                  </h2>
-                  <motion.button
-                    onClick={() => setIsModalOpen(false)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-lg p-2 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
-                    <svg
-                      className="w-6 h-6 md:w-7 md:h-7"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </motion.button>
-                </div>
-
-                <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
-                  <NewProject
-                    onClose={() => setIsModalOpen(false)}
-                    fetchProjects={fetchProjects}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal para Editar Proyecto */}
-      <AnimatePresence>
-        {isEditModalOpen && currentProject && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50"
-          >
-            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-auto">
-              <EditProject
-                project={currentProject}
-                onClose={() => setIsEditModalOpen(false)}
-                onUpdate={handleUpdate}
+      <motion.div {...fadeIn}>
+        <Card padded={false}>
+          {loading ? (
+            <div className="p-6">
+              <SkeletonRows count={5} />
+            </div>
+          ) : (
+            <div className="p-6">
+              <ProjectsTable
+                projects={projects}
+                columns={columns}
+                linkBase="/project"
+                fetchProjects={handleDelete}
+                onEdit={handleEdit}
               />
             </div>
-          </motion.div>
+          )}
+        </Card>
+      </motion.div>
+
+      {/* Modal para nuevo proyecto */}
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Crear nuevo proyecto"
+        description="Define el título, el itinerario y los integrantes del proyecto"
+      >
+        <NewProject onClose={() => setIsModalOpen(false)} fetchProjects={fetchProjects} />
+      </Modal>
+
+      {/* Modal para editar proyecto */}
+      <Modal
+        open={isEditModalOpen && Boolean(currentProject)}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar proyecto"
+        size="sm"
+      >
+        {currentProject && (
+          <EditProject
+            project={currentProject}
+            onClose={() => setIsEditModalOpen(false)}
+            onUpdate={handleUpdate}
+          />
         )}
-      </AnimatePresence>
-    </div>
+      </Modal>
+    </AppLayout>
   );
 };
 
