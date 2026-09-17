@@ -1,0 +1,5 @@
+# Sistema operativo
+.DS_Store
+
+# Dependencias (cada app tiene su propio node_modules)
+node_modules/

@@ -7,7 +7,6 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [keycloak] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -105,10 +104,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("userPermissions");
     localStorage.removeItem("strapiUserId");
-
-    if (keycloak) {
-      keycloak.logout();
-    }
   };
 
 
