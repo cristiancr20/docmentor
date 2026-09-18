@@ -98,7 +98,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      CHOKIDAR_USEPOLLING: "true" # Habilita hot-reloading en Docker
+      VITE_API_URL: http://localhost:1337 # URL del backend que usa el navegador (Vite la inyecta en import.meta.env)
     networks:
       - app-network
 

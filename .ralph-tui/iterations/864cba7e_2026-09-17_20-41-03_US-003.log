@@ -1,0 +1,71 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-003
+- **Task Title**: Migrar las suites de tests de Jest (CRA) a Vitest
+- **Description**: Como desarrollador, quiero que npm test ejecute Vitest, porque Jest no puede parsear import.meta.env y CRA ya no provee el runner. Las 8 suites y 46 tests actuales deben pasar sin cambiar lo que verif...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:41:03.827Z
+- **Ended At**: 2026-09-18T01:45:41.398Z
+- **Duration**: 4m 37s
+- **Input Tokens**: 132
+- **Output Tokens**: 16498
+- **Total Tokens**: 16630
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress notes and the current frontend setup.
+[94m[Bash][0m Read progress notes and frontend config files $ cat .ralph-tui/progress.md | head -150 && echo ---- && cat frontend/package.json && echo ---- && cat...
+[94m[Bash][0m Locate test files, jest usages and external references $ ls -a
+[94m[Bash][0m Check workflows, PRD status, and key test files $ grep -rn "process.env" frontend/src --include=*.js --include=*.jsx --include=*.ts --include=*.tsx | ...
+Let me install the dependencies and check the jest-dom export.
+[94m[Bash][0m Install vitest, jsdom, coverage-v8 and check jest-dom exports $ npm install -D vitest jsdom @vitest/coverage-v8 2>&1 | tail -5 && node -e "console.log(require('@tes...
+[94m[Bash][0m Show the dependency resolution error $ npm install -D vitest jsdom @vitest/coverage-v8 2>&1 | grep -v "^npm error$" | head -30
+The conflict comes from the old `jest-environment-jsdom` pinning jsdom@20. Since the AC removes the Jest devDependencies anyway, I'll uninstall them first, then install.
+[94m[Bash][0m Remove Jest devDependencies and install Vitest stack $ npm uninstall jest jest-environment-jsdom babel-jest jest-junit jest-localstorage-mock github-action...
+Now the config files: `vite.config.js`, `setupTests.js`, `package.json` scripts and `eslint.config.mjs`.
+[94m[Bash][0m Write Vitest config, setupTests, scripts and eslint globals $ node -e 'console.log(Object.keys(require("globals").vitest).length)'
+Now migrate the test files. First let me look at the ones with non-trivial mocks (factory closures, hoisting).
+[94m[Bash][0m Inspect tests with mock factories and fake timers $ sed -n 150,185p src/components/__tests__/NotificationBell.test.jsx
+[94m[Bash][0m Check how jspdf-autotable and logos are imported and asserted $ grep -n "logo_\|autoTable\|jsPDF" src/components/__tests__/GeneratePdfButton.test.jsx | sed -n 1,30p
+[94m[Bash][0m Replace jest.* with vi.* and fix Vitest-specific factories and env stubs $ sed -n 1,12p src/utils/__tests__/logger.test.js
+The `sed` didn't run because zsh doesn't word-split the variable. Redoing it with `find -exec`, then reapplying the pending edits.
+[94m[Bash][0m Apply jest→vi substitution across all test files and pending fixes $ sed -n 1,25p src/utils/__tests__/logger.test.js
+BSD `sed` doesn't support `\b`. Using `perl` instead (also catches the multi-line `jest\n  .fn()` in `useProjects.test.js:58`).
+[94m[Bash][0m Replace jest.* with vi.* using perl and apply Vitest-specific fixes $ sed -n 56,62p src/hooks/__tests__/useProjects.test.js
+Now let's run the suite.
+[94m[Bash][0m Run Vitest suite with coverage $ npm test 2>&1 | grep -v "^\s*[A-Za-z_./-]*\.jsx\?\s*|" | tail -80
+14 of 15 files pass. The one failure is a Vitest ≥4 rule: `new jsPDF()` with an arrow-function `mockImplementation` isn't constructible. Fix: use a regular `function`.
+[94m[Bash][0m Show the jsPDF mockImplementation $ sed -n 56,66p src/components/__tests__/GeneratePdfButton.test.jsx
+[94m[Bash][0m Make jsPDF mock constructible and rerun tests $ ''' assert old in s open(p,'w').write(s.replace(old,new)) EOF npm test 2>&1 | grep -E "Test Files|Te...
+[94m[Bash][0m Add mockReset to mirror CRA and rerun tests $ python3 - <<'EOF' p='vite.config.js' s=open(p).read() old='''    setupFiles: './src/setupTests.js', ...
+Passes with `mockReset` as well. Now the remaining quality checks: typecheck, eslint, build.
+[94m[Bash][0m Run typecheck, eslint and production build $ echo "== typecheck" && npm run typecheck 2>&1 | tail -3 && echo "== eslint" && npx eslint 'src/**/*....
+All checks pass. Let me verify leftovers: gitignore for `coverage/`, any remaining reference to the removed packages, and the final diff summary.
+[94m[Bash][0m Check gitignore, stale references and git status $ git status --short frontend
+[94m[Bash][0m Append US-003 entry and Vitest pattern to progress.md $ es solo rendimiento (~4 s en total), no hace falta tocar `pool`/`isolate`. --- ''' open(p,'w').write...
+US-003 is done. Summary of what changed in `frontend/`:
+
+**Dependencies**
+- Removed `jest`, `jest-environment-jsdom`, `babel-jest`, `jest-junit`, `jest-localstorage-mock`, `github-actions-ctrf` (no file or workflow referenced them; `unit_test_backend.yml` uses the backend's own Jest). Removing them first was also required: `jest-environment-jsdom` pinned `jsdom@20` and made `npm install jsdom` fail with ERESOLVE.
+- Added `vitest ^5.0.1`, `jsdom ^30.1.0`, `@vitest/coverage-v8`.
+
+**Config**
+- `vite.config.js`: `test` block per the AC (`jsdom`, `globals`, `setupFiles`, `css: false`, `coverage.reporter: ['text','lcov']`) plus `mockReset: true` to mirror CRA's `resetMocks`, which the AuthContext test relied on.
+- `src/setupTests.js`: `@testing-library/jest-dom/vitest` (the installed 6.6.3 exports it), dropped `dotenv` and `jest-localstorage-mock`, added an in-memory `localStorage` mock whose methods are `vi.fn()` and get reset in `beforeEach`.
+- `package.json`: `test = vitest run --coverage`, new `test:watch = vitest`. `eslint.config.mjs`: `globals.jest` → `globals.vitest`.
+
+**Tests** — `jest.*` → `vi.*` across all test files, plus three Vitest-specific fixes: `vi.mock` factories for default exports now return `{ default: ... }` (png assets, `jspdf-autotable`); `jsPDF.mockImplementation` uses a regular `function` so `new jsPDF()` works (Vitest ≥4 rejects arrow functions as constructors); `logger.test.js` uses `vi.stubEnv("MODE", …)` instead of `process.env.NODE_ENV`.
+
+**Verification**
+- `npm test` ✅ — 15 files, 86 tests, all passing. Note: the AC says "8 suites / 46 tests", but that figure predates tests added in earlier stories; US-001 already recorded 15/86 under Jest, so the count is unchanged by the migration.
+- `npm run typecheck` ✅, `npx eslint 'src/**/*.{js,jsx}'` ✅, `npm run build` ✅.
+
+One flag for a later story: the `dotenv` devDependency is now unused in the frontend. It wasn't in this AC's removal list, so I left it and noted it in `progress.md` as a candidate for US-005 alongside the Babel leftovers.
+
+<promise>COMPLETE</promise>

@@ -17,10 +17,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Node.js 18.20.4
+    - name: Set up Node.js 22
       uses: actions/setup-node@v4
       with:
-        node-version: 18.20.4
+        node-version: 22
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 

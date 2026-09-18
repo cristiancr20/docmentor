@@ -63,3 +63,15 @@ after each iteration and it's included in prompts for context.
   - Vitest carga `.env`/`.env.test` por sí mismo (`import.meta.env`), por eso sobra `dotenv`. La devDependency `dotenv` queda ya sin ningún uso en frontend: candidata a borrar en US-005 junto con `@babel/*`, `babel.config.js` y `@babel/core` (que sigue en `dependencies`).
   - Vitest avisa de que jsdom se crea 15 veces (uno por archivo); es solo rendimiento (~4 s en total), no hace falta tocar `pool`/`isolate`.
 ---
+
+## 2026-09-17 - US-004
+- `frontend/Dockerfile`: comentarios de la etapa de producción pasan de `/app/build` a `/app/dist` (`COPY --from=build /app/dist ...`); base `node:20-alpine` y `CMD ["npm","start"]` sin cambios (Vite 8 acepta `^20.19.0`, y `vite.config.js` ya fija `host: true` + puerto 3000).
+- `docker-compose.yml`: en `react` se elimina `CHOKIDAR_USEPOLLING` (era de webpack) y se añade `VITE_API_URL: http://localhost:1337`; `3000:3000` intacto.
+- `.github/workflows`: ninguno referenciaba `frontend/build` (verificado con grep en build_frontend, slint, sast, sca). Sí hubo que subir Node en `build_frontend.yml` (18.20.4 → 22) y `slint.yml` (matrix 18.20.5 → 22): Vite 8 exige `^20.19.0 || >=22.12.0` y Vitest 5 / jsdom 30 `>=22.12.0`, así que `npm run build` habría fallado en CI con Node 18. `sast.yml` se deja en 18.20.5 porque su matrix incluye el backend (`engines: >=18 <=20`) y su `npm run build || echo` ya tolera el fallo.
+- Nuevo `frontend/vercel.json` con el rewrite `/(.*)` → `/index.html` (SPA fallback para react-router).
+- `README.md`: `REACT_APP_API_URL` → `VITE_API_URL` (con nota del prefijo `VITE_`), `npm start` descrito como dev server de Vite, sección de depuración menciona `frontend/dist` y `npm run preview`, tecnologías: `React 18.x + Vite`.
+- Checks: `npm run build` ✅, `npm run typecheck` ✅, `npx eslint 'src/**/*.{js,jsx}'` ✅, `vercel.json` parsea, `docker-compose.yml` parsea (servicio `react` verificado con el paquete `yaml`). **No se pudo ejecutar `docker compose build react`**: el daemon de Docker no está arrancado y el plugin `compose` no está instalado en esta máquina.
+- **Learnings:**
+  - `frontend/Dockerfile` tiene finales de línea CRLF: los `perl -0pi` con `\n` no casan; usar `perl -pi` línea a línea con `\r$` (o `s/\r?\n/`) para conservar CRLF.
+  - Las versiones de Node de los workflows (18.x) quedaron por debajo del mínimo de Vite/Vitest; cualquier workflow nuevo del frontend debe usar Node 22. El backend (Strapi) sigue limitado a `<=20.x`, así que los workflows con matrix frontend+backend (sast.yml) no pueden compartir una sola versión sin separar el matrix.
+---

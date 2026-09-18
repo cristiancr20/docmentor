@@ -13,7 +13,7 @@ RUN npm install
 # Copiar el resto de tu aplicación
 COPY . . 
 
-# Build the app
+# Construir la app (Vite genera /app/dist)
 #RUN npm run build
 
 # Exponer el puerto (ajusta según tu aplicación)
@@ -25,8 +25,8 @@ CMD ["npm", "start"]
 # ===================================================================================================
 # Produccion
 
-# Copiar los archivos construidos desde la etapa anterior
-#COPY --from=build /app/build /usr/share/nginx/html
+# Copiar los archivos construidos por Vite (/app/dist) desde la etapa anterior
+#COPY --from=build /app/dist /usr/share/nginx/html
 
 # Exponer el puerto 80 (puerto predeterminado de Nginx)
 #EXPOSE 80

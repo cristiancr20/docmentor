@@ -13,7 +13,7 @@ DocMentor es una aplicación web para la gestión y seguimiento de documentos de
 ## 🛠️ Tecnologías Utilizadas
 
 ### Frontend
-- React 18.x
+- React 18.x + Vite
 - React Router 6.x
 - Tailwind CSS 3.x
 - Framer Motion
@@ -60,7 +60,7 @@ npm install
    ```bash
    cp .env.example .env
    ```
-   El archivo define `REACT_APP_API_URL=http://localhost:1337`. Si no existe `.env`, el frontend usa ese mismo valor por defecto.
+   El archivo define `VITE_API_URL=http://localhost:1337` (Vite solo expone al navegador las variables con prefijo `VITE_`). Si no existe `.env`, el frontend usa ese mismo valor por defecto.
 
    - En el directorio `backend`, crear un archivo `.env`:
    ```
@@ -89,7 +89,7 @@ npm install
 npm run develop
 ```
 
-2. Iniciar el frontend (desde el directorio `frontend`):
+2. Iniciar el frontend con el servidor de desarrollo de Vite (desde el directorio `frontend`):
 ```bash
 npm start
 ```
@@ -130,10 +130,11 @@ El sistema utiliza JWT (JSON Web Tokens) para la autenticación. Los tokens se a
 
 Para depurar la aplicación:
 
-1. Frontend:
+1. Frontend (el build de Vite se genera en `frontend/dist`; `npm run preview` lo sirve en local para probarlo):
 ```bash
 cd frontend
 npm run build
+npm run preview
 ```
 
 2. Backend:
