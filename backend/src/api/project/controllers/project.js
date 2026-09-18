@@ -38,21 +38,14 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async create(ctx) {
-    const user = ctx.state.user;
-
     const result = await super.create(ctx);
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'CREATE_PROJECT',
-      'project',
-      result.data.id,
-      user.id,
-      null,
-      result.data,
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'CREATE_PROJECT',
+      entity: 'project',
+      entityId: result.data.id,
+      after: result.data,
+    });
 
     return result;
   },
@@ -67,17 +60,13 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
 
     const result = await super.update(ctx);
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'UPDATE_PROJECT',
-      'project',
-      id,
-      user.id,
-      oldProject,
-      result.data,
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'UPDATE_PROJECT',
+      entity: 'project',
+      entityId: id,
+      before: oldProject,
+      after: result.data,
+    });
 
     return result;
   },
@@ -92,17 +81,12 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
 
     const result = await super.delete(ctx);
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'DELETE_PROJECT',
-      'project',
-      id,
-      user.id,
-      project,
-      null,
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'DELETE_PROJECT',
+      entity: 'project',
+      entityId: id,
+      before: project,
+    });
 
     return result;
   },
@@ -145,17 +129,13 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
       data: { status },
     });
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'CHANGE_PROJECT_STATUS',
-      'project',
-      id,
-      user.id,
-      { status: oldStatus },
-      { status },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'CHANGE_PROJECT_STATUS',
+      entity: 'project',
+      entityId: id,
+      before: { status: oldStatus },
+      after: { status },
+    });
 
     ctx.body = updatedProject;
   },

@@ -1,0 +1,163 @@
+# Iteration 10 Log
+
+## Metadata
+
+- **Task ID**: US-010
+- **Task Title**: Hacer atómica la restauración de versiones
+- **Description**: Como estudiante, quiero que restaurar una versión nunca deje dos documentos marcados como actuales, porque hoy restoreVersion crea la versión nueva y luego lanza N updates en paralelo sin transacción.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:45:48.453Z
+- **Ended At**: 2026-09-18T00:51:52.160Z
+- **Duration**: 6m 3s
+- **Input Tokens**: 238
+- **Output Tokens**: 25356
+- **Total Tokens**: 25594
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress file and the current `restoreVersion` implementation.
+[94m[Bash][0m Read progress notes and restoreVersion controller $ tail -80 .ralph-tui/progress.md && echo "=====" && grep -n "restoreVersion" -A80 backend/src/api/doc...
+[94m[Bash][0m Show Strapi version, document tests, and test DB config $ cat config/database.js | head -40
+[94m[Bash][0m Check installed Strapi versions and transaction API $ ls node_modules/@strapi/strapi/package.json >/dev/null 2>&1 && node -e "console.log(require('@strapi...
+[94m[Bash][0m Inspect transactionCtx and db.transaction implementation $ sed -n 3905,3975p node_modules/@strapi/database/dist/index.js && echo ===== && grep -n "async transa...
+
+[91m[Error: Exit code 1
+    }
+    if (this._fetched === this._limit || count < this._batchSize) {
+      this.push(null);
+    }
+  }
+}
+const storage = new node_async_hooks.AsyncLocalStorage();
+const transactionCtx = {
+  async run(trx, cb) {
+    const store = storage.getStore();
+    return storage.run(
+      {
+        trx,
+        // Fill with existing callbacks if nesting transactions
+        commitCallbacks: store?.commitCallbacks || [],
+        rollbackCallbacks: store?.rollbackCallbacks || []
+      },
+      cb
+    );
+  },
+  get() {
+    const store = storage.getStore();
+    return store?.trx;
+  },
+  async commit(trx) {
+    const store = storage.getStore();
+    if (store?.trx) {
+      store.trx = null;
+    }
+    await trx.commit();
+    if (!store?.commitCallbacks.length) {
+      return;
+    }
+    store.commitCallbacks.forEach((cb) => cb());
+    store.commitCallbacks = [];
+  },
+  async rollback(trx) {
+    const store = storage.getStore();
+    if (store?.trx) {
+      store.trx = null;
+    }
+    await trx.rollback();
+    if (!store?.rollbackCallbacks.length) {
+      return;
+    }
+    store.rollbackCallbacks.forEach((cb) => cb());
+    store.rollbackCallbacks = [];
+  },
+  onCommit(cb) {
+    const store = storage.getStore();
+    if (store?.commitCallbacks) {
+      store.commitCallbacks.push(cb);
+    }
+  },
+  onRollback(cb) {
+    const store = storage.getStore();
+    if (store?.rollbackCallbacks) {
+      store.rollbackCallbacks.push(cb);
+    }
+  }
+};
+const createQueryBuilder = (uid, db, initialState = {}) => {
+  const meta = db.metadata.get(uid);
+  const { tableName } = meta;
+  const state = ___default.default.defaults(
+    {
+      type: "select",
+      select: [],
+      count: null,
+      max: null,
+      first: false,
+(eval):1: ==== not found][0m
+[94m[Bash][0m Inspect db.transaction and updateMany implementation $ grep -n "updateMany" node_modules/@strapi/database/dist/index.js | head
+[94m[Bash][0m Inspect entityManager.updateMany and query-builder transaction join $ sed -n 5189,5215p node_modules/@strapi/database/dist/index.js && sed -n 4325,4340p node_modules/@str...
+[94m[Bash][0m Check how update with relation where clause is built $ grep -n "processWhere\|whereIn.*subquery\|shouldUseSubQuery\|state.joins.length" node_modules/@strap...
+[94m[Bash][0m Show document schema, controller header and test helper $ cat src/api/document/content-types/document/schema.json && sed -n 1,30p src/api/document/controllers...
+[94m[Bash][0m Verify ctx.internalServerError, repository caching, lifecycle subscribe and entityService transaction usage $ grep -n "async create(uid, opts" -A30 node_modules/@strapi/strapi/dist/services/entity-service/index...
+[94m[Bash][0m Locate internalServerError helper and entity-service transaction usage $ grep -n "transaction" node_modules/@strapi/strapi/dist/services/entity-service/index.js | head
+[94m[Bash][0m Find where Strapi registers koa ctx error helpers $ grep -n "internalServerError\|badRequest" node_modules/@strapi/utils/dist/types.d.ts | head -3
+[94m[Bash][0m Read errors middleware and check entity-service transactions $ grep -n "transaction\|db.transaction" node_modules/@strapi/strapi/dist/services/entity-service/*.js ...
+[94m[Bash][0m Check entity-service create transaction usage and koa helpers $ grep -rn "internalServerError" node_modules/@strapi/strapi/dist/services/server/koa.js | head -3
+[94m[Bash][0m Inspect entityService.create and find internalServerError helper registration $ grep -rln "internalServerError" node_modules/@strapi/strapi/dist/ | grep -v "\.map$" | head
+[94m[Bash][0m Locate entityService.create and internalServerError registration $ grep -rn "internalServerError" node_modules/@strapi/utils/dist/index.js | head -3
+[94m[Bash][0m Read entityService.create body and find internalServerError registration $ grep -rln "internalServerError" node_modules/@strapi/strapi/dist/ node_modules/@strapi/utils/dist/ |...
+[94m[Bash][0m Check how koa ctx error helpers are added and used in project $ grep -rn "ctx.internalServerError\|ctx.badRequest" src | head -5
+[94m[Bash][0m Search Strapi dist for internalServerError helper $ grep -rn "internalServerError" node_modules/@strapi/strapi/dist/services/*.js | head -3
+[94m[Bash][0m Search with plain grep for error helper registration $ grep -rn "badRequest" node_modules/@strapi/strapi/dist/services/server/*.js node_modules/@strapi/str...
+[94m[Bash][0m Locate koa error helper source $ grep -rn "delegate\|http-errors\|koa-boom\|createError" node_modules/@strapi/strapi/dist/services/se...
+[94m[Bash][0m Read koa error helper registration $ sed -n 12,45p node_modules/@strapi/strapi/dist/services/server/koa.js
+[94m[Bash][0m Wrap restoreVersion create + updateMany in a transaction $ }  ''' s=s.replace(old,new) open(p,'w').write(s) EOF sed -n 154,225p src/api/document/controllers/do...
+The replacement got mangled. I'll restore the file from git and redo it with a cleaner approach.
+[94m[Bash][0m Restore controller and locate replacement boundaries $ git checkout -- src/api/document/controllers/document.js && grep -c "" src/api/document/controllers/...
+[94m[Bash][0m Replace lines 168-197 of the controller with the transactional block $ } > /tmp/document.js && mv /tmp/document.js $f sed -n 154,225p $f && node --check $f && echo SYNTAX_...
+[94m[Bash][0m Confirm diff scope and check restore route / ownership rules for the test $ git diff --stat && grep -n "CREATE_DOCUMENT\|restore" src/api/document/routes/01-custom-document.js ...
+[94m[Bash][0m Check project relations and test bootstrap $ grep -n '"students"\|"tutor"\|"documents"' -A4 src/api/project/content-types/project/schema.json && ...
+[94m[Bash][0m Append restore tests and verify count/subscribe APIs exist $ grep -n "subscribe(subscriber)" -A12 node_modules/@strapi/database/dist/index.js | head -16
+[94m[Bash][0m Run backend test suite with Node 20 $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && node -v && npm test 2>&1 | grep -E "✓|✕...
+The happy path returned a 500 — let me see the logged error.
+[94m[Bash][0m Show the error logged by restoreVersion $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -n "No se pudo res...
+[94m[Bash][0m Inspect getKnexQuery subquery handling for update $ sed -n 4178,4245p node_modules/@strapi/database/dist/index.js
+[94m[Bash][0m Read processWhere to see handling of relation and unknown keys $ sed -n 3570,3660p node_modules/@strapi/database/dist/index.js
+[94m[Bash][0m Confirm manyToOne attributes expose joinColumn.name in metadata $ grep -n "const createJoin" -A22 node_modules/@strapi/database/dist/index.js | grep -n "joinColumn"
+[94m[Bash][0m Filter updateMany by the FK column and rerun the suite $ try {       restored = await strapi.db.transaction(async () => { ''' assert s.count(old2)==1 s=s.rep...
+[94m[Bash][0m Show full failure details for the restore tests $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -E "restore|● POST...
+[94m[Bash][0m Print the runtime metadata for the document.project attribute $ " 2>/dev/null | head -30
+[94m[Bash][0m Print runtime metadata for document.project with errors visible $ " 2>&1 | grep -A20 "META\|ERR" | head -30
+[94m[Bash][0m Check how manyToOne metadata join column is assigned $ sed -n 2085,2105p node_modules/@strapi/database/dist/index.js
+[94m[Bash][0m Check createRelation dispatch for manyToOne $ grep -n "const createManyToOne" -A20 node_modules/@strapi/database/dist/index.js | head -24
+[94m[Bash][0m Check whether manyToOne uses a join table and inspect the test DB schema $ sqlite3 .tmp/test.db ".tables" 2>/dev/null | tr ' ' '\n' | grep -i "document"
+[94m[Bash][0m Rewrite restoreVersion with siblings read inside the transaction $ } > /tmp/document.js && mv /tmp/document.js $f node --check $f && sed -n 145,160p $f && sed -n 224,2...
+[94m[Bash][0m Run the backend suite again $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -E "✓ tras|✓ si el...
+[94m[Bash][0m Show controller diff and available lint scripts; confirm package.json untouched $ git diff --stat -- package.json package-lock.json
+The backend has no lint/typecheck rules (both scripts are echo stubs), `package.json` is untouched, and no routes changed. Now the progress notes.
+[94m[Bash][0m Locate the pattern list entry to insert after $ cd /Users/cristian/orca/docmentor && grep -n "Regla del grep \`auth: false\`" .ralph-tui/progress.md...
+[94m[Bash][0m Append US-010 notes and pattern to progress.md $ el hook `beforeUpdateMany` corre dentro de `entityManager.updateMany` y, por tanto, dentro de la tra...
+US-010 is done.
+
+## What changed
+
+**`backend/src/api/document/controllers/document.js` — `restoreVersion`**
+- The sibling read, `nextVersion`/`currentTip` calculation, `entityService.create` of the restored version, and the unmarking of the rest now all run inside one `strapi.db.transaction(async () => { ... })`. Strapi 4.25 propagates the transaction via `AsyncLocalStorage`, so every `strapi.db.query`/`entityService` call inside the callback joins it automatically.
+- Unmarking is a single `updateMany({ where: { id: { $in: siblingIds, $ne: created.id } }, data: { isCurrent: false } })` instead of one `entityService.update` per document in `Promise.all`.
+- Any failure inside rolls back (no new version left behind), is logged, and returns `ctx.internalServerError('No se pudo restaurar la versión: la operación se revirtió y no se creó ninguna versión nueva')`. Audit logging stays outside, after commit.
+
+**`backend/config/env/test/documents/index.js`** — new `describe 'POST /documents/:id/restore es atómico'`:
+- Happy path as an `estudiante` with `CREATE_DOCUMENT` who belongs to the project: 200, `version: 3`, and exactly one document in the project with `isCurrent: true` (the new one), v2 unmarked.
+- Rollback path: a `beforeUpdateMany` lifecycle that throws (registered with `strapi.db.lifecycles.subscribe`, unsubscribed in `finally`) → 500 with the message, same document count, same `isCurrent` state as before, no new audit entry. Since the throw happens *after* the insert, this proves the rollback really undid the create.
+
+`cd backend && npm test`: **82/82 passing**. `backend/package.json` untouched.
+
+## One deviation from the acceptance criteria, worth knowing
+
+The criterion literally asked for `where: { project: projectId, id: { $ne: restored.id } }`. I tried it first and it fails on this Strapi version: `update documents set is_current = false where (t2.id = 4 and id <> 5)` → `no such column: t2.id`. The `project` relation isn't a column on `documents` (it lives in `documents_project_links`), so the update needs a join, and `@strapi/database` 4.25.20 checks `shouldUseSubQuery()` *before* `processState()` populates `state.joins` — a known bug that can't be fixed without upgrading `@strapi/*`, which the story forbids. Filtering by the ids read inside the same transaction keeps the single-`updateMany` intent and the atomicity guarantee; the reason is commented in the controller and recorded as a codebase pattern in `progress.md`.
+
+<promise>COMPLETE</promise>

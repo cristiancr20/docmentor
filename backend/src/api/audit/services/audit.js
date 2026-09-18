@@ -8,46 +8,68 @@ const { createCoreService } = require('@strapi/strapi').factories;
 
 const coreService = createCoreService('api::audit.audit');
 
+/**
+ * Registra una entrada de auditoría. Es la función interna: los controllers
+ * usan `logFromCtx`, que resuelve usuario e IP a partir del ctx de Koa.
+ */
+async function logAudit(action, entityType, entityId, userId, oldValue, newValue, ipAddress) {
+  // Los controllers registran la auditoría DESPUÉS de aplicar el cambio. Si
+  // esto lanzaba (por ejemplo un entityId indefinido -> NaN en un campo
+  // obligatorio), el cliente recibía un 500 por una operación que sí se había
+  // ejecutado, y al reintentar se duplicaba. Un fallo al auditar se registra
+  // pero no tumba la petición.
+  try {
+    const parsedEntityId = parseInt(entityId, 10);
+    const parsedUserId = parseInt(userId, 10);
+
+    if (Number.isNaN(parsedEntityId) || Number.isNaN(parsedUserId)) {
+      strapi.log.warn(
+        `Auditoría omitida (${action}): entityId=${entityId}, userId=${userId} no son numéricos.`
+      );
+      return null;
+    }
+
+    return await strapi.entityService.create('api::audit.audit', {
+      data: {
+        action,
+        entityType,
+        entityId: parsedEntityId,
+        userId: parsedUserId,
+        oldValue,
+        newValue,
+        ipAddress,
+        // El schema traía `"default": "$now"`, que Strapi no interpreta: lo
+        // tomaba como literal y toda inserción fallaba con "Invalid format,
+        // expected a timestamp or an ISO date". La marca de tiempo se pone
+        // aquí de forma explícita.
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    strapi.log.error(`No se pudo registrar la auditoría (${action}): ${error.message}`);
+    return null;
+  }
+}
+
+/** IP del cliente: la que resuelve Koa o, si no, la primera de x-forwarded-for. */
+function ipFromCtx(ctx) {
+  return ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0]?.trim() || '';
+}
+
 module.exports = {
   ...coreService,
 
-  async logAudit(action, entityType, entityId, userId, oldValue, newValue, ipAddress) {
-    // Los controllers registran la auditoría DESPUÉS de aplicar el cambio. Si
-    // esto lanzaba (por ejemplo un entityId indefinido -> NaN en un campo
-    // obligatorio), el cliente recibía un 500 por una operación que sí se había
-    // ejecutado, y al reintentar se duplicaba. Un fallo al auditar se registra
-    // pero no tumba la petición.
-    try {
-      const parsedEntityId = parseInt(entityId, 10);
-      const parsedUserId = parseInt(userId, 10);
+  logAudit,
 
-      if (Number.isNaN(parsedEntityId) || Number.isNaN(parsedUserId)) {
-        strapi.log.warn(
-          `Auditoría omitida (${action}): entityId=${entityId}, userId=${userId} no son numéricos.`
-        );
-        return null;
-      }
-
-      return await strapi.entityService.create('api::audit.audit', {
-        data: {
-          action,
-          entityType,
-          entityId: parsedEntityId,
-          userId: parsedUserId,
-          oldValue,
-          newValue,
-          ipAddress,
-          // El schema traía `"default": "$now"`, que Strapi no interpreta: lo
-          // tomaba como literal y toda inserción fallaba con "Invalid format,
-          // expected a timestamp or an ISO date". La marca de tiempo se pone
-          // aquí de forma explícita.
-          timestamp: new Date(),
-        },
-      });
-    } catch (error) {
-      strapi.log.error(`No se pudo registrar la auditoría (${action}): ${error.message}`);
-      return null;
-    }
+  /**
+   * Registra una acción tomando el usuario (`ctx.state.user.id`) y la IP del
+   * propio ctx, para que los controllers no repitan ese cálculo.
+   *
+   * @param {import('koa').Context} ctx
+   * @param {{ action: string, entity: string, entityId: number|string, before?: any, after?: any }} entry
+   */
+  async logFromCtx(ctx, { action, entity, entityId, before = null, after = null }) {
+    return logAudit(action, entity, entityId, ctx.state.user?.id, before, after, ipFromCtx(ctx));
   },
 
   async getAuditLogs(filters = {}, page = 1, pageSize = 20) {

@@ -90,17 +90,12 @@ module.exports = {
       populate: { rols: true },
     });
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'CREATE_USER',
-      'user',
-      newUser.id,
-      user.id,
-      null,
-      { username: newUser.username, email: newUser.email },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'CREATE_USER',
+      entity: 'user',
+      entityId: newUser.id,
+      after: { username: newUser.username, email: newUser.email },
+    });
 
     ctx.send({
       data: {
@@ -142,17 +137,13 @@ module.exports = {
       populate: { rols: true },
     });
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'UPDATE_USER',
-      'user',
-      parseInt(id),
-      user.id,
-      { username: targetUser.username, email: targetUser.email },
-      { username: updatedUser.username, email: updatedUser.email },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'UPDATE_USER',
+      entity: 'user',
+      entityId: parseInt(id),
+      before: { username: targetUser.username, email: targetUser.email },
+      after: { username: updatedUser.username, email: updatedUser.email },
+    });
 
     ctx.send({
       data: {
@@ -183,17 +174,13 @@ module.exports = {
       data: { isActive: false, blocked: true },
     });
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'DELETE_USER',
-      'user',
-      parseInt(id),
-      user.id,
-      { isActive: true },
-      { isActive: false },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'DELETE_USER',
+      entity: 'user',
+      entityId: parseInt(id),
+      before: { isActive: true },
+      after: { isActive: false },
+    });
 
     ctx.send({ data: { id: parseInt(id), message: 'Usuario desactivado' } });
   },
@@ -211,8 +198,6 @@ module.exports = {
       return ctx.notFound('User not found');
     }
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
     const oldUserData = {
       username: targetUser.username,
       email: targetUser.email,
@@ -228,18 +213,16 @@ module.exports = {
       },
     });
 
-    await strapi.service('api::audit.audit').logAudit(
-      'ANONYMIZE_USER',
-      'user',
-      parseInt(id),
-      user.id,
-      oldUserData,
-      {
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'ANONYMIZE_USER',
+      entity: 'user',
+      entityId: parseInt(id),
+      before: oldUserData,
+      after: {
         username: anonymousUsername,
         email: anonymousEmail,
       },
-      ipAddress
-    );
+    });
 
     ctx.send({
       message: 'Usuario anonimizado correctamente',

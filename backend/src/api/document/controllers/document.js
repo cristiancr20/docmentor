@@ -50,17 +50,12 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
 
     const result = await super.create(ctx);
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'CREATE_DOCUMENT',
-      'document',
-      result.data.id,
-      user.id,
-      null,
-      result.data,
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'CREATE_DOCUMENT',
+      entity: 'document',
+      entityId: result.data.id,
+      after: result.data,
+    });
 
     await strapi
       .service('api::notification.notification')
@@ -79,17 +74,13 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
 
     const result = await super.update(ctx);
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'UPDATE_DOCUMENT',
-      'document',
-      id,
-      user.id,
-      oldDocument,
-      result.data,
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'UPDATE_DOCUMENT',
+      entity: 'document',
+      entityId: id,
+      before: oldDocument,
+      after: result.data,
+    });
 
     return result;
   },
@@ -104,17 +95,12 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
 
     const result = await super.delete(ctx);
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'DELETE_DOCUMENT',
-      'document',
-      id,
-      user.id,
-      document,
-      null,
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'DELETE_DOCUMENT',
+      entity: 'document',
+      entityId: id,
+      before: document,
+    });
 
     return result;
   },
@@ -216,17 +202,13 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
       );
     }
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'RESTORE_DOCUMENT_VERSION',
-      'document',
-      restored.id,
-      user.id,
-      { restoredFrom: source.id, version: source.version },
-      { version: nextVersion },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'RESTORE_DOCUMENT_VERSION',
+      entity: 'document',
+      entityId: restored.id,
+      before: { restoredFrom: source.id, version: source.version },
+      after: { version: nextVersion },
+    });
 
     ctx.send({ data: restored });
   },
@@ -252,17 +234,13 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
       data: { isRevised },
     });
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'REVIEW_DOCUMENT',
-      'document',
-      id,
-      user.id,
-      { isRevised: document.isRevised },
-      { isRevised },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'REVIEW_DOCUMENT',
+      entity: 'document',
+      entityId: id,
+      before: { isRevised: document.isRevised },
+      after: { isRevised },
+    });
 
     ctx.send({ data: updated });
   },
@@ -303,17 +281,13 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
       data: { status },
     });
 
-    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
-
-    await strapi.service('api::audit.audit').logAudit(
-      'CHANGE_DOCUMENT_STATUS',
-      'document',
-      id,
-      user.id,
-      { status: oldStatus },
-      { status },
-      ipAddress
-    );
+    await strapi.service('api::audit.audit').logFromCtx(ctx, {
+      action: 'CHANGE_DOCUMENT_STATUS',
+      entity: 'document',
+      entityId: id,
+      before: { status: oldStatus },
+      after: { status },
+    });
 
     await strapi
       .service('api::notification.notification')
