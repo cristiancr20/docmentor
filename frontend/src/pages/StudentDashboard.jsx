@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, FileText, FolderKanban, Clock, Plus, Upload } from "lucide-react";
@@ -13,9 +13,9 @@ import { PermissionGate } from "../components/PermissionGate";
 import { useAuth } from "../context/AuthContext";
 import { getProjectsByStudents } from "../core/Projects";
 import { getDocumentsByProjectId } from "../core/Document";
+import useProjects from "../hooks/useProjects";
 import { getUserData } from "../utils/auth.utils";
 import { formatDate } from "../utils/format";
-import logger from "../utils/logger";
 
 // Entrada corta y uniforme: sin retardo por índice, que dejaba el final de las
 // listas largas apareciendo varios segundos después.
@@ -28,11 +28,8 @@ const fadeIn = {
 function StudentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
   const [recentDocuments, setRecentDocuments] = useState([]);
   const [documentsInReview, setDocumentsInReview] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   let userEmail = null;
 
   const storedUserData = getUserData();
@@ -40,45 +37,36 @@ function StudentDashboard() {
     userEmail = storedUserData.email;
   }
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      if (userEmail) {
-        const userProjects = await getProjectsByStudents(userEmail);
-        setProjects(userProjects);
+    if (!userEmail) return [];
 
-        const allDocuments = [];
-        let inReviewCount = 0;
+    const userProjects = await getProjectsByStudents(userEmail);
 
-        for (const project of userProjects) {
-          const projectDocuments = await getDocumentsByProjectId(project.id);
-          if (projectDocuments.data) {
-            const docsList = projectDocuments.data.map(doc => ({
-              ...doc.attributes,
-              id: doc.id,
-              projectId: project.id,
-              projectTitle: project.title
-            }));
-            allDocuments.push(...docsList);
-            inReviewCount += docsList.filter(doc => doc.status === "En Revisión").length;
-          }
-        }
+    const allDocuments = [];
+    let inReviewCount = 0;
 
-        allDocuments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setRecentDocuments(allDocuments.slice(0, 5));
-        setDocumentsInReview(inReviewCount);
+    for (const project of userProjects) {
+      const projectDocuments = await getDocumentsByProjectId(project.id);
+      if (projectDocuments.data) {
+        const docsList = projectDocuments.data.map(doc => ({
+          ...doc.attributes,
+          id: doc.id,
+          projectId: project.id,
+          projectTitle: project.title
+        }));
+        allDocuments.push(...docsList);
+        inReviewCount += docsList.filter(doc => doc.status === "En Revisión").length;
       }
-    } catch (err) {
-      logger.error("Error fetching dashboard data:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
     }
+
+    allDocuments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    setRecentDocuments(allDocuments.slice(0, 5));
+    setDocumentsInReview(inReviewCount);
+
+    return userProjects;
   };
+
+  const { projects, loading, error } = useProjects(fetchDashboardData);
 
   const title = `¡Bienvenido, ${user?.username ?? ""}!`;
   const description = "Gestiona tus proyectos y documentos en un único lugar";
@@ -131,7 +119,7 @@ function StudentDashboard() {
 
       {error && (
         <div className="mt-6 rounded-xl border border-line bg-danger-wash p-4 text-sm text-danger">
-          {error}
+          {error.message}
         </div>
       )}
 

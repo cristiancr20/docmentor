@@ -1,0 +1,121 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: Cancelar el polling de notificaciones al desmontar
+- **Description**: Como usuario, quiero que la campana de notificaciones no dispare actualizaciones de estado sobre un componente ya desmontado, porque hoy NotificationBell usa setInterval sin cancelar la petición en vu...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:15:46.806Z
+- **Ended At**: 2026-09-18T01:17:57.757Z
+- **Duration**: 2m 10s
+- **Input Tokens**: 78
+- **Output Tokens**: 8902
+- **Total Tokens**: 8980
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Read Notification core, NotificationBell, and progress notes $ sed -n 1,60p .ralph-tui/progress.md
+[94m[Bash][0m Read existing NotificationBell test and package versions $ cat frontend/src/components/__tests__/NotificationBell.test.jsx && grep -n '"axios"\|"react"\|"@test...
+[94m[Bash][0m Add signal support to getMyNotifications and AbortController to NotificationBell $ """ assert old in s s=s.replace(old,new) open(p,'w').write(s) EOF git diff --stat
+[94m[Bash][0m Add unmount/abort tests and run NotificationBell suite $ ') open(p,'w').write(s) EOF CI=true npx react-scripts test --watchAll=false src/components/__tests__...
+[94m[Bash][0m Wrap render in act for fake-timer test and rerun $ npx react-scripts test --watchAll=false src/components/__tests__/NotificationBell.test.jsx 2>&1 | ta...
+[94m[Bash][0m Inspect remaining warnings and compare with baseline before changes $ git stash pop -q && git status --short
+
+[91m[Error: Exit code 1
+  console.warn
+    ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+    [0m [90m 31 |[39m
+     [90m 32 |[39m [36mconst[39m renderBell [33m=[39m () [33m=>[39m
+    [31m[1m>[22m[39m[90m 33 |[39m   render(
+     [90m    |[39m         [31m[1m^[22m[39m
+     [90m 34 |[39m     [33m<[39m[33mMemoryRouter[39m[33m>[39m
+     [90m 35 |[39m       [33m<[39m[33mNotificationBell[39m [33m/[39m[33m>[39m
+     [90m 36 |[39m     [33m<[39m[33m/[39m[33mMemoryRouter[39m[33m>[39m[0m
+
+      at warn (node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (node_modules/react-router/lib/components.tsx:257:25)
+      at create (node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+      at commitPassiveMountEffects_complete (node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+      at commitPassiveMountEffects_begin (node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+      at commitPassiveMountEffects (node_modules/react-dom/cjs/react-dom.development.js:27078:3)
+      at flushPassiveEffectsImpl (node_modules/react-dom/cjs/react-dom.development.js:27023:14)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom.development.js:26808:9)
+      at callback (node_modules/react/cjs/react.development.js:2667:24)
+      at flushActQueue (node_modules/react/cjs/react.development.js:2582:11)
+      at actImplementation (node_modules/@testing-library/react/dist/act-compat.js:47:25)
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:180:25)
+--
+
+  console.warn
+    ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+    [0m [90m 31 |[39m
+     [90m 32 |[39m [36mconst[39m renderBell [33m=[39m () [33m=>[39m
+    [31m[1m>[22m[39m[90m 33 |[39m   render(
+     [90m    |[39m         [31m[1m^[22m[39m
+     [90m 34 |[39m     [33m<[39m[33mMemoryRouter[39m[33m>[39m
+     [90m 35 |[39m       [33m<[39m[33mNotificationBell[39m [33m/[39m[33m>[39m
+     [90m 36 |[39m     [33m<[39m[33m/[39m[33mMemoryRouter[39m[33m>[39m[0m
+
+      at warn (node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (node_modules/react-router/lib/components.tsx:257:25)
+      at create (node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+      at commitPassiveMountEffects_complete (node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+      at commitPassiveMountEffects_begin (node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+      at commitPassiveMountEffects (node_modules/react-dom/cjs/react-dom.development.js:27078:3)
+      at flushPassiveEffectsImpl (node_modules/react-dom/cjs/react-dom.development.js:27023:14)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom.development.js:26808:9)
+      at callback (node_modules/react/cjs/react.development.js:2667:24)
+      at flushActQueue (node_modules/react/cjs/react.development.js:2582:11)
+      at actImplementation (node_modules/@testing-library/react/dist/act-compat.js:47:25)
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:180:25)
+--
+
+  console.error
+    Warning: An update to NotificationBell inside a test was not wrapped in act(...).
+(eval):1: === not found][0m
+[94m[Bash][0m Check working tree state after failed command $ git status --short && git stash list | head -3
+Good, the stash never ran. There's still one act() warning — let me see which test emits it.
+[94m[Bash][0m Locate which test triggers the act warning $ npx react-scripts test --watchAll=false src/components/__tests__/NotificationBell.test.jsx 2>&1 | gr...
+[94m[Bash][0m Run each test in isolation to find the act warning source $ done
+[94m[Bash][0m Confirm the act warning in the empty-state test predates my change $ git stash pop -q && git status --short src
+That act() warning is pre-existing in the empty-state test (unrelated to this story); my two new tests are clean. Now the full quality checks.
+[94m[Bash][0m Run typecheck, eslint, and full frontend test suite $ npm run typecheck 2>&1 | tail -3 && echo "== eslint" && npx eslint 'src/**/*.{js,jsx}' && echo "esli...
+All green. Final diff review and progress log:
+[94m[Bash][0m Show final source diff and confirm poll interval unchanged $ cd /Users/cristian/orca/docmentor && git diff frontend/src/components/NotificationBell.jsx frontend/...
+[94m[Bash][0m Append US-004 entry and patterns to progress.md $ usar otro separador en los scripts de shell. --- """ open(p,'w').write(s) EOF tail -5 .ralph-tui/pro...
+[94m[Bash][0m Fix typo in progress entry $ sed -i '' 's/hasta que se abora el signal/hasta que se aborta el signal/' .ralph-tui/progress.md && ...
+US-004 implemented.
+
+**Changes**
+- `frontend/src/core/Notification.js:6` — `getMyNotifications({ signal } = {})` now forwards `signal` to `api.get(..., { signal })`.
+- `frontend/src/components/NotificationBell.jsx:55` — `loadNotifications(signal)` returns early on `CanceledError`/`AbortError` before logging; the polling `useEffect` creates one `AbortController` per cycle, aborts the previous one when the next tick fires, and the cleanup does `clearInterval` + `controller.abort()`. `POLL_INTERVAL_MS` is unchanged at 30000.
+- `frontend/src/components/__tests__/NotificationBell.test.jsx` — two new tests:
+  1. Mocks the request to stay pending until its signal aborts (rejecting with `CanceledError` like axios), unmounts mid-request, and asserts `signal.aborted === true` and that `console.error` was never called (covers both React warnings and an undesired `logger.error`).
+  2. With fake timers, advancing `POLL_INTERVAL_MS` aborts the previous cycle's signal and issues a fresh one.
+
+**Checks**
+- `npm run typecheck` ✓
+- `npx eslint 'src/**/*.{js,jsx}'` ✓
+- `CI=true npx react-scripts test --watchAll=false` ✓ — 12 suites, 66 tests
+
+**Notes**
+- React 18 no longer emits the "state update on an unmounted component" warning, so the test spies on `console.error` broadly and asserts on the signal directly.
+- The pre-existing "muestra mensaje vacío" test emits a "not wrapped in act" warning that predates this story (verified via stash); left untouched as out of scope.
+- Progress log and two new codebase patterns (cancelable polling requests; fake timers + RTL `act`) appended to `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>

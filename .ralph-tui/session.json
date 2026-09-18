@@ -3,10 +3,10 @@
   "sessionId": "e23adec5-809e-4505-8759-0cef36fa2eb4",
   "status": "running",
   "startedAt": "2026-09-18T01:08:14.704Z",
-  "updatedAt": "2026-09-18T01:17:57.758Z",
-  "currentIteration": 3,
+  "updatedAt": "2026-09-18T01:21:20.922Z",
+  "currentIteration": 4,
   "maxIterations": 0,
-  "tasksCompleted": 3,
+  "tasksCompleted": 4,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -36,8 +36,8 @@
       {
         "id": "US-004",
         "title": "Cancelar el polling de notificaciones al desmontar",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-005",
@@ -101,6 +101,16 @@
       "durationMs": 103842,
       "startedAt": "2026-09-18T01:14:01.865Z",
       "endedAt": "2026-09-18T01:15:45.707Z"
+    },
+    {
+      "iteration": 4,
+      "status": "completed",
+      "taskId": "US-004",
+      "taskTitle": "Cancelar el polling de notificaciones al desmontar",
+      "taskCompleted": true,
+      "durationMs": 130951,
+      "startedAt": "2026-09-18T01:15:46.806Z",
+      "endedAt": "2026-09-18T01:17:57.757Z"
     }
   ],
   "skippedTaskIds": [],

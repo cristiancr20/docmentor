@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -21,6 +21,7 @@ import { SkeletonStats, SkeletonRows } from "../components/ui/Skeleton";
 import { useAuth } from "../context/AuthContext";
 import { getAllProjects, getAllUsers, assignTutorToProject } from "../core/Projects";
 import { getDocumentsByProjectId } from "../core/Document";
+import useProjects from "../hooks/useProjects";
 import { formatDate } from "../utils/format";
 import logger from "../utils/logger";
 
@@ -35,12 +36,9 @@ const fadeIn = {
 function CoordinatorDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [tutors, setTutors] = useState([]);
   const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterTutor, setFilterTutor] = useState("all");
   const [filterDate, setFilterDate] = useState("all");
@@ -51,32 +49,23 @@ function CoordinatorDashboard() {
   const [selectedTutorForAssign, setSelectedTutorForAssign] = useState("");
   const [assignLoading, setAssignLoading] = useState(false);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
   const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [projectsData, tutorsData, studentsData] = await Promise.all([
-        getAllProjects(),
-        getAllUsers("tutor"),
-        getAllUsers("estudiante"),
-      ]);
+    const [projectsData, tutorsData, studentsData] = await Promise.all([
+      getAllProjects(),
+      getAllUsers("tutor"),
+      getAllUsers("estudiante"),
+    ]);
 
-      setProjects(projectsData);
-      setFilteredProjects(projectsData);
-      setTutors(tutorsData);
-      setStudents(studentsData);
+    setFilteredProjects(projectsData);
+    setTutors(tutorsData);
+    setStudents(studentsData);
 
-      await calculateMetrics(projectsData);
-    } catch (err) {
-      logger.error("Error fetching dashboard data:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    await calculateMetrics(projectsData);
+
+    return projectsData;
   };
+
+  const { projects, loading, error, setProjects } = useProjects(fetchDashboardData);
 
   const calculateMetrics = async (projectsData) => {
     try {
@@ -258,7 +247,7 @@ function CoordinatorDashboard() {
 
       {error && (
         <div className="mt-6 rounded-xl border border-line bg-danger-wash p-4 text-sm text-danger">
-          {error}
+          {error.message}
         </div>
       )}
 
