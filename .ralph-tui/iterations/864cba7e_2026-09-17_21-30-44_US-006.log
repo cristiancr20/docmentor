@@ -1,0 +1,266 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: Verificar en el navegador que la app funciona igual con Vite
+- **Description**: Como usuario, quiero que tras la migración el login, los dashboards, el visor de PDF con resaltados y el comparador de versiones funcionen exactamente como antes, porque esas pantallas dependen del wo...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T02:30:44.385Z
+- **Ended At**: 2026-09-18T02:53:07.895Z
+- **Duration**: 22m 23s
+- **Input Tokens**: 352
+- **Output Tokens**: 25769
+- **Total Tokens**: 26121
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress file and the current state of the frontend.
+[94m[Bash][0m Read progress notes and PRD $ cat .ralph-tui/progress.md && echo "-----PRD-----" && cat tasks/prd-vite.json | head -200
+[94m[Bash][0m Inspect frontend package, vite config and pdf viewer imports $ cd /Users/cristian/orca/docmentor/frontend && cat package.json && cat vite.config.js && ls public sr...
+[94m[Bash][0m Find pdf viewer imports, worker setup and routes $ cat src/App.jsx | head -120
+[94m[Bash][0m Check react-pdf-viewer packages and PdfViewer imports $ sed -n 1,80p src/components/PdfViewer.tsx
+[94m[Bash][0m Inspect backend and seed script $ cd /Users/cristian/orca/docmentor && ls backend/ && sed -n 1,80p backend/scripts/seed-test-users.js ...
+[94m[Bash][0m Check DB config, env keys, running ports and playwright availability $ ls ~/.cache/ms-playwright 2>/dev/null
+
+[91m[Error: Exit code 1
+const { connect } = require('http2');
+const path = require('path');
+
+module.exports = ({ env }) => {
+  const client = env('DATABASE_CLIENT', 'sqlite');
+
+  const connections = {
+    mysql: {
+      connection: {
+        connectionString: env('DATABASE_URL'),
+        host: env('DATABASE_HOST', 'localhost'),
+        port: env.int('DATABASE_PORT', 3306),
+        database: env('DATABASE_NAME', 'strapi'),
+        user: env('DATABASE_USERNAME', 'strapi'),
+        password: env('DATABASE_PASSWORD', 'strapi'),
+        ssl: env.bool('DATABASE_SSL', false) && {
+          key: env('DATABASE_SSL_KEY', undefined),
+          cert: env('DATABASE_SSL_CERT', undefined),
+          ca: env('DATABASE_SSL_CA', undefined),
+          capath: env('DATABASE_SSL_CAPATH', undefined),
+          cipher: env('DATABASE_SSL_CIPHER', undefined),
+          rejectUnauthorized: env.bool(
+            'DATABASE_SSL_REJECT_UNAUTHORIZED',
+            true
+          ),
+        },
+      },
+      pool: { min: env.int('DATABASE_POOL_MIN', 2), max: env.int('DATABASE_POOL_MAX', 10) },
+    },
+    mysql2: {
+      connection: {
+        host: env('DATABASE_HOST', 'localhost'),
+        port: env.int('DATABASE_PORT', 3306),
+        database: env('DATABASE_NAME', 'strapi'),
+        user: env('DATABASE_USERNAME', 'strapi'),
+        password: env('DATABASE_PASSWORD', 'strapi'),
+        ssl: env.bool('DATABASE_SSL', false) && {
+          key: env('DATABASE_SSL_KEY', undefined),
+          cert: env('DATABASE_SSL_CERT', undefined),
+          ca: env('DATABASE_SSL_CA', undefined),
+data.db
+HOST=<redacted>
+PORT=<redacted>
+APP_KEYS=<redacted>
+API_TOKEN_SALT=<redacted>
+ADMIN_JWT_SECRET=<redacted>
+TRANSFER_TOKEN_SALT=<redacted>
+JWT_SECRET=<redacted>
+
+DATABASE_CLIENT=<redacted>
+DATABASE_FILENAME=<redacted>
+
+SMTP_USER=<redacted>
+SMTP_PASS=<redacted>
+v26.0.0
+/opt/homebrew/bin/playwright-cli][0m
+[94m[Skill][0m
+Let me start the backend and check what data exists (users, documents with versions).
+[94m[Bash][0m Start Strapi backend in background and check health $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:1337/_health
+
+[91m[Error: Exit code 7
+> doc-version@0.1.0 develop
+> strapi develop
+
+/Users/cristian/orca/docmentor/backend/node_modules/buffer-equal-constant-time/index.js:37
+var origSlowBufEqual = SlowBuffer.prototype.equal;
+                                  ^
+
+TypeError: Cannot read properties of undefined (reading 'prototype')
+    at Object.<anonymous> (/Users/cristian/orca/docmentor/backend/node_modules/buffer-equal-constant-time/index.js:37:35)
+    at Module._compile (node:internal/modules/cjs/loader:1829:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1969:10)
+    at Module.load (node:internal/modules/cjs/loader:1552:32)
+    at Module._load (node:internal/modules/cjs/loader:1354:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1575:12)
+    at require (node:internal/modules/helpers:191:16)
+    at Object.<anonymous> (/Users/cristian/orca/docmentor/backend/node_modules/jsonwebtoken/node_modules/jwa/index.js:1:19)
+    at Module._compile (node:internal/modules/cjs/loader:1829:14)
+
+Node.js v26.0.0
+000][0m
+Node 26 breaks Strapi (needs ≤20). Checking for a version manager.
+[94m[Bash][0m Find alternative Node versions installed $ ls /opt/homebrew/opt | grep -i node
+[94m[Bash][0m Start backend with Node 20 and check health $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:1337/_health
+
+[91m[Error: Exit code 7
+v20.20.2
+        '/Users/cristian/orca/docmentor/backend/node_modules/@swc/core/binding.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@swc/core/index.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@vitejs/plugin-react-swc/index.cjs',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/pack-up/dist/index.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/commands/actions/plugin/build-command/action.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/commands/actions/plugin/build-command/command.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/commands/index.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/cli.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/bin/strapi.js'
+      ]
+    }
+  ]
+}
+
+Node.js v20.20.2
+000][0m
+[94m[Bash][0m Read the full backend error $ uname -m
+The backend's `node_modules` is missing the native `@swc/core` binary for darwin-arm64. Reinstalling deps (untracked, doesn't touch versioned backend files) with Node 20:
+[94m[Bash][0m Reinstall backend deps with npm ci using Node 20 $ git status --short . | head
+[94m[Bash][0m Start backend with Node 20 and check health $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:1337/_health
+
+[91m[Error: Exit code 7
+        '/Users/cristian/orca/docmentor/backend/node_modules/@swc/core/binding.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@swc/core/index.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@vitejs/plugin-react-swc/index.cjs',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/pack-up/dist/index.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/commands/actions/plugin/build-command/action.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/commands/actions/plugin/build-command/command.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/commands/index.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/dist/cli.js',
+        '/Users/cristian/orca/docmentor/backend/node_modules/@strapi/strapi/bin/strapi.js'
+      ]
+    }
+  ]
+}
+
+Node.js v20.20.2
+000][0m
+[94m[Bash][0m Check which swc platform packages are in the lockfile $ grep -n 'darwin' package-lock.json | head
+The lockfile only pins `@swc/core-linux-x64-gnu` (generated on Linux). I'll add the arm64 binary without saving to package.json/lock:
+[94m[Bash][0m Install swc arm64 binary without touching lockfile $ git status --short .
+[94m[ToolSearch][0m query: [93mselect:TaskOutput,TaskStop[0m
+[94m[TaskOutput][0m
+[94m[Bash][0m Start backend with Node 20 and check health $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:1337/_health
+
+[91m[Error: Exit code 7
+
+> doc-version@0.1.0 develop
+> strapi develop
+
+- Building build context
+
+[INFO] Including the following ENV variables as part of the JS bundle:
+    - ADMIN_PATH
+    - STRAPI_ADMIN_BACKEND_URL
+    - STRAPI_TELEMETRY_DISABLED
+✔ Building build context (288ms)
+- Creating admin
+✔ Creating admin (50552ms)
+000][0m
+[94m[Bash][0m Wait for Strapi to finish starting $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:1337/_health
+
+[91m[Error: <tool_use_error>Blocked: sleep 40 followed by: tail -30 /tmp/backend.log curl -s -o /dev/null -w "%{http_code}\n" http://localhost:1337/_health. To wait for a condition, use Monitor with an until-loop (e.g. `until <check>; do sleep 2; done`). To wait for a command you started, use run_in_background: true. Do not chain shorter sleeps to work around this block.</tool_use_error>][0m
+[94m[ToolSearch][0m query: [93mselect:Monitor[0m
+[94m[Bash][0m Wait until Strapi health endpoint responds $ tail -5 /tmp/backend.log
+Backend is up. Now let me check that seed users exist and find documents with versions/highlights.
+[94m[Bash][0m Test login for seed users and list DB tables $ sqlite3 backend/.tmp/data.db ".tables" 2>/dev/null | tr ' ' '\n' | grep -E "^(documents|projects|com...
+[94m[Bash][0m Inspect documents, versions, projects and comments in the DB $ ls backend/public/uploads | head
+[94m[Bash][0m Inspect version links and where the comparator is opened $ ls frontend/src/pages frontend/src/components
+Now start the Vite dev server and open the browser.
+[94m[Bash][0m Start Vite dev server and check worker asset $ curl -sI http://localhost:3000/pdf.worker.js | head -1
+[94m[Bash][0m Open the login page in Playwright $ playwright-cli open http://localhost:3000/login 2>&1 | tail -5 && playwright-cli snapshot 2>&1 | tai...
+[94m[Bash][0m Read console warnings and log in as tutor $ playwright-cli snapshot 2>&1 | sed -n '1,60p'
+Login → tutor dashboard works with 0 console errors (only React Router future-flag warnings, pre-existing). Now the document viewer with highlights (document 7 has comments).
+[94m[Bash][0m Open document 7 in the viewer and inspect PDF rendering $ playwright-cli eval "JSON.stringify({pages: document.querySelectorAll('.rpv-core__page-layer').lengt...
+[94m[Bash][0m Query viewer DOM and network for worker/PDF requests $ playwright-cli --raw network | grep -Ei "worker|\.pdf|comments" | head
+[94m[Read][0m [95m/tmp/dev-doc7.png[0m
+PDF renders with toolbar styling and both existing highlights painted. Let me verify the worker request and then create a new comment by selecting text.
+[94m[Bash][0m Check worker/PDF network status and select text in the PDF $ playwright-cli snapshot 2>&1 | grep -iE "comentar|button" | head
+`/pdf.worker.js` → 200 and the uploaded PDF → 200. My selection script had a bug; retrying the text selection:
+[94m[Bash][0m Select text in the PDF text layer to trigger highlight target $ playwright-cli snapshot 2>&1 | grep -iE "comentar|textbox|button \"(Agregar|Guardar|Añadir|Cancelar)...
+[94m[Bash][0m Click Comentar to open the comment form $ playwright-cli snapshot 2>&1 | grep -iE "textbox|button \"(Agregar|Guardar|Añadir|Cancelar|Comentar)...
+[94m[Bash][0m Submit the new comment and verify it appears $ playwright-cli screenshot --filename=/tmp/dev-doc7-comment.png >/dev/null
+[94m[Read][0m [95m/tmp/dev-doc7-comment.png[0m
+New comment created and its highlight painted. Now the version comparator from the project page:
+[94m[Bash][0m Check how the comparator chooses versions $ sed -n 40,100p src/pages/ProyectoDetalle.jsx
+[94m[Bash][0m Open project 6 and launch the version comparator $ playwright-cli console 2>&1 | grep -iE "error" | head -5
+[94m[Read][0m [95m/tmp/dev-compare.png[0m
+The comparator loads with the similarity percentage (0% — those two docs are unrelated bank statements; let me switch to an earlier pair and the side-by-side tab).
+[94m[Bash][0m Switch to previous pair and side-by-side view $ playwright-cli --raw eval "JSON.stringify({viewers: document.querySelectorAll('.rpv-core__viewer').l...
+[94m[Bash][0m Find the side-by-side control in the snapshot $ 
+[94m[Bash][0m Open side-by-side view and count viewers $ playwright-cli --raw eval "JSON.stringify({viewers: document.querySelectorAll('.rpv-core__viewer').l...
+[94m[Read][0m [95m/tmp/dev-compare-side.png[0m
+Both viewers load with red/green/yellow highlights and the similarity percentage. Now let me test synchronized scrolling:
+[94m[Bash][0m Find how synced scroll is implemented $ grep -n "scrollTop\|onScrollerReady\|scroll" src/components/DocumentComparePopup.jsx src/components/...
+[94m[Bash][0m Locate the synced scroll hook $ grep -n "scrollTop\|ratio\|syncScroll" src/hooks/*.js | head -20
+[94m[Bash][0m Scroll the left viewer and check the right one follows $ playwright-cli screenshot --filename=/tmp/dev-compare-scroll.png >/dev/null
+Synced scroll works (1500/4920 ≈ 30.5% → 247/809 ≈ 30.5%). Dev-mode checks all pass. Now the production build + preview:
+[94m[Bash][0m Build for production, start preview and check deep route + worker $ curl -s http://localhost:4173/tutor/dashboard | grep -o '<script[^>]*>'
+[94m[Bash][0m Inspect built index.html $ cat dist/index.html
+Good — that's just an HTML comment. Deep route `/tutor/dashboard` returns 200 text/html on preview. Now the browser checks against preview (port 4173):
+[94m[Bash][0m Log in on the preview build and reach the tutor dashboard $ playwright-cli console 2>&1 | grep -iE "error|warn" | head -5
+[94m[Bash][0m Inspect preview page state $ playwright-cli snapshot 2>&1 | sed -n 1,40p
+[94m[Bash][0m Submit login on preview build $ playwright-cli console 2>&1 | tail -3
+[94m[Bash][0m Check backend CORS configuration $ grep -rn "CORS\|ORIGIN" backend/.env.example
+[94m[Bash][0m Serve preview on 3001 and log in $ playwright-cli console 2>&1 | tail -3
+[94m[Bash][0m Check whether fields were filled $ playwright-cli --raw eval "JSON.stringify([document.querySelector('input[type=email], input[name=ema...
+[94m[Bash][0m Submit login on preview (port 3001) $ playwright-cli console 2>&1 | tail -2
+Login works on the production build with zero console messages. Now direct reload of a deep route, then the viewer:
+[94m[Bash][0m Reload deep route and open the viewer on the production build $ playwright-cli console 2>&1 | tail -2
+[94m[Read][0m [95m/tmp/prod-doc7.png[0m
+Identical to dev. Now create a comment on the production build and run the comparator:
+[94m[Bash][0m Create a new comment on the production build $ playwright-cli console 2>&1 | tail -1
+[94m[Bash][0m Run the comparator side-by-side with synced scroll on production build $ playwright-cli console 2>&1 | tail -1
+[94m[Read][0m [95m/tmp/prod-compare-side.png[0m
+Production build matches dev exactly. Let me also verify the student role dashboard quickly, then clean up.
+[94m[Bash][0m Log in as student on the production build $ playwright-cli close >/dev/null 2>&1
+Now the final quality checks, then cleanup of the servers and test data.
+[94m[Bash][0m Run tests, build, typecheck and lint $ npx eslint 'src/**/*.{js,jsx}' && echo ESLINT_OK
+[94m[Bash][0m Stop dev/preview/backend servers and list test comments $ "
+
+[91m[Error: Exit code 1
+Error: in prepare, no such column: content
+  select id, content from comments where content like '%US-006%';
+             ^--- error here][0m
+[94m[Bash][0m Find the test comments and check git status $ git status --short
+[94m[Bash][0m List the test comments and doc 7 status $ "
+[94m[Bash][0m Delete test comments, restore doc 7 status, remove playwright artifacts $ " && rm -rf frontend/.playwright-cli && git status --short
+Now I'll record the results in the PRD `notes` and in progress.md.
+[94m[Bash][0m Write verification notes into the PRD story $ ' grep -c "US-006" tasks/prd-vite.json
+[94m[Bash][0m Append US-006 entry and pattern to progress.md $ git status --short
+## US-006 — Verificación en navegador completada
+
+Verifiqué la app con `playwright-cli` (Chromium) contra el Strapi local usando los usuarios del seed, en **dev** (`npm start`, :3000) y con el **build de producción** (`vite preview`). Todo se comporta igual que antes de la migración; **no hubo que cambiar código**.
+
+**Resultados (idénticos en dev y producción):**
+- **Login → dashboard**: `tutor` → `/tutor/dashboard`, `estudiante` → `/student/dashboard`. 0 errores de consola (en dev solo los 2 avisos de future flags de React Router, previos a la migración; en producción 0 mensajes).
+- **Visor `/document/7`**: `/pdf.worker.js` → 200, PDF de `/uploads` → 200, página renderizada con canvas + capa de texto, los 2 resaltados existentes pintados, y creé un comentario nuevo (selección de texto → "Comentar" → guardar) que apareció con su resaltado.
+- **Comparador `/project/6`**: pestaña "Cambios" muestra el % de contenido en común y el diff; "Lado a lado" carga ambos visores con resaltados rojo/verde/amarillo, y el scroll sincronizado es proporcional (1500/4920 izq → 247/809 der).
+- **Ruta profunda** `/tutor/dashboard` recargada en `vite preview`: 200 `text/html` con la app, no 404.
+
+**Salvedad a tener en cuenta:** el CORS del backend (`backend/config/middlewares.js`, intocable por el PRD) solo admite `localhost:3000/3001`, así que en `:4173` el login falla por CORS. Hice las pruebas de navegador del build de producción con el mismo `dist/` en `npx vite preview --port 3001`, y en `:4173` validé por curl assets, worker y fallback SPA. Está anotado en `notes` del PRD y en progress.md.
+
+**Checks:** `npm test` ✅ (15 archivos, 86 tests), `npm run build` ✅, `npm run typecheck` ✅, eslint ✅.
+
+**Entorno:** el backend necesitaba Node 20 (nvm) y el binario `@swc/core-darwin-arm64` instalado con `--no-save --no-package-lock` (sin tocar archivos versionados). Servidores parados, comentarios de prueba borrados de la DB local y artefactos de Playwright eliminados. Archivos modificados: solo `tasks/prd-vite.json` (notes) y `.ralph-tui/progress.md` (entrada + patrón reutilizable de verificación en navegador).
+
+<promise>COMPLETE</promise>
