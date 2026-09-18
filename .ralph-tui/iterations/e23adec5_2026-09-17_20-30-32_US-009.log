@@ -1,0 +1,56 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: US-009
+- **Task Title**: Retirar la dependencia sqlite3 sin uso del backend
+- **Description**: Como desarrollador backend, quiero eliminar la devDependency sqlite3 de backend/package.json, porque Strapi 4 usa better-sqlite3 (ya presente) y el driver legado solo añade una compilación nativa y ru...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:30:32.913Z
+- **Ended At**: 2026-09-18T01:34:11.335Z
+- **Duration**: 3m 38s
+- **Input Tokens**: 96
+- **Output Tokens**: 9847
+- **Total Tokens**: 9943
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Read progress notes and check sqlite3 references $ echo "grep exit: $?"
+No source references to `sqlite3` as a module. Let me check the US-003 prerequisite context and current git state of the backend, then run the uninstall.
+[94m[Bash][0m Check backend git status, strapi versions, sqlite3 install state $ ls backend/node_modules/sqlite3 2>/dev/null | head -3
+[94m[Bash][0m Uninstall sqlite3 from backend with Node 20 $ cd /Users/cristian/orca/docmentor/backend && export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PAT...
+[94m[Bash][0m Verify lockfile diff only removes entries and strapi versions unchanged $ cd /Users/cristian/orca/docmentor && git diff --stat backend/package.json backend/package-lock.json ...
+[94m[Bash][0m Show context around added lockfile lines $ git diff -U6 backend/package-lock.json | grep -n -B8 -A8 '^+' | grep -v '^[0-9]*-\s*$' | head -120
+[94m[Bash][0m Confirm no version changes using patience diff and list removed packages $ git diff backend/package-lock.json | grep '^-    "node_modules/' | sed 's/^-    //' | tr -d '":{' | ...
+[94m[Bash][0m Run backend build with Node 20 $ echo "build exit: $?"
+[94m[Bash][0m Capture full build error and inspect swc binding state $ git -C .. stash list | head -3
+[94m[Bash][0m Check swc platform bindings in lockfile and node_modules $ cat node_modules/@swc/core/package.json | grep '"version"'
+[94m[Bash][0m Download swc darwin-arm64 binding tarball and place it in node_modules $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && mkdir -p /tmp/swc-arm64 && cd /tmp/swc-...
+[94m[Bash][0m Run backend build again with darwin binding present $ tail -15 /tmp/us009-build.log
+Build passes. Now the tests.
+[94m[Bash][0m Run backend test suite with Node 20 $ grep -E "Tests:|Test Suites:|✕|FAIL" /tmp/us009-test.log | head -20
+[94m[Bash][0m Remove temporary swc binding and check working tree status $ cd /Users/cristian/orca/docmentor && rm -rf backend/node_modules/@swc/core-darwin-arm64 /tmp/swc-arm...
+Only `backend/package.json` and `backend/package-lock.json` changed. Now the progress notes.
+[94m[Bash][0m Append US-009 notes and new patterns to progress.md $ grep -n "Build del backend en esta máquina" .ralph-tui/progress.md
+[94m[Bash][0m Confirm patterns section placement $ sed -n 18,26p .ralph-tui/progress.md | cut -c1-120
+The new patterns landed after the `---` separator; moving them up into the list.
+[94m[Bash][0m Move new pattern lines into the Codebase Patterns list $ python3 - <<'EOF' p = ".ralph-tui/progress.md" lines = open(p).read().split("\n") # find the two new...
+## US-009 — `sqlite3` retirada del backend
+
+**Hecho**
+- `grep` en `backend/src`, `backend/config` y `backend/scripts`: cero referencias a `sqlite3` como módulo (solo existía la devDependency).
+- `cd backend && npm uninstall sqlite3 --no-audit --no-fund` con Node 20 → `backend/package.json` pierde `"sqlite3": "^5.1.7"` y el lockfile elimina 71 paquetes (`sqlite3`, `node-gyp`, `make-fetch-happen`, `cacache`, `minipass-*`, `npmlog`, etc.). `better-sqlite3 ^11.0.0` se conserva.
+- Lockfile: ninguna versión cambia. Las únicas líneas nuevas son dos `"peer": true` en `encoding`/`iconv-lite` (ahora solo se alcanzan como peer opcional de `node-fetch`). Todos los `@strapi/*` siguen en la misma versión.
+- `npm run build` ✅ y `npm test` ✅ (1 suite, 90 tests), ambos con Node 20.
+
+**Dos cosas que conviene saber**
+1. El `grep '^+.*"version"'` literal del criterio devolvía **1 línea** (`is-absolute` 1.0.0) por un artefacto de alineación del diff Myers: la entrada es idéntica antes y después. Con `git diff --diff-algorithm=patience` da 0, que es lo que el criterio quiere comprobar.
+2. `npm run build` no arranca en esta máquina por un problema **preexistente y ajeno a esta historia**: el lockfile solo pinea `@swc/core-linux-x64-gnu` (se generó en Linux), así que en el Mac arm64 falta el binding darwin. Para verificar el build copié a mano `@swc/core-darwin-arm64@1.10.18` en `node_modules` (sin tocar lockfile), corrí el build, y lo borré después. Receta documentada en `## Codebase Patterns` de `progress.md`.
+
+**Archivos cambiados**: `backend/package.json`, `backend/package-lock.json` (+ notas en `.ralph-tui/progress.md`). Sin commit, como pide el flujo.
+
+<promise>COMPLETE</promise>

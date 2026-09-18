@@ -1,15 +1,16 @@
 {
   "id": "e23adec5-809e-4505-8759-0cef36fa2eb4",
-  "status": "running",
+  "status": "completed",
   "startedAt": "2026-09-18T01:08:14.681Z",
-  "updatedAt": "2026-09-18T01:30:31.912Z",
+  "updatedAt": "2026-09-18T01:34:13.957Z",
   "agentPlugin": "claude",
   "trackerPlugin": "json",
   "executionScopes": [],
   "prdPath": "./tasks/prd-calidad.json",
-  "currentIteration": 8,
+  "currentIteration": 9,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 8,
-  "cwd": "/Users/cristian/orca/docmentor"
+  "tasksCompleted": 9,
+  "cwd": "/Users/cristian/orca/docmentor",
+  "endedAt": "2026-09-18T01:34:13.957Z"
 }
