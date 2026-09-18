@@ -12,6 +12,7 @@ const {
   requireDocumentAccess,
   requireProjectAccess,
 } = require('../../../utils/ownership');
+const { readBody } = require('../../../utils/readBody');
 
 // Autenticación y permiso por código se resuelven en las policies declaradas en
 // routes/ (`global::is-authenticated`, `global::has-permission`); aquí el
@@ -220,7 +221,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
 
-    const { isRevised } = ctx.request.body?.data ?? ctx.request.body ?? {};
+    const { isRevised } = readBody(ctx);
     if (typeof isRevised !== 'boolean') {
       return ctx.badRequest('Se espera `isRevised` como booleano');
     }
@@ -251,7 +252,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
 
-    const { status } = ctx.request.body;
+    const { status } = readBody(ctx);
 
     const validStatuses = ['Subido', 'En Revisión', 'Aprobado', 'Cambios Solicitados', 'Archivado'];
     if (!validStatuses.includes(status)) {

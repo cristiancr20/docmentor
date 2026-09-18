@@ -1,0 +1,147 @@
+# Iteration 11 Log
+
+## Metadata
+
+- **Task ID**: US-011
+- **Task Title**: Centralizar el registro de auditoría desde el contexto
+- **Description**: Como desarrollador backend, quiero un helper logFromCtx en el servicio de auditoría que extraiga usuario e IP del ctx, para eliminar las seis copias del cálculo de ipAddress y la firma de siete argume...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:51:53.254Z
+- **Ended At**: 2026-09-18T01:00:50.531Z
+- **Duration**: 8m 57s
+- **Input Tokens**: 114
+- **Output Tokens**: 14124
+- **Total Tokens**: 14238
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress notes and the current audit service and its call sites.
+[94m[Bash][0m Read progress notes, audit service, and audit call sites $ tail -60 .ralph-tui/progress.md && echo ---- && cat backend/src/api/audit/services/audit.js && echo ...
+[94m[Bash][0m Find all audit call sites and IP computations in controllers $ grep -rn "x-forwarded-for\|logAudit\|ipAddress" backend/src | grep -v "api/audit/services"
+[94m[Bash][0m List controllers referencing audit and view project controller call sites $ sed -n 30,165p backend/src/api/project/controllers/project.js
+[94m[Bash][0m View document controller audit call sites $ sed -n 210,320p backend/src/api/document/controllers/document.js
+
+[91m[Error: Exit code 1
+
+  async create(ctx) {
+    const user = ctx.state.user;
+
+    // Sin esto se podía subir un documento al proyecto de otro indicando su id.
+    const targetProject = ctx.request.body?.data?.project;
+    if (targetProject) {
+      const projectId = typeof targetProject === 'object' ? targetProject.id : targetProject;
+      if (!(await requireProjectAccess(ctx, projectId, user.id, strapi))) return;
+    }
+
+    const result = await super.create(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'CREATE_DOCUMENT',
+      'document',
+      result.data.id,
+      user.id,
+      null,
+      result.data,
+      ipAddress
+    );
+
+    await strapi
+      .service('api::notification.notification')
+      .notifyDocumentUploaded(result.data.id, user.id);
+
+    return result;
+  },
+
+  async update(ctx) {
+    const user = ctx.state.user;
+
+    const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
+    const oldDocument = await strapi.entityService.findOne('api::document.document', id);
+
+    const result = await super.update(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'UPDATE_DOCUMENT',
+      'document',
+      id,
+      user.id,
+      oldDocument,
+      result.data,
+      ipAddress
+    );
+
+    return result;
+  },
+
+  async delete(ctx) {
+    const user = ctx.state.user;
+
+    const { id } = ctx.params;
+    if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
+
+    const document = await strapi.entityService.findOne('api::document.document', id);
+
+    const result = await super.delete(ctx);
+
+    const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
+
+    await strapi.service('api::audit.audit').logAudit(
+      'DELETE_DOCUMENT',
+      'document',
+      id,
+      user.id,
+      document,
+      null,
+      ipAddress
+    );
+
+    return result;
+  },
+(eval):1: === not found][0m
+[94m[Bash][0m View remaining document and User controller audit call sites $ sed -n 180,245p backend/src/extensions/users-permissions/controllers/User.js
+[94m[Bash][0m Add logFromCtx to audit service and rewrite all controller call sites $ t = p.read_text()     n_ip = t.count(IP_LINE)     t = t.replace(IP_LINE, '')     t, n_calls = CALL_R...
+Now let me check the result reads cleanly — the service head, one call site per controller, and the `anonymize` one where `ipAddress` was declared before the update.
+[94m[Bash][0m Review rewritten service and controller call sites $ sed -n 40,62p backend/src/api/document/controllers/document.js
+Now check for `const user = ctx.state.user;` that became unused after the rewrite, and see what the existing audit tests cover.
+[94m[Bash][0m Detect unused user variables and inspect existing audit tests $ ls backend/config/env/test
+My awk check was wrong (macOS awk doesn't support `\b`). Let me redo it in Python.
+[94m[Bash][0m Find handlers with unused user variable and check test/lint scripts $ ls backend/package.json && grep -n '"lint\|"test\|eslint' backend/package.json
+[94m[Bash][0m Inspect the two handlers where user is now unused $ git show HEAD:backend/src/extensions/users-permissions/controllers/User.js | grep -n "async adminLis...
+`adminListUsers` was already unused before this story (pre-existing, I'll leave it). `project.create` became unused due to my change, so I'll drop that line.
+[94m[Bash][0m Remove unused variable and view document test fixtures $ " assert t.count(old) == 1 p.write_text(t.replace(old, new)) EOF sed -n 1,60p backend/config/env/tes...
+[94m[Bash][0m View test entrypoint, helpers, and existing audit assertions $ grep -n "audit" -B3 -A8 backend/config/env/test/projects/index.js | sed -n 1,60p
+[94m[Bash][0m View test helper exports for user fixtures $ grep -n "module.exports" -A10 backend/config/env/test/helpers/strapi.js | tail -12
+[94m[Bash][0m Create audit service test and register it in the suite $ t = p.read_text() t = t.replace('require("./admin/index")\n', 'require("./admin/index")\nrequire("./...
+The directory didn't exist. Creating it and writing the file:
+[94m[Bash][0m Create audit test directory and test file $ EOF ls backend/config/env/test/audit
+Now run the backend suite with Node 20.
+[94m[Bash][0m Run backend jest suite $ cd /Users/cristian/orca/docmentor/backend && export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH...
+86/86 passing (82 previous + 4 new). Final acceptance-criteria checks: no `x-forwarded-for` outside the service, no `logAudit(` calls in controllers, `package.json` untouched.
+[94m[Bash][0m Verify acceptance criteria greps and package.json unchanged $ git status --short backend
+All criteria met. Now documenting the learnings in `progress.md` (entry plus a reusable pattern at the top).
+[94m[Bash][0m Append US-011 entry and reusable pattern to progress.md $ grep -c "Auditoría desde controllers" .ralph-tui/progress.md
+US-011 is done.
+
+**What changed**
+- `backend/src/api/audit/services/audit.js`: `logAudit` is now a module-internal function (still exported for compatibility), plus a private `ipFromCtx(ctx)` and the new `logFromCtx(ctx, { action, entity, entityId, before, after })` that pulls `userId` from `ctx.state.user.id` and IP from `ctx.request.ip` → first `x-forwarded-for` value → `''`.
+- All 14 `logAudit` call sites migrated to `logFromCtx`: `document.js` (6), `project.js` (4), `extensions/users-permissions/controllers/User.js` (4). The 14 duplicated `const ipAddress = ...` lines are gone; `project.create` also drops a `const user` that became unused. `comment`, `notification` and `rol` never audited anything, so there was nothing to migrate there.
+- New `backend/config/env/test/audit/index.js` (registered in `app.test.js`): field mapping + `ctx.request.ip`, `x-forwarded-for` fallback, no user → `null` with no row, and an HTTP `POST /documents` that verifies `CREATE_DOCUMENT` is still audited with the right `userId` and a non-empty IP.
+
+**Verification**
+- `npm test` (Node 20): 86/86 passing (82 previous + 4 new); existing audit assertions in projects/documents/admin still green.
+- `grep -rn x-forwarded-for backend/src` → only the audit service; no `logAudit(` calls outside it.
+- `backend/package.json` untouched.
+
+Progress notes and a reusable "Auditoría desde controllers" pattern were added to `.ralph-tui/progress.md`. No commits made.
+
+<promise>COMPLETE</promise>

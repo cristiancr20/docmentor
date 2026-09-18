@@ -138,6 +138,31 @@ export const restoreDocumentVersion = async (documentId) => {
   return response.data?.data;
 };
 
+// Rutas custom de estado y revisión. El backend lee el body con
+// utils/readBody (acepta `{ data: {...} }` o plano), pero desde aquí se envía
+// siempre envuelto en `data`, igual que en las rutas core.
+
+/** Marca la versión como revisada (o pendiente). Exige REVIEW_DOCUMENT. */
+export const setDocumentReviewed = async (documentId, isRevised = true) => {
+  const response = await api.put(`/api/documents/${documentId}/review`, {
+    data: { isRevised },
+  });
+
+  return response.data;
+};
+
+/**
+ * Cambia el estado del documento. Las transiciones permitidas las valida el
+ * backend (Subido → En Revisión → Aprobado | Cambios Solicitados, ...).
+ */
+export const changeDocumentStatus = async (documentId, status) => {
+  const response = await api.put(`/api/documents/${documentId}/status`, {
+    data: { status },
+  });
+
+  return response.data;
+};
+
 export const copyDocumentAsNewVersion = async (documentId) => {
   try {
     // Obtener el documento original

@@ -162,3 +162,15 @@ after each iteration and it's included in prompts for context.
   - Con supertest `ctx.request.ip` es el loopback (`::ffff:127.0.0.1`), así que por HTTP no se puede probar el fallback a `x-forwarded-for` (Koa no lo usa sin `app.proxy = true`); por eso ese caso va contra el servicio.
   - Para reescribir N llamadas idénticas con argumentos multilínea (el `after` de `anonymize` ocupa 4 líneas) funcionó un regex sobre `logAudit(\n(.*?)\n    \);` con `re.S` + un split de argumentos por comas a profundidad 0; comprobar que el número de líneas `ipAddress` eliminadas coincide con el de llamadas reescritas.
 ---
+
+## 2026-09-17 - US-012
+- Nuevo `backend/src/utils/readBody.js`: `readBody(ctx)` devuelve `ctx.request.body?.data ?? ctx.request.body ?? {}`. `setReviewed` y `changeStatus` (`controllers/document.js`) lo usan en vez de leer el body cada uno a su manera; `changeStatus` conserva la lista de estados permitidos y las transiciones tal cual (solo cambia la línea que desestructura `status`).
+- Frontend: `core/Document.js` gana `setDocumentReviewed(documentId, isRevised = true)` → `PUT /documents/:id/review` y `changeDocumentStatus(documentId, status)` → `PUT /documents/:id/status`, ambos con body `{ data: { ... } }`. `core/Comments.js` mantiene `updateDocumentStatusRevisado` (lo importa `DocumentViewer.jsx`) pero delega en `setDocumentReviewed`. No había ninguna llamada a `/status` en el frontend antes de esta historia.
+- Tests: nuevo `describe` en `config/env/test/documents/index.js` (4 casos): `{ data: { status } }` y `{ status }` → 200 con `data.status` igual, mismo valor persistido y misma auditoría (`oldValue`/`newValue`); estado fuera de la lista → 400 "Estado inválido" en ambas formas; transición no permitida → 400 con el mismo mensaje en ambas formas y sin cambio en BD; body vacío → 400 en vez de reventar. `npm test`: 90/90. Frontend: eslint, typecheck y jest (56/56) verdes.
+- `backend/package.json` intacto.
+- Files changed: `backend/src/utils/readBody.js` (nuevo), `backend/src/api/document/controllers/document.js`, `backend/config/env/test/documents/index.js`, `frontend/src/core/Document.js`, `frontend/src/core/Comments.js`.
+- **Learnings:**
+  - `ctx.badRequest('Estado inválido')` responde `{ error: { status: 400, name: 'BadRequestError', message } }`; en supertest se lee `response.body.error.message` (mismo formato que el 500 de US-010).
+  - Con `.send(undefined)` supertest no manda body y Strapi deja `ctx.request.body = {}`, así que `readBody` devuelve `{}` y la validación del controller responde 400 sin excepciones; el `?? {}` final cubre el caso en que el body-parser deje `undefined`.
+  - `Comments.js` puede importar de `Document.js` sin ciclo (Document.js solo importa `apiClient`); los tests de `CommentsPanel` mockean `core/Comments` completo y no se ven afectados.
+---

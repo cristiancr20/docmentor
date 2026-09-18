@@ -1,4 +1,5 @@
 import api from "./apiClient";
+import { setDocumentReviewed } from "./Document";
 
 // MÉTODO PARA AGREGAR COMENTARIO AL DOCUMENTO
 export const addCommentToDocument = async (
@@ -33,14 +34,10 @@ const postComment = async (documentId, newComment, tutorId, highlightAreas, quot
 
 // Marca la versión como revisada. Va por la ruta de revisión, que exige
 // REVIEW_DOCUMENT; el PUT genérico al documento pedía UPDATE_DOCUMENT y
-// devolvía 403 al tutor.
-export const updateDocumentStatusRevisado = async (documentId) => {
-  const response = await api.put(`/api/documents/${documentId}/review`, {
-    data: { isRevised: true },
-  });
-
-  return response.data;
-};
+// devolvía 403 al tutor. La llamada vive en core/Document.js junto con la de
+// cambio de estado; aquí solo se conserva el nombre que usa DocumentViewer.
+export const updateDocumentStatusRevisado = (documentId) =>
+  setDocumentReviewed(documentId, true);
 
 // Se pide también el autor de cada corrección: el panel lo muestra junto al
 // comentario, y con `populate=comments` a secas la relación no venía.
