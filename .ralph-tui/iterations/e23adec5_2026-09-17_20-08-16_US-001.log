@@ -1,0 +1,67 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Crear un logger de frontend silenciado en producción
+- **Description**: Como desarrollador, quiero un módulo frontend/src/utils/logger.js con debug/info/warn/error que no imprima nada cuando process.env.NODE_ENV === 'production', para dejar de tener más de cien console.* ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:08:16.143Z
+- **Ended At**: 2026-09-18T01:10:55.155Z
+- **Duration**: 2m 39s
+- **Input Tokens**: 88
+- **Output Tokens**: 10208
+- **Total Tokens**: 10296
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress file and the current state of `console.*` usage in the frontend.
+[94m[Bash][0m Read progress.md head and tail $ head -80 .ralph-tui/progress.md && echo "-----" && tail -40 .ralph-tui/progress.md
+[94m[Bash][0m Survey console usage and frontend scripts $ cat frontend/package.json | sed -n '/"scripts"/,/}/p'
+zsh glob expansion got in the way; quoting the include patterns.
+[94m[Bash][0m Survey console usage with quoted globs $ grep -n 'eslintConfig' -A 10 frontend/package.json
+[94m[Bash][0m Show eslint config and every console line $ grep -rn 'console\.' frontend/src --include='*.js' --include='*.jsx' --include='*.tsx' --exclude-dir...
+[94m[Bash][0m Inspect eslint config, utils style, tests, tsconfig $ cat frontend/src/setupTests.js
+[94m[Bash][0m Check how tests use console and import conventions $ cat frontend/src/index.js
+Now I'll create the logger module and its test.
+[94m[Bash][0m Create logger module and its test $ EOF echo done
+[94m[Bash][0m Replace console calls with logger and add imports $ } EOF node /tmp/replace-console.js
+Let me verify the acceptance grep and spot-check the import placement in the diff.
+[94m[Bash][0m Verify no console left and check import placement $ git diff -U1 frontend/src | grep -B2 -A1 '^+import logger' | head -120
+Import placement looks right everywhere. Now the quality checks: typecheck, eslint, and the test suite.
+[94m[Bash][0m Run typecheck and eslint $ echo "eslint exit=${PIPESTATUS[0]}"
+[94m[Bash][0m Get exit codes for typecheck and eslint $ echo "eslint exit=$?"
+Both pass. Now the full test suite.
+[94m[Bash][0m Run full frontend test suite $ echo "exit=${PIPESTATUS[0]}"
+All 12 suites pass (64 tests), including the new `logger.test.js`. Now documenting learnings in `progress.md`.
+[94m[Bash][0m Append learnings and pattern to progress.md $ tail -20 .ralph-tui/progress.md
+Final check of the working tree to confirm the scope of changes.
+[94m[Bash][0m Show changed files summary $ git status --short -- frontend .ralph-tui/progress.md && echo "--- stat ---" && git diff --stat -- f...
+US-001 is done. Summary of what I implemented:
+
+## Changes
+
+**New: `frontend/src/utils/logger.js`**
+Exports a default `{ debug, info, warn, error }` object. `debug` and `info` bail out when `process.env.NODE_ENV === 'production'`; `warn` and `error` always delegate to `console`. The env check runs per call rather than at module load, so CRA's build-time inlining still folds the branch in production while tests can toggle `NODE_ENV` without `jest.resetModules()`.
+
+**New: `frontend/src/utils/__tests__/logger.test.js`**
+8 tests covering all four levels in both `production` and `development` — including the required assertion that `debug` does not call `console.log` in production and does in development.
+
+**Replaced 88 `console.*` calls across 29 files** (`core/`, `context/`, `components/`, `pages/`, `pages/administration/`): 84 `console.error` → `logger.error`, 4 `console.log` → `logger.debug`, 1 `console.warn` → `logger.warn`. The `import logger from ".../utils/logger"` line was inserted after each file's last import, matching that file's quote style (single quotes in `core/*.js`, double elsewhere). The stale CRA comment in `index.js` (`reportWebVitals(console.log)`) was reworded to `logger.debug` so the acceptance grep is clean.
+
+## Verification (all passing)
+- Acceptance grep `grep -rn 'console\.' frontend/src ... | grep -v ...` → no output
+- `npm run typecheck` → exit 0
+- `npx eslint 'src/**/*.{js,jsx}'` → exit 0
+- `CI=true npx react-scripts test --watchAll=false` → 12 suites, 64 tests passed
+
+## progress.md
+Appended the US-001 entry and added three reusable items to `## Codebase Patterns`: the logger convention, the per-directory quote style in frontend imports, and the zsh gotcha that unquoted `--include=*.js` fails with "no matches found".
+
+No commits were created, per the workflow instructions.
+
+<promise>COMPLETE</promise>

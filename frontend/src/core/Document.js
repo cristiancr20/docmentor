@@ -96,15 +96,7 @@ export const createDocument = async (title, fileId, projectId) => {
     }
 
 
-    const response = await api.post(
-      `/api/documents`,
-      documentData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.post(`/api/documents`, documentData);
 
     if (!response || !response.data || !response.data.data) {
       throw new Error(
@@ -117,12 +109,9 @@ export const createDocument = async (title, fileId, projectId) => {
     // aviso y además fallaba con 403: crear notificaciones exige
     // MANAGE_NOTIFICATIONS, que un estudiante no tiene ni debe tener, porque le
     // permitiría fabricar avisos a nombre de otros.
+    // Si algo falla el error se propaga: tragárselo hacía que la vista mostrara
+    // "documento subido correctamente" aunque la subida hubiera fallado.
     return response.data;
-  } catch (error) {
-    // Se re-lanza: tragarse el error hacía que la vista mostrara "documento
-    // subido correctamente" aunque la subida hubiera fallado.
-    handleError(error);
-    throw error;
   } finally {
     window.isUploadingDocument = false;
   }
@@ -207,11 +196,7 @@ export const copyDocumentAsNewVersion = async (documentId) => {
     };
 
     // Crear la nueva versión en Strapi
-    const newResponse = await api.post(`/api/documents`, newDocumentData, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const newResponse = await api.post(`/api/documents`, newDocumentData);
 
     if (!newResponse || !newResponse.data || !newResponse.data.data) {
       throw new Error("Error al crear la nueva versión.");
@@ -224,13 +209,16 @@ export const copyDocumentAsNewVersion = async (documentId) => {
 
     return newResponse.data.data;
   } catch (error) {
+    // Se conserva el catch: esta función nunca ha propagado el error, devuelve
+    // undefined si la copia falla.
     logger.error("Error al copiar documento:", error);
   }
 };
 
 
 
-// MÉTODO PARA MANEJAR ERRORES
+// MÉTODO PARA MANEJAR ERRORES (lo usan getLastDocument y markDocumentAsOld,
+// que tragan el error y devuelven un valor por defecto)
 const handleError = (error) => {
   if (error.response) {
     logger.error("Error de respuesta:", error.response.data);
@@ -242,29 +230,8 @@ const handleError = (error) => {
 };
 
 // Obtener documentos por ID del proyecto
-export const getDocumentsByProjectId = async (projectId) => {
-  try {
-    // Utiliza la sintaxis correcta para aplicar el filtro
-    const response = await api.get(
-      `/api/documents?filters[project][id][$eq]=${projectId}&populate=*`
-    );
+export const getDocumentsByProjectId = async (projectId) =>
+  (await api.get(`/api/documents?filters[project][id][$eq]=${projectId}&populate=*`)).data;
 
-    return response.data;
-  } catch (error) {
-    logger.error(
-      "Error al obtener los documentos:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
-
-export const getDocumentById = async (documentId) => {
-  try {
-    const response = await api.get(`/api/documents/${documentId}?populate=*`);
-    return response.data;
-  } catch (error) {
-    logger.error("Error fetching document:", error);
-    throw error;
-  }
-};
+export const getDocumentById = async (documentId) =>
+  (await api.get(`/api/documents/${documentId}?populate=*`)).data;
