@@ -150,3 +150,127 @@ describe('policies en las rutas de /documents', () => {
     expect(asAdmin.body.data.map((doc) => doc.id)).toContain(document.id);
   });
 });
+
+// US-010: restaurar una versión crea la nueva y desmarca el resto del proyecto
+// dentro de una sola transacción, así que nunca quedan dos `isCurrent`.
+describe('POST /documents/:id/restore es atómico', () => {
+  const DOCUMENT_UID = 'api::document.document';
+
+  let student;
+  let studentToken;
+  let project;
+  let v1;
+  let v2;
+
+  const currentDocuments = () =>
+    strapi.db.query(DOCUMENT_UID).findMany({
+      where: { project: project.id, isCurrent: true },
+      select: ['id', 'version'],
+    });
+
+  const countDocuments = () => strapi.db.query(DOCUMENT_UID).count({ where: { project: project.id } });
+
+  beforeAll(async () => {
+    const createPermission = await strapi.db.query('api::permission.permission').create({
+      data: { code: 'CREATE_DOCUMENT', module: 'documents', isActive: true },
+    });
+
+    // `estudiante` no es un rol elevado: el acceso al documento se resuelve
+    // por pertenencia al proyecto (students), igual que en producción.
+    const rol = await strapi.db.query('api::rol.rol').create({
+      data: { name: 'RestoreStudent', rolType: 'estudiante', permissions: [createPermission.id] },
+    });
+
+    const authenticatedRole = await strapi.db
+      .query('plugin::users-permissions.role')
+      .findOne({ where: { type: 'authenticated' } });
+
+    student = await strapi.db.query('plugin::users-permissions.user').create({
+      data: {
+        username: 'restore-student',
+        email: 'restore-student@docmentor.test',
+        password: 'Student12345',
+        provider: 'local',
+        confirmed: true,
+        blocked: false,
+        isActive: true,
+        role: authenticatedRole.id,
+        rols: [rol.id],
+      },
+    });
+    studentToken = strapi.plugins['users-permissions'].services.jwt.issue({ id: student.id });
+
+    project = await strapi.db.query('api::project.project').create({
+      data: { title: 'Proyecto restauración', students: [student.id] },
+    });
+
+    v1 = await strapi.entityService.create(DOCUMENT_UID, {
+      data: { title: 'Doc', project: project.id, version: 1, isCurrent: false, publishedAt: new Date() },
+    });
+    v2 = await strapi.entityService.create(DOCUMENT_UID, {
+      data: {
+        title: 'Doc',
+        project: project.id,
+        version: 2,
+        isCurrent: true,
+        previous_version: v1.id,
+        publishedAt: new Date(),
+      },
+    });
+  });
+
+  it('tras restaurar, exactamente un documento del proyecto tiene isCurrent true', async () => {
+    const response = await request(strapi.server.httpServer)
+      .post(`/api/documents/${v1.id}/restore`)
+      .set({ Authorization: `Bearer ${studentToken}` })
+      .expect(200);
+
+    const restored = response.body.data;
+    expect(restored.version).toBe(3);
+    expect(restored.isCurrent).toBe(true);
+    expect(restored.restoredFrom.id).toBe(v1.id);
+
+    const current = await currentDocuments();
+    expect(current).toHaveLength(1);
+    expect(current[0].id).toBe(restored.id);
+
+    // Las versiones anteriores siguen ahí, pero desmarcadas.
+    expect(await countDocuments()).toBe(3);
+    const previous = await strapi.db.query(DOCUMENT_UID).findOne({ where: { id: v2.id } });
+    expect(previous.isCurrent).toBe(false);
+  });
+
+  it('si el desmarcado falla, se revierte todo: ni versión nueva ni cambio de isCurrent', async () => {
+    const before = await currentDocuments();
+    const totalBefore = await countDocuments();
+
+    // Hacer fallar el updateMany desde un lifecycle: corre dentro de la
+    // transacción, así que la versión ya insertada debe deshacerse.
+    const unsubscribe = strapi.db.lifecycles.subscribe({
+      models: [DOCUMENT_UID],
+      beforeUpdateMany() {
+        throw new Error('fallo simulado en updateMany');
+      },
+    });
+
+    try {
+      const response = await request(strapi.server.httpServer)
+        .post(`/api/documents/${v2.id}/restore`)
+        .set({ Authorization: `Bearer ${studentToken}` })
+        .expect(500);
+
+      expect(response.body.error.message).toMatch(/No se pudo restaurar la versión/);
+    } finally {
+      unsubscribe();
+    }
+
+    expect(await countDocuments()).toBe(totalBefore);
+    expect(await currentDocuments()).toEqual(before);
+
+    // Tampoco se audita una restauración que no ocurrió.
+    const audits = await strapi.db.query('api::audit.audit').findMany({
+      where: { action: 'RESTORE_DOCUMENT_VERSION', userId: student.id },
+    });
+    expect(audits).toHaveLength(1);
+  });
+});

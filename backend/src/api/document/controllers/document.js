@@ -151,50 +151,70 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
       return ctx.badRequest('El documento no pertenece a ningún proyecto');
     }
 
-    // El número se calcula aquí: el cliente lo hacía leyendo la última versión
-    // y sumando uno, así que dos restauraciones simultáneas generaban dos
-    // versiones con el mismo número.
-    const siblings = await strapi.db.query('api::document.document').findMany({
-      where: { project: projectId },
-      select: ['id', 'version'],
-    });
+    // Todo lo que decide y escribe la restauración va en una sola transacción:
+    // antes se creaba la nueva versión y luego se lanzaba un update por
+    // documento en paralelo, así que un fallo a medias dejaba dos (o ninguna)
+    // como actual. Dentro del callback, strapi.db.query y entityService se
+    // enganchan solos a la transacción (AsyncLocalStorage); si algo lanza, se
+    // hace rollback y no queda ninguna versión nueva.
+    let restored;
+    let nextVersion;
+    try {
+      restored = await strapi.db.transaction(async () => {
+        // El número se calcula aquí: el cliente lo hacía leyendo la última
+        // versión y sumando uno, así que dos restauraciones simultáneas
+        // generaban dos versiones con el mismo número.
+        const siblings = await strapi.db.query('api::document.document').findMany({
+          where: { project: projectId },
+          select: ['id', 'version'],
+        });
 
-    const nextVersion = siblings.reduce((max, doc) => Math.max(max, doc.version ?? 0), 0) + 1;
-    const currentTip = siblings.reduce(
-      (tip, doc) => ((doc.version ?? 0) > (tip?.version ?? 0) ? doc : tip),
-      null
-    );
+        nextVersion = siblings.reduce((max, doc) => Math.max(max, doc.version ?? 0), 0) + 1;
+        const currentTip = siblings.reduce(
+          (tip, doc) => ((doc.version ?? 0) > (tip?.version ?? 0) ? doc : tip),
+          null
+        );
 
-    const restored = await strapi.entityService.create('api::document.document', {
-      data: {
-        title: source.title,
-        documentFile: (source.documentFile ?? []).map((file) => file.id),
-        project: projectId,
-        version: nextVersion,
-        isCurrent: true,
-        isRevised: false,
-        status: 'Subido',
-        // Encadena con la punta del historial, y deja constancia aparte de
-        // cuál se restauró: es lo que dibuja la conexión en la línea de tiempo.
-        previous_version: currentTip?.id ?? null,
-        restoredFrom: source.id,
-        // El content-type tiene draftAndPublish activo: sin esto la versión
-        // nace como borrador y no aparece en el historial.
-        publishedAt: new Date(),
-      },
-      populate: { documentFile: true, restoredFrom: true },
-    });
+        const created = await strapi.entityService.create('api::document.document', {
+          data: {
+            title: source.title,
+            documentFile: (source.documentFile ?? []).map((file) => file.id),
+            project: projectId,
+            version: nextVersion,
+            isCurrent: true,
+            isRevised: false,
+            status: 'Subido',
+            // Encadena con la punta del historial, y deja constancia aparte de
+            // cuál se restauró: es lo que dibuja la conexión en la línea de tiempo.
+            previous_version: currentTip?.id ?? null,
+            restoredFrom: source.id,
+            // El content-type tiene draftAndPublish activo: sin esto la versión
+            // nace como borrador y no aparece en el historial.
+            publishedAt: new Date(),
+          },
+          populate: { documentFile: true, restoredFrom: true },
+        });
 
-    // Solo la nueva queda como actual.
-    await Promise.all(
-      siblings
-        .filter((doc) => doc.id !== restored.id)
-        .map((doc) =>
-          strapi.entityService.update('api::document.document', doc.id, {
-            data: { isCurrent: false },
-          })
-        )
-    );
+        // Solo la nueva queda como actual: un único UPDATE sobre el resto del
+        // proyecto en vez de un update por documento. Se filtra por los ids
+        // leídos en esta misma transacción y no por `project: projectId`: la
+        // relación vive en `documents_project_links`, y en Strapi 4.25 el query
+        // builder decide si usa subconsulta antes de procesar el where, así que
+        // un updateMany filtrado por relación genera `t2.id` sin el join y
+        // falla con "no such column".
+        await strapi.db.query('api::document.document').updateMany({
+          where: { id: { $in: siblings.map((doc) => doc.id), $ne: created.id } },
+          data: { isCurrent: false },
+        });
+
+        return created;
+      });
+    } catch (error) {
+      strapi.log.error(`No se pudo restaurar la versión ${id} del proyecto ${projectId}`, error);
+      return ctx.internalServerError(
+        'No se pudo restaurar la versión: la operación se revirtió y no se creó ninguna versión nueva'
+      );
+    }
 
     const ipAddress = ctx.request.ip || ctx.request.headers['x-forwarded-for']?.split(',')[0] || '';
 

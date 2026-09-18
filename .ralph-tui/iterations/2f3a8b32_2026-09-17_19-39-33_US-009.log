@@ -1,0 +1,131 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: US-009
+- **Task Title**: Proteger el resto de rutas con policies y retirar protectedController
+- **Description**: Como desarrollador backend, quiero completar la migración a policies en notification, audit, rol, permission, setting y la extensión users-permissions, para eliminar utils/protectedController.js y que...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:39:33.511Z
+- **Ended At**: 2026-09-18T00:45:47.231Z
+- **Duration**: 6m 13s
+- **Input Tokens**: 176
+- **Output Tokens**: 31329
+- **Total Tokens**: 31505
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the current state of the backend.
+[94m[Bash][0m Read progress notes, protectedController and grep usages $ tail -120 .ralph-tui/progress.md && echo ---- && cat backend/src/utils/protectedController.js && ech...
+[94m[Bash][0m Read notification and rol routes/controllers $ done
+[94m[Bash][0m Read audit, permission, setting routes/controllers $ done
+[94m[Bash][0m Read users-permissions extension $ cat src/extensions/users-permissions/strapi-server.js 2>/dev/null
+
+[91m[Error: Exit code 1
+'use strict';
+
+/**
+ * Rutas custom que se inyectan en el plugin users-permissions vía strapi-server.js.
+ * Handler en formato corto ('user.<accion>') y `prefix: ''` para que la ruta
+ * quede montada bajo /api sin el prefijo del plugin.
+ */
+
+module.exports = [
+  {
+    method: 'GET',
+    path: '/auth/me/permissions',
+    handler: 'user.getMyPermissions',
+    config: { prefix: '', auth: false },
+  },
+  {
+    method: 'DELETE',
+    path: '/users/:id/anonymize',
+    handler: 'user.anonymize',
+    config: { prefix: '', auth: false },
+  },
+  {
+    method: 'GET',
+    path: '/admin/users',
+    handler: 'user.adminListUsers',
+    config: { prefix: '', auth: false },
+  },
+  {
+    method: 'POST',
+    path: '/admin/users',
+    handler: 'user.adminCreateUser',
+    config: { prefix: '', auth: false },
+  },
+  {
+    method: 'PUT',
+    path: '/admin/users/:id',
+    handler: 'user.adminUpdateUser',
+    config: { prefix: '', auth: false },
+  },
+  {
+    method: 'DELETE',
+    path: '/admin/users/:id',
+    handler: 'user.adminDeleteUser',
+    config: { prefix: '', auth: false },
+  },
+];
+(eval):1: == not found][0m
+[94m[Bash][0m Read User controller, strapi-server, ownership, has-permission, comment controller $ cat src/api/comment/controllers/comment.js
+[94m[Bash][0m Read reference route files and test scaffolding $ cat config/env/test/helpers/strapi.js
+[94m[Bash][0m Read existing notification, rol, user and comment tests $ sed -n 1,80p config/env/test/comments/index.js
+[94m[Bash][0m Read comment policy tests and is-authenticated policy $ cat src/policies/is-authenticated.js
+[94m[Bash][0m Check bootstrap and where permission codes are defined $ grep -rn "VIEW_AUDIT_LOGS\|MANAGE_SETTINGS\|MANAGE_NOTIFICATIONS\|ANONYMIZE_USER\|VIEW_USERS" --incl...
+[94m[Bash][0m Find permission codes and frontend endpoint usage $ grep -rn "audit-logs\|/api/settings\|/api/permissions\|/api/rols\|/admin/users\|anonymize\|me/permis...
+[94m[Bash][0m Check whether seed grants u-p permissions for audit custom routes $ grep -n "users-permissions.permission\|action:" scripts/seed-test-users.js | head -20
+[94m[Bash][0m Inspect how Strapi loads and resolves policies $ sed -n 1,80p node_modules/@strapi/strapi/dist/core/registries/policies.js 2>/dev/null
+[94m[Bash][0m Rewrite has-permission policy exporting userHasPermission helper $ EOF
+Now the comment controller: `canModifyComment` uses `ctx.state.user` directly instead of `authorize`.
+[94m[Bash][0m Migrate comment controller off protectedController $ """) assert s.count("canModifyComment(ctx, user.id, strapi)")==2 s=s.replace("canModifyComment(ctx, ...
+Now notification routes and controller.
+[94m[Bash][0m Migrate notification routes and controller to policies $ sed -n 15,60p src/api/notification/controllers/notification.js
+[94m[Bash][0m Remove no-op create/update/delete overrides from notification controller $ },  ""","") open(p,'w').write(s) EOF node -e "require('./src/api/notification/controllers/notificati...
+Now rol, permission, setting, audit.
+[94m[Bash][0m Migrate rol, permission and setting routes/controllers to policies $ echo done
+[94m[Bash][0m Migrate audit routes and controller to policies $ require('./src/api/audit/routes/01-custom-audit.js')" && echo ok
+[94m[Bash][0m Check policy resolution for plugin routes $ grep -rn "policies" node_modules/@strapi/strapi/dist/services/server/compose-endpoint.js | head
+[94m[Bash][0m Check global:: policy resolution in @strapi/utils $ cat node_modules/@strapi/utils/dist/policy.js 2>/dev/null | head -80 || grep -rln "policy" node_modu...
+[94m[Bash][0m Locate policy resolve implementation $ grep -n "resolvePolicy\|const resolve = \|globalPolicy\|isGlobal" node_modules/@strapi/utils/dist/in...
+[94m[Bash][0m Read policy resolution code $ sed -n 170,260p node_modules/@strapi/utils/dist/index.js
+Good — `global::` names resolve via `strapi.policy(name)` regardless of api/plugin scope, and a function policy is used as-is. Now the users-permissions extension.
+[94m[Bash][0m Migrate users-permissions extension routes and controller $ require('./src/extensions/users-permissions/routes/index.js')" && echo ok
+Now delete `protectedController.js`, update the stale doc reference in `is-authenticated.js`, and verify the greps.
+[94m[Bash][0m Delete protectedController and verify greps $ grep -rn -A1 'auth: false' src | grep -v "^--$"
+Every `auth: false` route now declares policies. Let me run the existing suite before adding tests.
+[94m[Bash][0m Run backend test suite with Node 20 $ export PATH=~/.nvm/versions/node/v20.20.2/bin:$PATH && node -v && ls node_modules >/dev/null 2>&1 &&...
+[94m[Bash][0m Check audit assertions in existing tests, setting schema, policies test header $ sed -n 1,40p config/env/test/policies/index.js
+[94m[Bash][0m Look at audit assertion pattern and policies test tail $ tail -30 config/env/test/policies/index.js
+Now add tests: a `userHasPermission` unit block in the policies suite, and a new `admin` suite for the migrated routes.
+[94m[Bash][0m Add admin route tests and run suite $ EOF export PATH=~/.nvm/versions/node/v20.20.2/bin:$PATH && npm test 2>&1 | grep -E "✓|✕|Tests:|Test ...
+[94m[Bash][0m Inspect the failing helper test $ grep -n "authenticatedContext = " -A8 config/env/test/policies/index.js
+`authenticatedContext` is scoped to the sibling `describe`; I'll inline it in the new block.
+[94m[Bash][0m Fix scope error and rerun suite $ """) open(p,'w').write(s) EOF export PATH=~/.nvm/versions/node/v20.20.2/bin:$PATH && npm test 2>&1 |...
+80/80. Now the remaining checks: lint (if any), `package.json` untouched, and any lingering references in docs/scripts.
+[94m[Bash][0m Check git status, package.json untouched, lint scripts and leftover references $ grep -rn "protectedController" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.ralph-tu...
+[94m[Bash][0m Update codebase patterns and append US-009 entry to progress.md $ se declaró `is-authenticated` y se deja la auth de users-permissions (que el seed no concede) como p...
+US-009 is complete. Summary of what was done:
+
+**Routes migrated to policies** (`global::is-authenticated` + `global::has-permission` with the code each handler previously enforced):
+- `notification`: core find/findOne → session only (controller keeps the recipient filter); create/update/delete → `MANAGE_NOTIFICATIONS`; custom `/notifications/me*` and `/:id/read` → `auth: false` + session.
+- `audit`: `/audit-logs`, `/audit-logs/export`, core find/findOne → `VIEW_AUDIT_LOGS`. The custom audit routes keep users-permissions auth (they never had `auth: false`; the seed grants `api::audit.audit.find/export`). Core create/update/delete → session only, since no permission code exists for them and the u-p role gate remains.
+- `rol`: writes + `POST/DELETE /rols/:id/permissions` → `MANAGE_ROLES`; reads → session.
+- `permission` → `MANAGE_PERMISSIONS`; `setting` → `MANAGE_SETTINGS`.
+- users-permissions extension: `/auth/me/permissions` → session; `GET /admin/users` → `VIEW_USERS`; `POST/PUT/DELETE /admin/users` → `MANAGE_USERS`; `/users/:id/anonymize` → `ANONYMIZE_USER`.
+
+**`protectedController.js` removed.** Controllers read `ctx.state.user`; empty overrides were dropped (`setting` is now a bare `createCoreController`). `has-permission.js` now also exports `userHasPermission(user, code)` (attached to the policy function — the Strapi loader registers it unchanged), and `canModifyComment` uses it against `ctx.state.user` instead of `authorize()`.
+
+**Verification:**
+- `grep -rn protectedController backend/src` → empty; every `auth: false` route has `policies` in the same config.
+- `backend/package.json` untouched; backend has no lint/typecheck rules configured.
+- `npm test` (Node 20): **80/80** — 52 existing + 3 unit cases for `userHasPermission` + new `config/env/test/admin/index.js` with 24 HTTP cases covering each migrated route (no token / no permission / with permission, including audit `userId` from `ctx.state.user`).
+
+`progress.md` updated: the "record-dependent permission" pattern now points to `userHasPermission`, plus two new patterns (policies on plugin routes; the `auth: false` grep rule) and the US-009 entry.
+
+<promise>COMPLETE</promise>
