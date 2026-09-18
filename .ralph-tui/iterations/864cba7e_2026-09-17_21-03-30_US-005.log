@@ -1,0 +1,87 @@
+# Iteration 5 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: Retirar la configuración y dependencias que solo usaba CRA
+- **Description**: Como desarrollador, quiero eliminar los restos de la toolchain anterior, para que package.json y la raíz de frontend/ solo contengan lo que Vite y Vitest usan.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T02:03:30.792Z
+- **Ended At**: 2026-09-18T02:30:43.284Z
+- **Duration**: 27m 12s
+- **Input Tokens**: 94
+- **Output Tokens**: 9478
+- **Total Tokens**: 9572
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress notes and the current state of `frontend/`.
+[94m[Bash][0m Read progress notes head and tail $ sed -n 1,80p .ralph-tui/progress.md && echo "-----TAIL-----" && tail -60 .ralph-tui/progress.md
+[94m[Bash][0m Inspect frontend root, package.json, babel, eslint, gitignore $ cd /Users/cristian/orca/docmentor/frontend && ls -la && echo "---PKG---" && cat package.json && echo...
+Now let me check who references the Babel packages, `reportWebVitals`, `web-vitals`, `silent-check-sso`, and `dotenv`.
+[94m[Bash][0m Find references to Babel, web-vitals, SSO file, dotenv $ echo "--- repo-wide refs outside frontend ---" && cd .. && grep -rn --exclude-dir=node_modules --exc...
+[94m[Bash][0m Inspect index.jsx, tracked files, and dependency trees $ cd /Users/cristian/orca/docmentor/frontend && sed -n 1,30p src/index.jsx && echo "--- git tracked in...
+[94m[Bash][0m Delete CRA leftovers and update eslint comment, gitignore, index.jsx $ \n \*/|\n|' src/index.jsx && \ echo "--- eslint comment ---" && grep -n "runtime automático" eslint....
+[94m[Bash][0m Check index.jsx tail after removing CRA comment $ tail -4 src/index.jsx | cat -e
+[94m[Bash][0m Trim trailing blank line in index.jsx $ \n/' src/index.jsx && tail -2 src/index.jsx | cat -e
+Now the dependency changes: uninstall the Babel packages, `web-vitals` and the unused `dotenv`, then upgrade TypeScript to 5.
+[94m[Bash][0m Uninstall Babel/web-vitals/dotenv and install TypeScript 5 $ npx tsc --version
+[94m[Bash][0m Check for extraneous or missing dependencies $ npm ls --depth=0 2>&1 | grep -iE 'extraneous|missing|UNMET|invalid' || echo "none"
+Clean tree. Now the four quality checks.
+[94m[Bash][0m Run typecheck and eslint $ echo "ESLINT_EXIT=${PIPESTATUS[0]}"
+[94m[Bash][0m Capture exit codes for typecheck and eslint $ echo "ESLINT_EXIT=$?"
+
+[91m[Error: unknown][0m
+[94m[Bash][0m Run Vitest test suite $ echo "TEST_EXIT=${PIPESTATUS[0]}"
+[94m[Bash][0m Capture test exit code and run Vite build $ ls dist/silent-check-sso.html 2>&1
+
+[91m[Error: Exit code 1
+TEST_EXIT=0
+      [38;5;246m│[0m
+ [38;5;246m1982 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249ms[0m[38;5;249mt[0m[38;5;249m [0m[38;5;249mw[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m [0meval[38;5;249m([0m[38;5;249m"[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mq[0m[38;5;249mu[0m[38;5;249mi[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249m"[0m[38;5;249m)[0m[38;5;249m([0m[38;5;249mt[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249ms[0m[38;5;249m.[0m[38;5;249mw[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249mk[0m[38;5;249me[0m[38;5;249mr[0m[38;5;249mS[0m[38;5;249mr[0m[38;5;249mc[0m[38;5;249m)[0m[38;5;249m;[0m
+ [38;5;240m     │[0m                        ──┬─  
+ [38;5;240m     │[0m                          ╰─── Use of direct `eval` here.
+ [38;5;240m     │[0m 
+ [38;5;240m     │[0m [38;5;115mHelp[0m: Consider using indirect eval. For more information, check the documentation: https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+[38;5;246m──────╯[0m
+✓ built in 1.07s
+BUILD_EXIT=0
+assets
+favicon.ico
+index.html
+logo192.png
+logo512.png
+manifest.json
+pdf.worker.js
+robots.txt
+--- silent-check-sso in dist? ---
+ls: dist/silent-check-sso.html: No such file or directory][0m
+[94m[Bash][0m Review git status and diff of the changes $ git status --short . && echo "--- @babel/parser still resolvable (transitive via plugin-react)? ---"...
+[94m[Bash][0m Refresh stale Codebase Patterns entries in progress.md $ cualquier archivo que no parsea contiene JSX (es exactamente lo que esbuild/Vite rechazará en `.js`)...
+[94m[Bash][0m Append US-005 entry to progress.md $ si en otra máquina existe, `git status` no lo mostrará y hay que borrarlo a mano. --- EOF tail -3 .r...
+US-005 is done. Summary of what changed in `frontend/`:
+
+**Removed (git rm)**
+- `babel.config.js` — nothing else referenced it; the JSX runtime comment in `eslint.config.mjs:31` now points at `@vitejs/plugin-react`.
+- `public/silent-check-sso.html` — Keycloak leftover, zero references anywhere in the repo.
+- `src/reportWebVitals.js` — its only mention was a commented-out CRA block at the end of `src/index.jsx`, which I removed too.
+- The untracked `frontend/build/` directory (old CRA output), and `/build` from `.gitignore` (leaving `/dist`).
+
+**Dependencies**
+- Uninstalled `@babel/core`, `@babel/preset-env`, `@babel/preset-react`, `@babel/plugin-proposal-private-property-in-object`, `web-vitals`, and `dotenv`. `dotenv` wasn't in the acceptance criteria, but it's been unused since US-003 and the story's goal is a `package.json` that only holds what Vite/Vitest use — flagging it in case you'd rather keep it.
+- `typescript` `^4.9.5` → `^5.9.3`; no `tsconfig.json` changes were needed.
+
+**Verification**
+- `npm ls --depth=0` — no extraneous/missing
+- `npm run typecheck` ✅ (tsc 5.9.3)
+- `npx eslint 'src/**/*.{js,jsx}'` ✅
+- `npm test` ✅ — 15 files, 86 tests
+- `npm run build` ✅ — `dist/` no longer contains `silent-check-sso.html`
+
+One thing left deliberately out of scope: Vite still warns that `vite.config.js` is ESM without `"type": "module"`. With `babel.config.js` gone, `tailwind.config.js` is the only remaining CJS file blocking that switch — I noted it in `progress.md` (Codebase Patterns + learnings) as the natural follow-up.
+
+<promise>COMPLETE</promise>

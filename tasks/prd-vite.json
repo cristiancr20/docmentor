@@ -137,14 +137,15 @@
         "cd frontend && npm run build passes"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Verificado con playwright-cli (Chromium) contra el backend local (Node 20) con usuarios del seed. Dev (npm start, :3000) y build de producción (vite preview): login tutor/estudiante → dashboard de su rol con 0 errores de consola (solo los 2 avisos de future flags de React Router, previos a la migración; en el build de producción 0 mensajes); visor /document/7: /pdf.worker.js y el PDF de /uploads responden 200, se pintan los 2 resaltados existentes y se creó un comentario nuevo con su resaltado; comparador en /project/6: pestaña Cambios muestra el % de contenido en común, Lado a lado carga los dos visores con resaltados rojo/verde/amarillo y el scroll sincronizado es proporcional (1500/4920 en el izquierdo → 247/809 en el derecho). Recarga directa de /tutor/dashboard en preview responde 200 text/html con la app (curl en :4173 y navegador). Sin diferencias visuales: no hubo que cambiar código. Salvedad: el backend (config/middlewares.js, intocable por el PRD) solo permite CORS desde localhost:3000/3001, así que en :4173 el login falla por CORS; las comprobaciones en navegador del build de producción se hicieron con `vite preview --port 3001` (mismo dist/), y en :4173 se validaron por curl las rutas de assets, del worker y el fallback SPA.",
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-09-18T02:30:43.285Z"
+    "updatedAt": "2026-09-18T02:53:07.902Z"
   }
 }
