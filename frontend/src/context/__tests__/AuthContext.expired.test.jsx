@@ -36,7 +36,7 @@ describe("Sesión expirada (401 del backend)", () => {
     localStorage.getItem.mockImplementation((key) => store.get(key) ?? null);
     localStorage.setItem.mockImplementation((key, value) => store.set(key, String(value)));
     localStorage.removeItem.mockImplementation((key) => store.delete(key));
-    onExpired = jest.fn();
+    onExpired = vi.fn();
     window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
   });
 
@@ -94,7 +94,7 @@ describe("Sesión expirada (401 del backend)", () => {
   });
 
   it("deja de escuchar auth:expired al desmontarse", () => {
-    const removeSpy = jest.spyOn(window, "removeEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
     const { unmount } = render(
       <AuthProvider>
         <Consumer />

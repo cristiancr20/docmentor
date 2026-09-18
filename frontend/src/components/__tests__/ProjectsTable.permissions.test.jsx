@@ -4,12 +4,12 @@ import { MemoryRouter } from "react-router-dom";
 import ProjectsTable from "../ProjectsTable";
 import { usePermission } from "../../context/PermissionContext";
 
-jest.mock("../../context/PermissionContext", () => ({
-  usePermission: jest.fn(),
+vi.mock("../../context/PermissionContext", () => ({
+  usePermission: vi.fn(),
 }));
 
-jest.mock("../../core/Projects", () => ({
-  deleteProject: jest.fn(),
+vi.mock("../../core/Projects", () => ({
+  deleteProject: vi.fn(),
 }));
 
 const mockPermissions = (permissions) => {
@@ -46,7 +46,7 @@ const renderTable = () =>
         projects={projects}
         columns={columns}
         linkBase="/project"
-        fetchProjects={jest.fn()}
+        fetchProjects={vi.fn()}
       />
     </MemoryRouter>
   );

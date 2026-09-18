@@ -3,13 +3,13 @@ import { render, screen } from "@testing-library/react";
 import CommentsPanel from "../CommentsPanel";
 import { usePermission } from "../../context/PermissionContext";
 
-jest.mock("../../context/PermissionContext", () => ({
-  usePermission: jest.fn(),
+vi.mock("../../context/PermissionContext", () => ({
+  usePermission: vi.fn(),
 }));
 
-jest.mock("../../core/Comments", () => ({
-  updateComment: jest.fn(),
-  deleteComment: jest.fn(),
+vi.mock("../../core/Comments", () => ({
+  updateComment: vi.fn(),
+  deleteComment: vi.fn(),
 }));
 
 const mockPermissions = (permissions) => {
@@ -38,8 +38,8 @@ describe("CommentsPanel permisos", () => {
     render(
       <CommentsPanel
         comments={comments}
-        onUpdateComments={jest.fn()}
-        onCommentClick={jest.fn()}
+        onUpdateComments={vi.fn()}
+        onCommentClick={vi.fn()}
       />
     );
 
@@ -52,8 +52,8 @@ describe("CommentsPanel permisos", () => {
     render(
       <CommentsPanel
         comments={comments}
-        onUpdateComments={jest.fn()}
-        onCommentClick={jest.fn()}
+        onUpdateComments={vi.fn()}
+        onCommentClick={vi.fn()}
       />
     );
 

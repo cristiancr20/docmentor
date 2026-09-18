@@ -8,7 +8,7 @@ describe("useProjects", () => {
   let errorSpy;
 
   beforeEach(() => {
-    errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -16,7 +16,7 @@ describe("useProjects", () => {
   });
 
   test("empieza cargando y expone los proyectos cuando el loader resuelve", async () => {
-    const loader = jest.fn().mockResolvedValue(projectsA);
+    const loader = vi.fn().mockResolvedValue(projectsA);
 
     const { result } = renderHook(() => useProjects(loader));
 
@@ -33,7 +33,7 @@ describe("useProjects", () => {
   });
 
   test("trata un loader que no devuelve nada como lista vacía", async () => {
-    const loader = jest.fn().mockResolvedValue(undefined);
+    const loader = vi.fn().mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useProjects(loader));
 
@@ -43,7 +43,7 @@ describe("useProjects", () => {
 
   test("expone el error, lo loguea y deja de cargar cuando el loader falla", async () => {
     const failure = new Error("Tutor no encontrado");
-    const loader = jest.fn().mockRejectedValue(failure);
+    const loader = vi.fn().mockRejectedValue(failure);
 
     const { result } = renderHook(() => useProjects(loader));
 
@@ -55,7 +55,7 @@ describe("useProjects", () => {
   });
 
   test("reload vuelve a llamar al loader, limpia el error y actualiza los proyectos", async () => {
-    const loader = jest
+    const loader = vi
       .fn()
       .mockRejectedValueOnce(new Error("fallo temporal"))
       .mockResolvedValueOnce(projectsB);
@@ -80,7 +80,7 @@ describe("useProjects", () => {
   });
 
   test("relanza la carga cuando cambian las deps", async () => {
-    const loader = jest.fn().mockResolvedValueOnce(projectsA).mockResolvedValueOnce(projectsB);
+    const loader = vi.fn().mockResolvedValueOnce(projectsA).mockResolvedValueOnce(projectsB);
 
     const { result, rerender } = renderHook(({ email }) => useProjects(loader, [email]), {
       initialProps: { email: "a@test.com" },
@@ -97,7 +97,7 @@ describe("useProjects", () => {
   test("aborta la carga al desmontar y descarta su resultado", async () => {
     let resolveLoader;
     let receivedSignal;
-    const loader = jest.fn(({ signal }) => {
+    const loader = vi.fn(({ signal }) => {
       receivedSignal = signal;
       return new Promise((resolve) => {
         resolveLoader = resolve;
@@ -122,7 +122,7 @@ describe("useProjects", () => {
   });
 
   test("ignora los errores de cancelación sin loguearlos", async () => {
-    const loader = jest.fn(({ signal }) =>
+    const loader = vi.fn(({ signal }) =>
       new Promise((_, reject) => {
         signal.addEventListener("abort", () => {
           const err = new Error("canceled");

@@ -1,27 +1,26 @@
 import logger from "../logger";
 
 describe("logger", () => {
-  const originalEnv = process.env.NODE_ENV;
   let logSpy;
   let infoSpy;
   let warnSpy;
   let errorSpy;
 
   beforeEach(() => {
-    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-    infoSpy = jest.spyOn(console, "info").mockImplementation(() => {});
-    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = originalEnv;
-    jest.restoreAllMocks();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   describe("en production", () => {
     beforeEach(() => {
-      process.env.NODE_ENV = "production";
+      vi.stubEnv("MODE", "production");
     });
 
     it("debug no llama a console.log", () => {
@@ -48,7 +47,7 @@ describe("logger", () => {
 
   describe("en development", () => {
     beforeEach(() => {
-      process.env.NODE_ENV = "development";
+      vi.stubEnv("MODE", "development");
     });
 
     it("debug llama a console.log con los mismos argumentos", () => {

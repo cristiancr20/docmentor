@@ -17,6 +17,7 @@ after each iteration and it's included in prompts for context.
   ```
 - **Imports sin extensión en frontend/src:** todos los imports/`jest.mock` van sin `.js`/`.jsx`, así que renombrar la extensión de un módulo no requiere tocar importadores. Las configs (`tailwind.config.js`, `eslint.config.mjs`, `tsconfig.json`, `jest.transform`) ya incluyen `.jsx`.
 - **Verificar el dev server de Vite sin navegador (frontend):** `npm start` en background y `curl` contra `http://localhost:3000`: el HTML debe incluir `<script type="module" src="/src/index.jsx">`; `curl /src/core/config.js` muestra el `import.meta.env` inyectado (sirve para comprobar que `.env` se leyó); `curl -sI /pdf.worker.js` debe dar 200 (assets de `public/` se sirven en raíz); y `curl /src/index.css | grep '\.bg-surface'` confirma que PostCSS+Tailwind están activos. Terminar con `pkill -f vite`.
+- **Tests con Vitest (frontend):** `vi` es global (`test.globals: true`), no hace falta importarlo. Tres diferencias con Jest que rompen tests al migrar: (1) el factory de `vi.mock` debe devolver la forma del módulo, así que una export por defecto va como `() => ({ default: ... })`, nunca `() => vi.fn()` ni `() => "valor"`; (2) si el código hace `new Mock()`, la `mockImplementation` debe ser una `function` normal, no una arrow (Vitest ≥ 4 lanza "is not a constructor"); (3) el entorno se alterna con `vi.stubEnv("MODE", "production")` + `vi.unstubAllEnvs()` en `afterEach`, no asignando `process.env.NODE_ENV`. `vite.config.js` lleva `test.mockReset: true` (equivale al `resetMocks` de CRA) y `src/setupTests.js` instala un mock propio de `localStorage` con `vi.fn()` y almacén en memoria.
 - **Módulos ESM vs CJS en la raíz de frontend:** `package.json` no tiene `"type": "module"` porque `tailwind.config.js` y `babel.config.js` usan `module.exports`. `vite.config.js` y `postcss.config.js` están en ESM igualmente y Vite los carga (con un aviso de `configLoader: 'native'`). Si se añade `"type": "module"` hay que convertir antes esos dos `.js` CJS (o renombrarlos a `.cjs`).
 
 ---
@@ -46,4 +47,19 @@ after each iteration and it's included in prompts for context.
   - Vite avisa de que `vite.config.js` usa ESM sin `"type": "module"`; se dejó así a propósito (ver Codebase Patterns) para no romper `tailwind.config.js` ni `babel.config.js` (CJS). Candidato natural para resolver en US-005 al borrar `babel.config.js`.
   - `typescript@4.9.5` tipa `vite/client` sin problema con `skipLibCheck: true`.
   - El comentario HTML de `index.html` que menciona el antiguo `<script src="https://unpkg.com/...pdf.worker.min.js">` sobrevive al build de Vite (CRA lo eliminaba al minificar). Es un comentario, no carga nada.
+---
+
+## 2026-09-17 - US-003
+- `npm uninstall jest jest-environment-jsdom babel-jest jest-junit jest-localstorage-mock github-actions-ctrf` (ningún archivo ni workflow los referenciaba; `unit_test_backend.yml` usa el Jest del backend, que no se toca) y `npm install -D vitest jsdom @vitest/coverage-v8` (vitest ^5.0.1, jsdom ^30.1.0). Hubo que desinstalar antes: `jest-environment-jsdom` fijaba `jsdom@20` y npm daba ERESOLVE al instalar el `jsdom` moderno.
+- `vite.config.js`: bloque `test` con `environment: 'jsdom'`, `globals: true`, `setupFiles: './src/setupTests.js'`, `mockReset: true`, `css: false`, `coverage.reporter: ['text', 'lcov']`.
+- `src/setupTests.js`: `import '@testing-library/jest-dom/vitest'` (la 6.6.3 instalada exporta `./vitest`); fuera `dotenv` y `jest-localstorage-mock`; mock propio de `localStorage` (`getItem/setItem/removeItem/clear/key` como `vi.fn()` con almacén en memoria, `Object.defineProperty(window, 'localStorage', ...)`) que se vacía y resetea en `beforeEach`.
+- 15 archivos de `src/**/__tests__`: `jest.*` → `vi.*` (perl `s/\bjest(?=\s*\.)/vi/g`, que también cubre el `jest\n  .fn()` multilínea de `useProjects.test.js`). Ajustes manuales: `GeneratePdfButton.test.jsx` (factories de png y `jspdf-autotable` devuelven `{ default }`; `jsPDF.mockImplementation(function () {...})` para que sea construible), `logger.test.js` (`vi.stubEnv("MODE", ...)` / `vi.unstubAllEnvs()`), comentario de `AuthContext.test.jsx`.
+- `package.json`: `test = vitest run --coverage`, nuevo `test:watch = vitest`. `eslint.config.mjs`: `globals.jest` → `globals.vitest`.
+- Checks: `npm test` ✅ (15 archivos, 86 tests: el mismo número que daba Jest en US-001; el "8 suites / 46 tests" del AC es de una foto anterior del repo), `npm run typecheck` ✅, `npx eslint 'src/**/*.{js,jsx}'` ✅, `npm run build` ✅.
+- **Learnings:**
+  - Ver patrón "Tests con Vitest" en Codebase Patterns (forma del módulo en `vi.mock`, mocks construibles, `vi.stubEnv`).
+  - En Vitest ≥ 3 `mockReset` restaura la implementación original pasada a `vi.fn(impl)` (no la deja en `undefined` como Jest), así que con `mockReset: true` el mock de `localStorage` recupera solo su almacén en memoria tras cada test.
+  - `@testing-library/jest-dom/vitest` extiende `expect` de Vitest directamente; con `globals: true` no hay que importar `expect` en los tests.
+  - Vitest carga `.env`/`.env.test` por sí mismo (`import.meta.env`), por eso sobra `dotenv`. La devDependency `dotenv` queda ya sin ningún uso en frontend: candidata a borrar en US-005 junto con `@babel/*`, `babel.config.js` y `@babel/core` (que sigue en `dependencies`).
+  - Vitest avisa de que jsdom se crea 15 veces (uno por archivo); es solo rendimiento (~4 s en total), no hace falta tocar `pool`/`isolate`.
 ---

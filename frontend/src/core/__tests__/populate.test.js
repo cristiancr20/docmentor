@@ -5,9 +5,9 @@ import api from '../apiClient';
 import { getDocumentsByProjectId } from '../Document';
 import { getProjectById } from '../Projects';
 
-jest.mock('../apiClient', () => ({
+vi.mock('../apiClient', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: vi.fn() },
 }));
 
 beforeEach(() => {

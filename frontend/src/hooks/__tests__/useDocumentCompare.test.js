@@ -4,15 +4,15 @@ import { comparePdfDocuments } from "../../utils/pdfCompare";
 import { getCommentsByDocument } from "../../core/Comments";
 import { HIGHLIGHT_COLORS } from "../../utils/highlightColors";
 
-jest.mock("../../utils/pdfCompare", () => ({
-  comparePdfDocuments: jest.fn(),
+vi.mock("../../utils/pdfCompare", () => ({
+  comparePdfDocuments: vi.fn(),
 }));
 
-jest.mock("../../core/Comments", () => ({
-  getCommentsByDocument: jest.fn(),
+vi.mock("../../core/Comments", () => ({
+  getCommentsByDocument: vi.fn(),
 }));
 
-jest.mock("../../core/config.js", () => ({
+vi.mock("../../core/config.js", () => ({
   API_URL: "http://api.test",
 }));
 
@@ -49,14 +49,14 @@ describe("useDocumentCompare", () => {
   let errorSpy;
 
   beforeEach(() => {
-    errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     comparePdfDocuments.mockResolvedValue(comparison);
     getCommentsByDocument.mockResolvedValue([]);
   });
 
   afterEach(() => {
     errorSpy.mockRestore();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("compara los dos archivos al montar y expone el resultado y la similitud", async () => {

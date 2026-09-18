@@ -1,0 +1,67 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-002
+- **Task Title**: Sustituir react-scripts por Vite para dev y build
+- **Description**: Como desarrollador, quiero que npm start levante Vite y npm run build genere el bundle con Vite, para dejar de depender de react-scripts. En esta historia los tests quedan temporalmente sin ejecutar (...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:37:46.587Z
+- **Ended At**: 2026-09-18T01:41:02.674Z
+- **Duration**: 3m 16s
+- **Input Tokens**: 82
+- **Output Tokens**: 11342
+- **Total Tokens**: 11424
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress file and the current frontend setup.
+[94m[Bash][0m Read progress notes and frontend config files $ cat .ralph-tui/progress.md && echo "-----PKG-----" && cat frontend/package.json && echo "-----TSCONF...
+[94m[Bash][0m Inspect index.html, config, pdf worker setup and references to CRA $ grep -rn "REACT_APP\|react-scripts\|frontend/build" --exclude-dir=node_modules --exclude-dir=.git --...
+[94m[Bash][0m Check env references, later stories scope, Dockerfile and node version $ ls node_modules/.bin | grep -i vite
+`src/utils/logger.js` also references `process.env.NODE_ENV`, which the AC says must go. Let me look at it and its test.
+[94m[Bash][0m Inspect logger, its test, setupTests and eslint config $ cat src/utils/logger.js && echo "-----TEST-----" && cat src/utils/__tests__/logger.test.js && echo "...
+Plan is clear. Installing Vite and removing react-scripts first.
+[94m[Bash][0m Install vite and plugin-react, uninstall react-scripts $ console.log(p.devDependencies.vite,p.devDependencies["@vitejs/plugin-react"],"react-scripts:",p.depe...
+Vite 8.3 and plugin-react 6.1 installed, react-scripts gone. Now the config files, `index.html` move, and source changes.
+[94m[Bash][0m Create vite/postcss configs and move index.html to frontend root $ tail -12 index.html
+Now the source, env, tsconfig, package.json and .gitignore changes.
+[94m[Bash][0m Update config.js, pdf worker, logger, env files, tsconfig, gitignore and package.json $ sed -n 9,14p src/utils/logger.js
+Now the quality checks: typecheck, eslint, and build.
+[94m[Bash][0m Run typecheck and eslint $ echo "eslint exit=${PIPESTATUS[0]}"
+[94m[Bash][0m Run eslint and Vite build, verify dist outputs $ grep -c PUBLIC_URL dist/index.html
+Build passes (the `unpkg` script match is the pre-existing HTML comment, not a live tag). Now the dev server check: start Vite on 3000 and curl it.
+[94m[Bash][0m Start Vite dev server, verify HTML, module, env and Tailwind, then stop it $ echo "stopped"
+[94m[Bash][0m Show git status and confirm dist is ignored $ grep -n "module.exports\|export default" tailwind.config.js babel.config.js
+All acceptance criteria are met. Now documenting in `progress.md`.
+[94m[Bash][0m Append US-002 entry and patterns to progress.md $ grep -n "Verificar el dev server" .ralph-tui/progress.md
+US-002 is implemented and verified against every acceptance criterion.
+
+## What changed (`frontend/`)
+
+- **Dependencies**: `vite ^8.3.0` and `@vitejs/plugin-react ^6.1.1` added as devDependencies; `react-scripts` uninstalled.
+- **New configs**: `vite.config.js` (react plugin, `port: 3000`, `host: true`, `outDir: 'dist'`) and `postcss.config.js` (tailwindcss + autoprefixer).
+- **`index.html`** moved from `public/` to the root via `git mv`; `%PUBLIC_URL%` removed (now `/favicon.ico`, `/logo192.png`, `/manifest.json`) and `<script type="module" src="/src/index.jsx">` added before `</body>`.
+- **Source**: `src/core/config.js` → `import.meta.env.VITE_API_URL`; `src/setupPdfWorker.js` → `${import.meta.env.BASE_URL}pdf.worker.js`. I also changed `src/utils/logger.js` from `process.env.NODE_ENV` to `import.meta.env.MODE` — it wasn't named in the AC, but the AC requires zero `process.env` references in `src` outside tests, and that was the one remaining hit.
+- **Env/config**: `.env` and `.env.example` renamed to `VITE_API_URL` (same value); `tsconfig.json` gets `"types": ["vite/client"]`; `/dist` added to `.gitignore`.
+- **`package.json`**: `start=vite`, `build=vite build`, `preview=vite preview`; `test` left untouched for US-003; `browserslist` and `jest` blocks removed.
+
+## Verification
+
+- `npm run typecheck` ✅ · `npx eslint 'src/**/*.{js,jsx}'` ✅
+- `npm run build` ✅ — produces `dist/index.html` and `dist/pdf.worker.js`
+- `npm start` ✅ on `http://localhost:3000` — curl confirmed the HTML serves `/src/index.jsx`, `VITE_API_URL` is injected into `config.js`, `/pdf.worker.js` returns 200, and Tailwind utilities (e.g. `.bg-surface`) are generated.
+
+## Notes for later stories
+
+- Vite warns that `vite.config.js` is ESM without `"type": "module"`. I left it that way deliberately since `tailwind.config.js` and `babel.config.js` are CJS; US-005 (which deletes `babel.config.js`) is the natural place to resolve it.
+- `logger.test.js` toggles `process.env.NODE_ENV`; in US-003 it should switch to `vi.stubEnv("MODE", "production")`.
+- Build emits warnings (an `eval` in `pdfjs-dist`, one chunk > 500 kB) — warnings only, the build succeeds.
+
+Learnings and two reusable patterns (curl-based dev-server verification, ESM/CJS constraint) are recorded in `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>

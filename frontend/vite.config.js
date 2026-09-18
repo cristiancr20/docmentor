@@ -11,4 +11,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.js',
+    // Equivale al resetMocks: true de CRA: cada test arranca con los vi.fn()
+    // sin historial ni implementaciones sobrescritas
+    mockReset: true,
+    css: false,
+    coverage: {
+      reporter: ['text', 'lcov'],
+    },
+  },
 });

@@ -17,7 +17,7 @@ export default [
   },
   {
     files: ["**/__tests__/**/*.{js,jsx}", "**/*.{test,spec}.{js,jsx}", "src/setupTests.js"],
-    languageOptions: { globals: globals.jest },
+    languageOptions: { globals: globals.vitest },
   },
   pluginJs.configs.recommended,
   {

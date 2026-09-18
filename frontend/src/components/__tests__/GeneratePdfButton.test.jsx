@@ -4,26 +4,28 @@ import userEvent from "@testing-library/user-event";
 import { jsPDF } from "jspdf";
 import GeneratePdfButton from "../GeneratePdfButton";
 
-// Mock de los assets de imagen (jest no transforma binarios png).
-jest.mock("../../assets/logo_carrera.png", () => "logo_carrera.png");
-jest.mock("../../assets/logo_universidad.png", () => "logo_universidad.png");
+// Mock de los assets de imagen (los tests no necesitan los binarios png).
+// En Vitest el factory de vi.mock devuelve el módulo completo: la export
+// por defecto va en `default`.
+vi.mock("../../assets/logo_carrera.png", () => ({ default: "logo_carrera.png" }));
+vi.mock("../../assets/logo_universidad.png", () => ({ default: "logo_universidad.png" }));
 
-jest.mock("jspdf", () => ({ jsPDF: jest.fn() }));
-jest.mock("jspdf-autotable", () => jest.fn());
+vi.mock("jspdf", () => ({ jsPDF: vi.fn() }));
+vi.mock("jspdf-autotable", () => ({ default: vi.fn() }));
 
 let mockPdfInstance;
 
 const buildPdfInstance = () => ({
-  setProperties: jest.fn(),
-  setFontSize: jest.fn(),
-  setFont: jest.fn(),
-  setLineWidth: jest.fn(),
-  line: jest.fn(),
-  text: jest.fn(),
-  addImage: jest.fn(),
-  addPage: jest.fn(),
-  splitTextToSize: jest.fn((t) => (Array.isArray(t) ? t : [t])),
-  save: jest.fn(),
+  setProperties: vi.fn(),
+  setFontSize: vi.fn(),
+  setFont: vi.fn(),
+  setLineWidth: vi.fn(),
+  line: vi.fn(),
+  text: vi.fn(),
+  addImage: vi.fn(),
+  addPage: vi.fn(),
+  splitTextToSize: vi.fn((t) => (Array.isArray(t) ? t : [t])),
+  save: vi.fn(),
   lastAutoTable: { finalY: 150 },
   internal: { pageSize: { width: 210, height: 297 } },
 });
@@ -56,9 +58,12 @@ const buildDocuments = () => [
 
 describe("GeneratePdfButton", () => {
   beforeEach(() => {
-    // react-scripts activa resetMocks, por lo que reasignamos la implementación.
+    // Cada test recibe una instancia limpia. El componente hace `new jsPDF()`,
+    // y Vitest exige que la implementación sea construible (function, no arrow).
     mockPdfInstance = buildPdfInstance();
-    jsPDF.mockImplementation(() => mockPdfInstance);
+    jsPDF.mockImplementation(function () {
+      return mockPdfInstance;
+    });
   });
 
   it("muestra el botón Descargar PDF", () => {

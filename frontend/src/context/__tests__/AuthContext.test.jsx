@@ -28,14 +28,14 @@ const renderAuth = () =>
 describe("AuthContext (sesión en localStorage)", () => {
   let consoleError;
 
-  // jest-localstorage-mock expone jest.fn() y CRA los resetea antes de cada
-  // test (resetMocks), así que se respaldan con un almacén en memoria.
+  // El mock de localStorage de setupTests.js expone vi.fn() y se resetea antes
+  // de cada test, así que se respaldan con un almacén en memoria propio.
   beforeEach(() => {
     const store = new Map();
     localStorage.getItem.mockImplementation((key) => store.get(key) ?? null);
     localStorage.setItem.mockImplementation((key, value) => store.set(key, String(value)));
     localStorage.removeItem.mockImplementation((key) => store.delete(key));
-    consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {

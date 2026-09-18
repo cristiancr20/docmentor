@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { PermissionGate } from "../PermissionGate";
 import { usePermission } from "../../context/PermissionContext";
 
-jest.mock("../../context/PermissionContext", () => ({
-  usePermission: jest.fn(),
+vi.mock("../../context/PermissionContext", () => ({
+  usePermission: vi.fn(),
 }));
 
 const mockPermissions = (permissions) => {

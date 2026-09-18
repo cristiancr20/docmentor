@@ -11,12 +11,12 @@ import {
   updateNotificationPreference,
 } from "../../core/Notification";
 
-jest.mock("../../core/Notification", () => ({
-  getMyNotifications: jest.fn(),
-  markNotificationAsRead: jest.fn(),
-  markAllNotificationsAsRead: jest.fn(),
-  getNotificationPreference: jest.fn(),
-  updateNotificationPreference: jest.fn(),
+vi.mock("../../core/Notification", () => ({
+  getMyNotifications: vi.fn(),
+  markNotificationAsRead: vi.fn(),
+  markAllNotificationsAsRead: vi.fn(),
+  getNotificationPreference: vi.fn(),
+  updateNotificationPreference: vi.fn(),
 }));
 
 const buildNotification = (overrides = {}) => ({
@@ -123,7 +123,7 @@ describe("NotificationBell", () => {
   });
 
   it("aborta la petición en vuelo al desmontar sin avisos de setState", async () => {
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     let capturedSignal = null;
     // Simula axios: la petición queda pendiente hasta que se aborta el signal
     getMyNotifications.mockImplementation(
@@ -156,7 +156,7 @@ describe("NotificationBell", () => {
   });
 
   it("cancela la petición anterior al lanzar el siguiente ciclo de polling", async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       const signals = [];
       getMyNotifications.mockImplementation(({ signal } = {}) => {
@@ -171,14 +171,14 @@ describe("NotificationBell", () => {
       expect(signals).toHaveLength(1);
 
       await act(async () => {
-        jest.advanceTimersByTime(POLL_INTERVAL_MS);
+        vi.advanceTimersByTime(POLL_INTERVAL_MS);
       });
 
       expect(signals).toHaveLength(2);
       expect(signals[0].aborted).toBe(true);
       expect(signals[1].aborted).toBe(false);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 });
