@@ -13,6 +13,7 @@ import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
 import { getUserData } from "../utils/auth.utils";
 import { formatDateTime } from "../utils/format";
+import logger from "../utils/logger";
 
 const fadeIn = {
   initial: { opacity: 0, y: 8 },
@@ -34,7 +35,7 @@ const ViewProjectsStudents = () => {
   if (storedUserData) {
     userEmail = storedUserData.email;
   } else {
-    console.log("No se encontró el userData en localStorage");
+    logger.debug("No se encontró el userData en localStorage");
   }
 
   useEffect(() => {

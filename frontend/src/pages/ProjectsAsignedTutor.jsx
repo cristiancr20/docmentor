@@ -10,6 +10,7 @@ import { SkeletonRows } from "../components/ui/Skeleton";
 import ProjectsTable from "../components/ProjectsTable";
 import { getUserData } from "../utils/auth.utils";
 import { formatDateTime } from "../utils/format";
+import logger from "../utils/logger";
 
 const ITINERARIES = [
   "Ingeniería de Software",
@@ -37,7 +38,7 @@ const ProjectsAsignedTutor = () => {
   if (storedUserData) {
     userEmail = storedUserData.email;
   } else {
-    console.log("No se encontró el userData en localStorage");
+    logger.debug("No se encontró el userData en localStorage");
   }
 
   useEffect(() => {
@@ -53,7 +54,7 @@ const ProjectsAsignedTutor = () => {
         }
       } catch (error) {
         setError("Error al cargar los proyectos");
-        console.error("Error fetching projects:", error);
+        logger.error("Error fetching projects:", error);
       } finally {
         setLoading(false);
       }

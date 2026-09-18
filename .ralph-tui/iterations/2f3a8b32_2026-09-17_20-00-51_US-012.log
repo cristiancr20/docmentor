@@ -1,0 +1,45 @@
+# Iteration 12 Log
+
+## Metadata
+
+- **Task ID**: US-012
+- **Task Title**: Unificar la lectura del body en los endpoints custom de document
+- **Description**: Como desarrollador, quiero que setReviewed y changeStatus lean el body de la misma forma, porque hoy uno acepta { data: { isRevised } } o { isRevised } y el otro solo { status } en la raíz.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:00:51.666Z
+- **Ended At**: 2026-09-18T01:03:18.244Z
+- **Duration**: 2m 26s
+- **Input Tokens**: 74
+- **Output Tokens**: 9330
+- **Total Tokens**: 9404
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Read progress notes and document controller $ tail -80 .ralph-tui/progress.md && ls backend/src/utils backend/src/api/document/controllers backend...
+[94m[Bash][0m Inspect ownership util, frontend Document.js and document tests $ cat backend/src/utils/ownership.js | head -30 && grep -n "status\|review\|isRevised" frontend/src/co...
+[94m[Bash][0m Locate frontend calls to status/review endpoints $ grep -n "status\|review\|api\.\|export" frontend/src/core/Document.js && grep -rn "documents/\${\|/s...
+[94m[Bash][0m Inspect Comments.js review call and search status usage $ cat frontend/src/core/Document.js | sed -n 1,60p
+[94m[Bash][0m Check usages and existing document tests $ sed -n 45,160p backend/config/env/test/documents/index.js
+[94m[Bash][0m Check imports and notification service $ grep -rn "readBody" backend/src | head
+Now the backend helper and controller changes.
+[94m[Bash][0m Create readBody helper and use it in both handlers $ \n") open(p,'w').write(s) EOF grep -n "readBody" backend/src/api/document/controllers/document.js
+[94m[Bash][0m Inspect Document.js tail and related tests $ grep -rln "core/Document\|core/Comments" frontend/src --include='*.test.*' --include='*.jsx' -r | he...
+[94m[Bash][0m Add status/review calls to Document.js and delegate from Comments.js $ \n',1) open(p,'w').write(s) EOF head -3 frontend/src/core/Comments.js
+[94m[Bash][0m Check status schema and restore test fixtures $ grep -n '"status"' -A10 backend/src/api/document/content-types/document/schema.json | head -20 && se...
+[94m[Bash][0m Add status body tests and run backend suite $ EOF cd backend && export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH && node -v && npm test 2>&...
+Backend: 90/90. Now the frontend gates.
+[94m[Bash][0m Run frontend eslint, typecheck and jest $ cd /Users/cristian/orca/docmentor/frontend && export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PAT...
+All green. Final checks and progress notes.
+[94m[Bash][0m Verify status and append progress notes $ los tests de `CommentsPanel` mockean `core/Comments` completo y no se ven afectados. --- EOF echo do...
+US-012 implemented:
+
+- **Backend:** new `backend/src/utils/readBody.js` (`readBody(ctx)` → `ctx.request.body?.data ?? ctx.request.body ?? {}`); `setReviewed` and `changeStatus` in `backend/src/api/document/controllers/document.js` both use it. The allowed-status list and transition table in `changeStatus` are unchanged.
+- **Frontend:** `frontend/src/core/Document.js` now exports `setDocumentReviewed` and `changeDocumentStatus`, both sending `{ data: { ... } }`. `Comments.js` keeps the `updateDocumentStatusRevisado` name used by `DocumentViewer.jsx` but delegates to `setDocumentReviewed` (the frontend had no `/status` call before this story).
+- **Tests:** 4 new cases in `backend/config/env/test/documents/index.js` covering `{ data: { status } }` vs `{ status }` (same 200 response, same persisted value, same audit), invalid status and forbidden transition in both forms, and empty body.
+- **Gates:** `cd backend && npm test` → 90/90; frontend eslint, `tsc --noEmit`, and jest (56/56) all pass. `backend/package.json` untouched. Progress notes appended to `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>

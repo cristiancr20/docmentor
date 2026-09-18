@@ -1,4 +1,5 @@
 import api from './apiClient';
+import logger from '../utils/logger';
 
 //METODO PARA GUARDAR LOS EMAILS PARA EL ENVIO DE CORREOS   
 export const saveEmail = async (email_notifications) => {
@@ -6,7 +7,7 @@ export const saveEmail = async (email_notifications) => {
     const response = await api.post(`/api/settings`, { data: email_notifications });
     return response.data;
   } catch (error) {
-    console.error("Error al guardar el email:", error);
+    logger.error("Error al guardar el email:", error);
     throw error;
   }
 };
@@ -17,7 +18,7 @@ export const getEmail = async () => {
     const response = await api.get(`/api/settings`);
     return response.data;
   } catch (error) {
-    console.error("Error al obtener el email:", error);
+    logger.error("Error al obtener el email:", error);
     throw error;
   }
 };
@@ -46,7 +47,7 @@ export const updateEmail = async (emailId) => {
 
     return response.data;
   } catch (error) {
-    console.error("Error al actualizar el email:", error);
+    logger.error("Error al actualizar el email:", error);
     throw error;
   }
 };

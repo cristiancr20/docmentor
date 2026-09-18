@@ -1,206 +1,77 @@
 {
   "version": 1,
-  "sessionId": "2f3a8b32-4456-4840-bce0-70117e0eaba9",
+  "sessionId": "e23adec5-809e-4505-8759-0cef36fa2eb4",
   "status": "running",
-  "startedAt": "2026-09-18T00:17:41.135Z",
-  "updatedAt": "2026-09-18T01:03:18.245Z",
-  "currentIteration": 11,
+  "startedAt": "2026-09-18T01:08:14.704Z",
+  "updatedAt": "2026-09-18T01:10:55.156Z",
+  "currentIteration": 0,
   "maxIterations": 0,
-  "tasksCompleted": 11,
+  "tasksCompleted": 0,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
     "plugin": "json",
     "executionScopes": [],
-    "prdPath": "./tasks/prd-seguridad.json",
-    "totalTasks": 12,
+    "prdPath": "./tasks/prd-calidad.json",
+    "totalTasks": 9,
     "tasks": [
       {
         "id": "US-001",
-        "title": "Guardar la sesión en localStorage sin cifrado simulado",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Crear un logger de frontend silenciado en producción",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-002",
-        "title": "Eliminar el flujo de login institucional Keycloak muerto",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Quitar los try/catch que solo loguean y relanzan en core/",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-003",
-        "title": "Apuntar a localhost por defecto y no a una URL de producción",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Usar strapi.log en lugar de console en el backend",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-004",
-        "title": "Limpiar auth.utils.js de helpers sin uso o defectuosos",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Cancelar el polling de notificaciones al desmontar",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-005",
-        "title": "Cerrar la sesión en memoria cuando el backend responde 401",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Extraer la carga de proyectos de los dashboards a un hook",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-006",
-        "title": "Crear policies globales is-authenticated y has-permission en Strapi",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Sustituir populate=* por populate explícito en core/",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-007",
-        "title": "Proteger las rutas de document con policies",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Renombrar el visor de PDF con un nombre que describa lo que es",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-008",
-        "title": "Proteger las rutas de project y comment con policies",
-        "status": "completed",
-        "completedInSession": true
+        "title": "Extraer la lógica de comparación de DocumentComparePopup a un hook",
+        "status": "open",
+        "completedInSession": false
       },
       {
         "id": "US-009",
-        "title": "Proteger el resto de rutas con policies y retirar protectedController",
-        "status": "completed",
-        "completedInSession": true
-      },
-      {
-        "id": "US-010",
-        "title": "Hacer atómica la restauración de versiones",
-        "status": "completed",
-        "completedInSession": true
-      },
-      {
-        "id": "US-011",
-        "title": "Centralizar el registro de auditoría desde el contexto",
-        "status": "completed",
-        "completedInSession": true
-      },
-      {
-        "id": "US-012",
-        "title": "Unificar la lectura del body en los endpoints custom de document",
+        "title": "Retirar la dependencia sqlite3 sin uso del backend",
         "status": "open",
         "completedInSession": false
       }
     ]
   },
-  "iterations": [
-    {
-      "iteration": 1,
-      "status": "completed",
-      "taskId": "US-001",
-      "taskTitle": "Guardar la sesión en localStorage sin cifrado simulado",
-      "taskCompleted": true,
-      "durationMs": 182105,
-      "startedAt": "2026-09-18T00:17:42.787Z",
-      "endedAt": "2026-09-18T00:20:44.892Z"
-    },
-    {
-      "iteration": 2,
-      "status": "completed",
-      "taskId": "US-002",
-      "taskTitle": "Eliminar el flujo de login institucional Keycloak muerto",
-      "taskCompleted": true,
-      "durationMs": 128616,
-      "startedAt": "2026-09-18T00:20:46.002Z",
-      "endedAt": "2026-09-18T00:22:54.618Z"
-    },
-    {
-      "iteration": 3,
-      "status": "completed",
-      "taskId": "US-003",
-      "taskTitle": "Apuntar a localhost por defecto y no a una URL de producción",
-      "taskCompleted": true,
-      "durationMs": 102093,
-      "startedAt": "2026-09-18T00:22:55.737Z",
-      "endedAt": "2026-09-18T00:24:37.830Z"
-    },
-    {
-      "iteration": 4,
-      "status": "completed",
-      "taskId": "US-004",
-      "taskTitle": "Limpiar auth.utils.js de helpers sin uso o defectuosos",
-      "taskCompleted": true,
-      "durationMs": 63749,
-      "startedAt": "2026-09-18T00:24:38.921Z",
-      "endedAt": "2026-09-18T00:25:42.670Z"
-    },
-    {
-      "iteration": 5,
-      "status": "completed",
-      "taskId": "US-005",
-      "taskTitle": "Cerrar la sesión en memoria cuando el backend responde 401",
-      "taskCompleted": true,
-      "durationMs": 106906,
-      "startedAt": "2026-09-18T00:25:43.767Z",
-      "endedAt": "2026-09-18T00:27:30.673Z"
-    },
-    {
-      "iteration": 6,
-      "status": "completed",
-      "taskId": "US-006",
-      "taskTitle": "Crear policies globales is-authenticated y has-permission en Strapi",
-      "taskCompleted": true,
-      "durationMs": 304593,
-      "startedAt": "2026-09-18T00:27:31.773Z",
-      "endedAt": "2026-09-18T00:32:36.366Z"
-    },
-    {
-      "iteration": 7,
-      "status": "completed",
-      "taskId": "US-007",
-      "taskTitle": "Proteger las rutas de document con policies",
-      "taskCompleted": true,
-      "durationMs": 238137,
-      "startedAt": "2026-09-18T00:32:37.486Z",
-      "endedAt": "2026-09-18T00:36:35.623Z"
-    },
-    {
-      "iteration": 8,
-      "status": "completed",
-      "taskId": "US-008",
-      "taskTitle": "Proteger las rutas de project y comment con policies",
-      "taskCompleted": true,
-      "durationMs": 175678,
-      "startedAt": "2026-09-18T00:36:36.726Z",
-      "endedAt": "2026-09-18T00:39:32.404Z"
-    },
-    {
-      "iteration": 9,
-      "status": "completed",
-      "taskId": "US-009",
-      "taskTitle": "Proteger el resto de rutas con policies y retirar protectedController",
-      "taskCompleted": true,
-      "durationMs": 373720,
-      "startedAt": "2026-09-18T00:39:33.511Z",
-      "endedAt": "2026-09-18T00:45:47.231Z"
-    },
-    {
-      "iteration": 10,
-      "status": "completed",
-      "taskId": "US-010",
-      "taskTitle": "Hacer atómica la restauración de versiones",
-      "taskCompleted": true,
-      "durationMs": 363707,
-      "startedAt": "2026-09-18T00:45:48.453Z",
-      "endedAt": "2026-09-18T00:51:52.160Z"
-    },
-    {
-      "iteration": 11,
-      "status": "completed",
-      "taskId": "US-011",
-      "taskTitle": "Centralizar el registro de auditoría desde el contexto",
-      "taskCompleted": true,
-      "durationMs": 537277,
-      "startedAt": "2026-09-18T00:51:53.254Z",
-      "endedAt": "2026-09-18T01:00:50.531Z"
-    }
-  ],
+  "iterations": [],
   "skippedTaskIds": [],
   "cwd": "/Users/cristian/orca/docmentor",
   "activeTaskIds": [],

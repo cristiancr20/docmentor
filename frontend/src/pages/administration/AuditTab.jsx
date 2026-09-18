@@ -10,6 +10,7 @@ import { PermissionGate } from "../../components/PermissionGate";
 import { errorAlert, successAlert } from "../../components/Alerts/Alerts";
 import { getAdminAuditLogs, exportAuditReport } from "../../core/Admin";
 import { formatDateTime, humanizeAction } from "../../utils/format";
+import logger from "../../utils/logger";
 
 /** Mapea la acción del log al tono del Badge: alta, baja o cambio. */
 const toneForAction = (action) => {
@@ -35,7 +36,7 @@ const AuditTab = ({ auditLogs, setAuditLogs }) => {
       const logs = await getAdminAuditLogs(filters);
       setAuditLogs(logs);
     } catch (err) {
-      console.error("Error filtrando logs de auditoría:", err);
+      logger.error("Error filtrando logs de auditoría:", err);
       errorAlert("Error al cargar los logs de auditoría");
     }
   };
@@ -48,7 +49,7 @@ const AuditTab = ({ auditLogs, setAuditLogs }) => {
       await exportAuditReport(format, filters);
       successAlert(`Reporte ${format.toUpperCase()} exportado correctamente`);
     } catch (err) {
-      console.error("Error exportando reporte:", err);
+      logger.error("Error exportando reporte:", err);
       errorAlert("Error al exportar el reporte de auditoría");
     } finally {
       setExportLoading(null);

@@ -12,6 +12,7 @@ import AccessDenied from "../components/AccessDenied";
 import { usePermission } from "../context/PermissionContext";
 import { getAuditLogs } from "../core/Audit";
 import { formatDateTime, humanizeAction } from "../utils/format";
+import logger from "../utils/logger";
 
 /** Tono del Badge según la acción registrada. */
 const toneForAction = (action) => {
@@ -63,7 +64,7 @@ function AuditLogs() {
       // que devuelven los endpoints estándar de Strapi.
       setTotalPages(response.pagination?.pageCount || 1);
     } catch (err) {
-      console.error("Error fetching audit logs:", err);
+      logger.error("Error fetching audit logs:", err);
       setError(err.message);
     } finally {
       setLoading(false);

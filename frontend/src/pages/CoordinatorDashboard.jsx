@@ -22,6 +22,7 @@ import { useAuth } from "../context/AuthContext";
 import { getAllProjects, getAllUsers, assignTutorToProject } from "../core/Projects";
 import { getDocumentsByProjectId } from "../core/Document";
 import { formatDate } from "../utils/format";
+import logger from "../utils/logger";
 
 // Entrada corta y uniforme: sin retardo por índice, que dejaba el final de las
 // listas largas apareciendo varios segundos después.
@@ -70,7 +71,7 @@ function CoordinatorDashboard() {
 
       await calculateMetrics(projectsData);
     } catch (err) {
-      console.error("Error fetching dashboard data:", err);
+      logger.error("Error fetching dashboard data:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -100,7 +101,7 @@ function CoordinatorDashboard() {
       setPendingDocuments(totalPending);
       setTutorLoadMap(tutorLoad);
     } catch (err) {
-      console.error("Error calculating metrics:", err);
+      logger.error("Error calculating metrics:", err);
     }
   };
 
@@ -169,7 +170,7 @@ function CoordinatorDashboard() {
       setSelectedProject(null);
       setSelectedTutorForAssign("");
     } catch (err) {
-      console.error("Error assigning tutor:", err);
+      logger.error("Error assigning tutor:", err);
       alert("Error al asignar tutor");
     } finally {
       setAssignLoading(false);

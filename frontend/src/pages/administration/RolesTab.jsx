@@ -12,6 +12,7 @@ import {
   addPermissionToRole,
   removePermissionFromRole,
 } from "../../core/Admin";
+import logger from "../../utils/logger";
 
 /** Pestaña de roles: lista de roles a la izquierda y sus permisos a la derecha. */
 const RolesTab = ({ rols, permissions }) => {
@@ -28,7 +29,7 @@ const RolesTab = ({ rols, permissions }) => {
       const perms = await getRolePermissions(rol.id);
       setRolePermissions(perms.map((p) => p.id));
     } catch (err) {
-      console.error("Error cargando permisos del rol:", err);
+      logger.error("Error cargando permisos del rol:", err);
       errorAlert("Error al cargar los permisos del rol");
     } finally {
       setRolePermissionsLoading(false);
@@ -49,7 +50,7 @@ const RolesTab = ({ rols, permissions }) => {
       }
       successAlert("Permisos del rol actualizados");
     } catch (err) {
-      console.error("Error actualizando permisos del rol:", err);
+      logger.error("Error actualizando permisos del rol:", err);
       errorAlert("Error al actualizar los permisos del rol");
     }
   };

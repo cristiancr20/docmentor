@@ -23,6 +23,7 @@ import EmptyState from "./ui/EmptyState";
 import { SkeletonRows } from "./ui/Skeleton";
 import ChangeList from "./compare/ChangeList";
 import CompareSummary, { SimilarityBadge } from "./compare/CompareSummary";
+import logger from "../utils/logger";
 
 /**
  * Comparador de versiones.
@@ -97,7 +98,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       setResult(await comparePdfDocuments(documento1, documento2));
       setStatus("done");
     } catch (error) {
-      console.error("Error comparando documentos:", error);
+      logger.error("Error comparando documentos:", error);
       setStatus("error");
     }
   }, [documento1, documento2]);
@@ -131,7 +132,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
         setNotesDocument1(toNotes(comments1));
         setNotesDocument2(toNotes(comments2));
       } catch (error) {
-        console.error("Error al cargar los comentarios:", error);
+        logger.error("Error al cargar los comentarios:", error);
       }
     };
 

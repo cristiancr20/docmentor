@@ -1,4 +1,5 @@
 import api from './apiClient';
+import logger from '../utils/logger';
 
 // Configurar axios para que incluya cookies en cada solicitud
 /* axios.defaults.withCredentials = true; */
@@ -11,7 +12,7 @@ export const registerUser = async (data) => {
     return response.data;
   } catch (error) {
     // Si hay un error, lo vuelves a lanzar para que pueda ser manejado en el componente
-    console.error("Error en el registro de usuario:", error);
+    logger.error("Error en el registro de usuario:", error);
     throw error; // Re-lanza el error para capturarlo en el componente
   }
 };
@@ -23,7 +24,7 @@ export const login = async (data) => {
     return response.data;
   } catch (error) {
     // Captura y muestra detalles del error
-    console.error("Error en login:", error);
+    logger.error("Error en login:", error);
     throw error;  // Para que el error sea capturado en el `handleSubmit`
   }
 };
@@ -37,7 +38,7 @@ export const getUserWithRole = async (userId, token) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error al obtener el usuario con rol:", error);
+    logger.error("Error al obtener el usuario con rol:", error);
     throw error;
   }
 };
@@ -51,7 +52,7 @@ export const getUserByEmail = async (email) => {
 
     return users?.length > 0 ? users[0] : null;
   } catch (error) {
-    console.error("Error fetching user by email:", error);
+    logger.error("Error fetching user by email:", error);
     return null;
   }
 };

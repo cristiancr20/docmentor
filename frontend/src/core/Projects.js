@@ -1,4 +1,5 @@
 import api from './apiClient';
+import logger from '../utils/logger';
 
 
 //METODO PARA CREAR UN NUEVO PROYECTO
@@ -17,7 +18,7 @@ export const createProject = async (projectData) => {
     );
     return response.data;
   } catch (error) {
-    console.error(
+    logger.error(
       "Error al crear el proyecto:",
       error.response ? error.response.data : error.message
     );
@@ -36,7 +37,7 @@ export const updateProject = async (projectId, projectData) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Error al actualizar el proyecto:", error);
+    logger.error("Error al actualizar el proyecto:", error);
     throw error;
   }
 };
@@ -49,7 +50,7 @@ export const deleteProject = async (projectId) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Error al eliminar el proyecto:", error);
+    logger.error("Error al eliminar el proyecto:", error);
     throw error;
   }
 };
@@ -62,7 +63,7 @@ export const deleteProject = async (projectId) => {
     );
     return response.data.project_es;
   } catch (error) {
-    console.error("Error fetching user documents:", error);
+    logger.error("Error fetching user documents:", error);
     throw error;
   }
 }; */
@@ -75,7 +76,7 @@ export const getProjectById = async (projectId) => {
     );
     return response.data.data;
   } catch (error) {
-    console.error("Error fetching project details:", error);
+    logger.error("Error fetching project details:", error);
     throw error;
   }
 };
@@ -96,7 +97,7 @@ export const getProjectsByTutor = async (userEmail) => {
 
     return projects;
   } catch (error) {
-    console.error("Error fetching projects by tutor email:", error);
+    logger.error("Error fetching projects by tutor email:", error);
     throw error;
   }
 };
@@ -118,7 +119,7 @@ export const getProjectsByEmail = async (userEmail) => {
 
     return projects;
   } catch (error) {
-    console.error("Error fetching projects by tutor email:", error);
+    logger.error("Error fetching projects by tutor email:", error);
     throw error;
   }
 };
@@ -139,7 +140,7 @@ export const getProjectsByStudents = async (userEmail) => {
 
     return projects;
   } catch (error) {
-    console.error("Error fetching projects by tutor email:", error);
+    logger.error("Error fetching projects by tutor email:", error);
     throw error;
   }
 };
@@ -162,7 +163,7 @@ export const getProjectsByStudents = async (userEmail) => {
 
     return projects;
   } catch (error) {
-    console.error("Error fetching projects by tutor email:", error);
+    logger.error("Error fetching projects by tutor email:", error);
     throw error;
   }
 }; */
@@ -181,7 +182,7 @@ export const getTutors = async (isInstitutional) => {
     const wantInstitutional = isInstitutional === true;
     return tutors.filter((tutor) => (tutor.isInstitutional === true) === wantInstitutional);
   } catch (error) {
-    console.error("Error fetching tutors:", error);
+    logger.error("Error fetching tutors:", error);
     throw error;
   }
 };
@@ -202,7 +203,7 @@ export const getUserByEmail = async (email) => {
 
     return null;
   } catch (error) {
-    console.error("Error al obtener el usuario por email:", error);
+    logger.error("Error al obtener el usuario por email:", error);
     throw error;
   }
 };
@@ -217,7 +218,7 @@ export const getUserById = async (id) => {
     const response = await api.get(`/api/users/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error al obtener el usuario por ID:', error);
+    logger.error('Error al obtener el usuario por ID:', error);
     throw error;
   }
 };
@@ -229,7 +230,7 @@ export const getAllProjects = async () => {
     );
     return response.data.data || [];
   } catch (error) {
-    console.error("Error fetching all projects:", error);
+    logger.error("Error fetching all projects:", error);
     throw error;
   }
 };
@@ -242,7 +243,7 @@ export const getAllUsers = async (rolType) => {
     const response = await api.get(url);
     return response.data || [];
   } catch (error) {
-    console.error("Error fetching users:", error);
+    logger.error("Error fetching users:", error);
     throw error;
   }
 };
@@ -259,7 +260,7 @@ export const assignTutorToProject = async (projectId, tutorId) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Error assigning tutor to project:", error);
+    logger.error("Error assigning tutor to project:", error);
     throw error;
   }
 };

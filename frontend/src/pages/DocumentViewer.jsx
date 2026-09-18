@@ -31,6 +31,7 @@ import { getUserData } from "../utils/auth.utils";
 import { formatDateTime } from "../utils/format";
 import { getUserByEmail } from "../core/Autentication.js";
 import { usePermission } from "../context/PermissionContext";
+import logger from "../utils/logger";
 
 const DocumentoViewer = () => {
   const { documentId } = useParams();
@@ -55,7 +56,7 @@ const DocumentoViewer = () => {
   if (storedUserData) {
     tutorEmail = storedUserData.email;
   } else {
-    console.log("No se encontró el userData en localStorage");
+    logger.debug("No se encontró el userData en localStorage");
   }
 
   useEffect(() => {
@@ -148,7 +149,7 @@ const DocumentoViewer = () => {
       await Promise.all([fetchComments(), fetchDocument()]);
       successAlert("Comentario agregado");
     } catch (error) {
-      console.error("Error adding comment:", error);
+      logger.error("Error adding comment:", error);
       errorAlert("No se pudo guardar el comentario");
     }
   };
@@ -163,7 +164,7 @@ const DocumentoViewer = () => {
       await fetchDocument();
       successAlert("Documento marcado como revisado");
     } catch (error) {
-      console.error("Error updating document status:", error);
+      logger.error("Error updating document status:", error);
       errorAlert("No se pudo actualizar el estado del documento");
     } finally {
       setIsSubmitting(false);

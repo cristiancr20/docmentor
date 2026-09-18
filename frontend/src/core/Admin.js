@@ -1,4 +1,5 @@
 import api from './apiClient';
+import logger from '../utils/logger';
 
 /* ==================== USUARIOS (CRUD con soft delete) ==================== */
 
@@ -7,7 +8,7 @@ export const getAdminUsers = async () => {
     const response = await api.get(`/api/admin/users`);
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al obtener usuarios:", error);
+    logger.error("Error al obtener usuarios:", error);
     throw error;
   }
 };
@@ -17,7 +18,7 @@ export const createAdminUser = async (userData) => {
     const response = await api.post(`/api/admin/users`, userData);
     return response.data.data;
   } catch (error) {
-    console.error("Error al crear usuario:", error);
+    logger.error("Error al crear usuario:", error);
     throw error;
   }
 };
@@ -27,7 +28,7 @@ export const updateAdminUser = async (userId, userData) => {
     const response = await api.put(`/api/admin/users/${userId}`, userData);
     return response.data.data;
   } catch (error) {
-    console.error("Error al actualizar usuario:", error);
+    logger.error("Error al actualizar usuario:", error);
     throw error;
   }
 };
@@ -38,7 +39,7 @@ export const deleteAdminUser = async (userId) => {
     const response = await api.delete(`/api/admin/users/${userId}`);
     return response.data.data;
   } catch (error) {
-    console.error("Error al eliminar usuario:", error);
+    logger.error("Error al eliminar usuario:", error);
     throw error;
   }
 };
@@ -50,7 +51,7 @@ export const getRols = async () => {
     const response = await api.get(`/api/rols?pagination[pageSize]=100`);
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al obtener roles:", error);
+    logger.error("Error al obtener roles:", error);
     throw error;
   }
 };
@@ -60,7 +61,7 @@ export const getAllPermissions = async () => {
     const response = await api.get(`/api/permissions?pagination[pageSize]=100`);
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al obtener permisos:", error);
+    logger.error("Error al obtener permisos:", error);
     throw error;
   }
 };
@@ -70,7 +71,7 @@ export const getRolePermissions = async (rolId) => {
     const response = await api.get(`/api/rols/${rolId}/permissions`);
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al obtener permisos del rol:", error);
+    logger.error("Error al obtener permisos del rol:", error);
     throw error;
   }
 };
@@ -82,7 +83,7 @@ export const addPermissionToRole = async (rolId, permissionId) => {
       { permissionId });
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al agregar permiso al rol:", error);
+    logger.error("Error al agregar permiso al rol:", error);
     throw error;
   }
 };
@@ -93,7 +94,7 @@ export const removePermissionFromRole = async (rolId, permissionId) => {
       `/api/rols/${rolId}/permissions/${permissionId}`);
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al quitar permiso del rol:", error);
+    logger.error("Error al quitar permiso del rol:", error);
     throw error;
   }
 };
@@ -117,7 +118,7 @@ export const getAdminAuditLogs = async (filters = {}) => {
     if (Array.isArray(payload)) return payload;
     return payload?.results || [];
   } catch (error) {
-    console.error("Error al obtener logs de auditoría:", error);
+    logger.error("Error al obtener logs de auditoría:", error);
     throw error;
   }
 };
@@ -147,7 +148,7 @@ export const exportAuditReport = async (format, filters = {}) => {
 
     return response.headers["x-audit-hash"] || null;
   } catch (error) {
-    console.error("Error al exportar reporte de auditoría:", error);
+    logger.error("Error al exportar reporte de auditoría:", error);
     throw error;
   }
 };
@@ -159,7 +160,7 @@ export const getSettings = async () => {
     const response = await api.get(`/api/settings?sort=id:asc`);
     return response.data.data || [];
   } catch (error) {
-    console.error("Error al obtener configuración:", error);
+    logger.error("Error al obtener configuración:", error);
     throw error;
   }
 };
@@ -171,7 +172,7 @@ export const createSetting = async (data) => {
       { data });
     return response.data;
   } catch (error) {
-    console.error("Error al crear configuración:", error);
+    logger.error("Error al crear configuración:", error);
     throw error;
   }
 };
@@ -183,7 +184,7 @@ export const updateSetting = async (settingId, data) => {
       { data });
     return response.data;
   } catch (error) {
-    console.error("Error al actualizar configuración:", error);
+    logger.error("Error al actualizar configuración:", error);
     throw error;
   }
 };
@@ -198,7 +199,7 @@ export const setActualEmail = async (settings, emailId) => {
     );
     return updateSetting(emailId, { isActual: true });
   } catch (error) {
-    console.error("Error al actualizar el email actual:", error);
+    logger.error("Error al actualizar el email actual:", error);
     throw error;
   }
 };

@@ -7,6 +7,7 @@ import { successAlert, errorAlert } from "./Alerts/Alerts";
 import { getUserData } from "../utils/auth.utils";
 import Input, { Select, Textarea } from "./ui/Input";
 import Button from "./ui/Button";
+import logger from "../utils/logger";
 
 const ITINERARIES = [
   "Ingeniería de Software",
@@ -69,7 +70,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
         return null;
       }
     } catch (error) {
-      console.error("Error al obtener el ID del usuario:", error);
+      logger.error("Error al obtener el ID del usuario:", error);
       errorAlert("Error al buscar el usuario");
       return null;
     }
@@ -102,7 +103,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
         }
         setPartnerData(foundPartner);
       } catch (error) {
-        console.error("Error al procesar los datos del compañero:", error);
+        logger.error("Error al procesar los datos del compañero:", error);
         setPartnerData(null);
       }
     } else {
@@ -147,7 +148,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
       setDescription("");
       setPartnerEmail("");
     } catch (error) {
-      console.error(
+      logger.error(
         "Error al crear el proyecto:",
         error.response ? error.response.data : error.message
       );

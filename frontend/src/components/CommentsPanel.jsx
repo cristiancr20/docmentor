@@ -9,6 +9,7 @@ import Button from "./ui/Button";
 import { Textarea } from "./ui/Input";
 import EmptyState from "./ui/EmptyState";
 import { formatDateTime, initialsOf } from "../utils/format";
+import logger from "../utils/logger";
 
 /** "hace 5 min", "ayer"... Para fechas lejanas cae a la fecha completa. */
 const relativeTime = (value) => {
@@ -53,7 +54,7 @@ const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) =>
       await onUpdated();
       setIsEditing(false);
     } catch (error) {
-      console.error("Error updating comment", error);
+      logger.error("Error updating comment", error);
       errorAlert("No se pudo guardar el comentario");
     } finally {
       setIsSaving(false);
@@ -73,7 +74,7 @@ const CommentCard = ({ comment, isSelected, canManage, onSelect, onUpdated }) =>
       await onUpdated();
       successAlert("El comentario ha sido eliminado.");
     } catch (error) {
-      console.error("Error deleting comment", error);
+      logger.error("Error deleting comment", error);
       errorAlert("Error al eliminar el comentario");
     }
   };

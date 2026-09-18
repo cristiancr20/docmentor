@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import PropTypes from "prop-types";
 import { useAuth } from "./AuthContext";
 import api, { getAuthToken } from "../core/apiClient";
+import logger from "../utils/logger";
 
 const PermissionContext = createContext();
 
@@ -41,7 +42,7 @@ export const PermissionProvider = ({ children }) => {
       const { data } = await api.get("/api/auth/me/permissions");
       setPermissions(data.data || []);
     } catch (err) {
-      console.error("Error al obtener los permisos:", err);
+      logger.error("Error al obtener los permisos:", err);
       setError(err.message);
       // Fallar cerrado: sin permisos confirmados por el servidor, ninguno.
       setPermissions([]);

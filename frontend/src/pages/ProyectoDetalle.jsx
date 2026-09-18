@@ -25,6 +25,7 @@ import VersionTimeline from "../components/VersionTimeline";
 import { usePermission } from "../context/PermissionContext";
 import { useAuth } from "../context/AuthContext";
 import { formatDateTime } from "../utils/format";
+import logger from "../utils/logger";
 
 const fadeIn = {
   initial: { opacity: 0, y: 8 },
@@ -70,7 +71,7 @@ const ProyectoDetalle = () => {
       }
     } catch (error) {
       setError("Error al cargar los detalles del proyecto");
-      console.error("Error fetching project details:", error);
+      logger.error("Error fetching project details:", error);
     }
   };
 
@@ -149,7 +150,7 @@ const ProyectoDetalle = () => {
       await fetchProject();
       successAlert(`Se restauró la versión ${version} como versión nueva`);
     } catch (error) {
-      console.error("Error al restaurar la versión:", error);
+      logger.error("Error al restaurar la versión:", error);
       errorAlert("No se pudo restaurar la versión");
     } finally {
       setRestoringId(null);

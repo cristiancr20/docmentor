@@ -11,6 +11,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { ROLE_ROUTES, validateAuthResponse } from "../utils/auth.utils";
 import { useAuth } from "../context/AuthContext";
+import logger from "../utils/logger";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -67,7 +68,7 @@ const Login = () => {
         throw new Error(`Rol desconocido: ${userRole}`);
       }
     } catch (error) {
-      console.error("Error en el proceso de autenticación:", error);
+      logger.error("Error en el proceso de autenticación:", error);
       loginErrorAlert("Error en el inicio de sesión. Verifica tus credenciales.");
     } finally {
       setIsSubmitting(false);

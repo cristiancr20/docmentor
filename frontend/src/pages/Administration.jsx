@@ -16,6 +16,7 @@ import UsersTab from "./administration/UsersTab";
 import RolesTab from "./administration/RolesTab";
 import AuditTab from "./administration/AuditTab";
 import SettingsTab from "./administration/SettingsTab";
+import logger from "../utils/logger";
 
 const SECTIONS = [
   { key: "usuarios", label: "Usuarios" },
@@ -66,11 +67,11 @@ function Administration() {
 
         const failed = results.filter((r) => r.status === "rejected");
         if (failed.length > 0) {
-          console.error("Errores al cargar el dashboard:", failed);
+          logger.error("Errores al cargar el dashboard:", failed);
           setError("Algunas secciones no pudieron cargarse correctamente");
         }
       } catch (err) {
-        console.error("Error cargando el dashboard de administración:", err);
+        logger.error("Error cargando el dashboard de administración:", err);
         setError(err.message);
       } finally {
         setLoading(false);

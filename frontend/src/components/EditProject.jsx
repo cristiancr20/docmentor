@@ -6,6 +6,7 @@ import { errorAlert, successAlert } from "./Alerts/Alerts";
 import { getUserData } from "../utils/auth.utils";
 import Input, { Select, Textarea } from "./ui/Input";
 import Button from "./ui/Button";
+import logger from "../utils/logger";
 
 const fadeIn = {
   initial: { opacity: 0, y: 8 },
@@ -49,7 +50,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
       const response = await getTutors(userData.isInstitutional);
       setTutores(response);
     } catch (error) {
-      console.error("Error al obtener la lista de tutores:", error);
+      logger.error("Error al obtener la lista de tutores:", error);
       errorAlert("Error al cargar la lista de tutores");
     }
   };
@@ -76,7 +77,7 @@ const EditProject = ({ project, onClose, onUpdate }) => {
 
       successAlert("El proyecto ha sido editado.");
     } catch (error) {
-      console.error("Error al actualizar el proyecto:", error);
+      logger.error("Error al actualizar el proyecto:", error);
       const mensaje = error.response?.data?.message || "Error al actualizar el proyecto";
       errorAlert(mensaje);
     }

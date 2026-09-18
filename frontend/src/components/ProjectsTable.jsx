@@ -8,6 +8,7 @@ import { deleteProject } from "../core/Projects";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
 import EmptyState from "./ui/EmptyState";
 import { usePermission } from "../context/PermissionContext";
+import logger from "../utils/logger";
 
 // Entrada corta y uniforme: sin retardo por índice, que con listas largas dejaba
 // las últimas filas apareciendo segundos después.
@@ -71,7 +72,7 @@ const ProjectsTable = ({
       fetchProjects(); // Recarga los proyectos después de la eliminación
       successAlert("El proyecto ha sido eliminado");
     } catch (error) {
-      console.error("Error al eliminar el proyecto:", error);
+      logger.error("Error al eliminar el proyecto:", error);
       errorAlert(error.response?.data?.message || "Error al eliminar el proyecto");
     }
   };

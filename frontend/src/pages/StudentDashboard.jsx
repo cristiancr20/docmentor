@@ -15,6 +15,7 @@ import { getProjectsByStudents } from "../core/Projects";
 import { getDocumentsByProjectId } from "../core/Document";
 import { getUserData } from "../utils/auth.utils";
 import { formatDate } from "../utils/format";
+import logger from "../utils/logger";
 
 // Entrada corta y uniforme: sin retardo por índice, que dejaba el final de las
 // listas largas apareciendo varios segundos después.
@@ -72,7 +73,7 @@ function StudentDashboard() {
         setDocumentsInReview(inReviewCount);
       }
     } catch (err) {
-      console.error("Error fetching dashboard data:", err);
+      logger.error("Error fetching dashboard data:", err);
       setError(err.message);
     } finally {
       setLoading(false);

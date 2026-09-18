@@ -1,4 +1,5 @@
 import api from './apiClient';
+import logger from '../utils/logger';
 
 /**
  * Registros de auditoría.
@@ -25,7 +26,7 @@ export const getAuditLogs = async (filters = {}) => {
     const response = await api.get(`/api/audit-logs?${params.toString()}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching audit logs:", error);
+    logger.error("Error fetching audit logs:", error);
     throw error;
   }
 };

@@ -8,6 +8,7 @@ import Input, { Select } from "../../components/ui/Input";
 import { PermissionGate } from "../../components/PermissionGate";
 import { errorAlert, successAlert } from "../../components/Alerts/Alerts";
 import { getSettings, createSetting, updateSetting, setActualEmail } from "../../core/Admin";
+import logger from "../../utils/logger";
 
 /** Pestaña de configuración: correos SMTP, retención de logs y respaldos. */
 const SettingsTab = ({ settings, setSettings }) => {
@@ -48,7 +49,7 @@ const SettingsTab = ({ settings, setSettings }) => {
       const refreshed = await getSettings();
       setSettings(refreshed);
     } catch (err) {
-      console.error("Error creando email SMTP:", err);
+      logger.error("Error creando email SMTP:", err);
       errorAlert("Error al guardar el correo");
     } finally {
       setSmtpSaving(false);
@@ -66,7 +67,7 @@ const SettingsTab = ({ settings, setSettings }) => {
       );
       successAlert("Email actualizado correctamente");
     } catch (err) {
-      console.error("Error actualizando email actual:", err);
+      logger.error("Error actualizando email actual:", err);
       errorAlert("Error al actualizar el correo");
     }
   };
@@ -95,7 +96,7 @@ const SettingsTab = ({ settings, setSettings }) => {
       const refreshed = await getSettings();
       setSettings(refreshed);
     } catch (err) {
-      console.error("Error guardando configuración:", err);
+      logger.error("Error guardando configuración:", err);
       errorAlert("Error al guardar la configuración");
     } finally {
       setConfigSaving(false);

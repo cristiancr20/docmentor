@@ -11,6 +11,7 @@ import { PermissionGate } from "../../components/PermissionGate";
 import { errorAlert, successAlert } from "../../components/Alerts/Alerts";
 import { createAdminUser, updateAdminUser, deleteAdminUser } from "../../core/Admin";
 import { formatDate } from "../../utils/format";
+import logger from "../../utils/logger";
 
 const EMPTY_USER_FORM = {
   username: "",
@@ -101,7 +102,7 @@ const UsersTab = ({ users, setUsers, rols }) => {
       }
       closeUserModal();
     } catch (err) {
-      console.error("Error guardando usuario:", err);
+      logger.error("Error guardando usuario:", err);
       errorAlert(err.response?.data?.error?.message || "Error al guardar el usuario");
     } finally {
       setUserSaving(false);
@@ -118,7 +119,7 @@ const UsersTab = ({ users, setUsers, rols }) => {
       setUsers((prev) => prev.map((u) => (u.id === targetUser.id ? { ...u, isActive: false } : u)));
       successAlert("Usuario desactivado correctamente");
     } catch (err) {
-      console.error("Error desactivando usuario:", err);
+      logger.error("Error desactivando usuario:", err);
       errorAlert("Error al desactivar el usuario");
     }
   };

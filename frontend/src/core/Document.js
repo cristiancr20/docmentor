@@ -1,4 +1,5 @@
 import api from './apiClient';
+import logger from '../utils/logger';
 
 // Resto de tu código
 //const API_URL = "http://localhost:1337";
@@ -59,7 +60,7 @@ export const createDocument = async (title, fileId, projectId) => {
   // todas las siguientes salían por aquí devolviendo null en silencio mientras
   // la interfaz seguía diciendo "documento subido correctamente".
   if (window.isUploadingDocument) {
-    console.warn("Intento de doble carga detectado, cancelando.");
+    logger.warn("Intento de doble carga detectado, cancelando.");
     return null;
   }
   window.isUploadingDocument = true;
@@ -223,7 +224,7 @@ export const copyDocumentAsNewVersion = async (documentId) => {
 
     return newResponse.data.data;
   } catch (error) {
-    console.error("Error al copiar documento:", error);
+    logger.error("Error al copiar documento:", error);
   }
 };
 
@@ -232,11 +233,11 @@ export const copyDocumentAsNewVersion = async (documentId) => {
 // MÉTODO PARA MANEJAR ERRORES
 const handleError = (error) => {
   if (error.response) {
-    console.error("Error de respuesta:", error.response.data);
+    logger.error("Error de respuesta:", error.response.data);
   } else if (error.request) {
-    console.error("Error en la solicitud:", error.request);
+    logger.error("Error en la solicitud:", error.request);
   } else {
-    console.error("Error:", error.message);
+    logger.error("Error:", error.message);
   }
 };
 
@@ -250,7 +251,7 @@ export const getDocumentsByProjectId = async (projectId) => {
 
     return response.data;
   } catch (error) {
-    console.error(
+    logger.error(
       "Error al obtener los documentos:",
       error.response?.data || error.message
     );
@@ -263,7 +264,7 @@ export const getDocumentById = async (documentId) => {
     const response = await api.get(`/api/documents/${documentId}?populate=*`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching document:", error);
+    logger.error("Error fetching document:", error);
     throw error;
   }
 };

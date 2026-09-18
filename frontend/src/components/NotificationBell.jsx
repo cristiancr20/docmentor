@@ -12,6 +12,7 @@ import {
 } from "../core/Notification";
 import { errorAlert } from "./Alerts/Alerts";
 import { formatDateTime } from "../utils/format";
+import logger from "../utils/logger";
 
 // Tecnología elegida: polling cada 30s (simple, compatible con la
 // autenticación JWT existente y suficiente para el volumen de la app)
@@ -56,7 +57,7 @@ const NotificationBell = () => {
       const data = await getMyNotifications();
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error al cargar notificaciones:", error);
+      logger.error("Error al cargar notificaciones:", error);
     }
   }, []);
 
@@ -70,7 +71,7 @@ const NotificationBell = () => {
     getNotificationPreference()
       .then((value) => value && setPreference(value))
       .catch((error) =>
-        console.error("Error al cargar preferencia de notificaciones:", error)
+        logger.error("Error al cargar preferencia de notificaciones:", error)
       );
   }, []);
 
@@ -96,7 +97,7 @@ const NotificationBell = () => {
         navigate(`/document/${documentId}`);
       }
     } catch (error) {
-      console.error("Error al marcar la notificación como leída:", error);
+      logger.error("Error al marcar la notificación como leída:", error);
       errorAlert("Error al procesar la notificación");
     }
   };
@@ -108,7 +109,7 @@ const NotificationBell = () => {
         prev.map((item) => ({ ...item, isRead: true }))
       );
     } catch (error) {
-      console.error("Error al marcar todas como leídas:", error);
+      logger.error("Error al marcar todas como leídas:", error);
       errorAlert("Error al marcar las notificaciones como leídas");
     }
   };
@@ -121,7 +122,7 @@ const NotificationBell = () => {
     try {
       await updateNotificationPreference(newPreference);
     } catch (error) {
-      console.error("Error al actualizar la preferencia:", error);
+      logger.error("Error al actualizar la preferencia:", error);
       setPreference(previousPreference);
       errorAlert("Error al guardar la preferencia de notificaciones");
     }

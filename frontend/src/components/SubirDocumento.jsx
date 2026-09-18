@@ -6,6 +6,7 @@ import { uploadFile, createDocument } from "../core/Document";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
 import Input, { inputClass } from "./ui/Input";
 import Button from "./ui/Button";
+import logger from "../utils/logger";
 
 const fadeIn = {
   initial: { opacity: 0, y: 8 },
@@ -39,7 +40,7 @@ const SubirDocumento = ({ projectId, onClose }) => {
       setFile(null);
       if (onClose) onClose();
     } catch (error) {
-      console.error("Error uploading document:", error);
+      logger.error("Error uploading document:", error);
       const mensaje = error.response?.data?.message || "Error al subir el documento";
       errorAlert(mensaje);
     } finally {
