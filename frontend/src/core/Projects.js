@@ -13,9 +13,20 @@ export const updateProject = async (projectId, projectData) =>
 export const deleteProject = async (projectId) =>
   (await api.delete(`/api/projects/${projectId}`)).data;
 
-// OBTENER DETALLES DE UN PROYECTO POR ID DEL PROYECTO
+// OBTENER DETALLES DE UN PROYECTO POR ID DEL PROYECTO. ProyectoDetalle y el
+// PDF del proyecto solo muestran nombre y correo del tutor y de los
+// estudiantes; con `populate=*` venían además todos los documentos.
 export const getProjectById = async (projectId) =>
-  (await api.get(`/api/projects/${projectId}?populate=*`)).data.data;
+  (
+    await api.get(`/api/projects/${projectId}`, {
+      params: {
+        "populate[tutor][fields][0]": "username",
+        "populate[tutor][fields][1]": "email",
+        "populate[students][fields][0]": "username",
+        "populate[students][fields][1]": "email",
+      },
+    })
+  ).data.data;
 
 export const getProjectsByTutor = async (userEmail) => {
   const response = await api.get(

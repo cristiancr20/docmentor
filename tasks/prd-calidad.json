@@ -120,11 +120,12 @@
         "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Llamadas revisadas (grep 'populate=\\*' y 'populate\\[' en frontend/src/core):\n- Document.getDocumentsByProjectId (lista, /api/documents?filters[project]): antes populate=*. Ahora por defecto sin relaciones; consumidores StudentDashboard, TutorDashboard y CoordinatorDashboard solo leen title/status/version/createdAt, y DocumentViewer (selector de versiones hermanas) solo id/version. ProyectoDetalle la llama con { withRelations: true } y conserva: documentFile[fields]=url (DocumentComparePopup y VersionTimeline), restoredFrom[fields]=version (VersionTimeline) y comments[fields]=correction,quote (GeneratePdfButton). Se dejan de traer notifications, project, previous_version/next_version y el resto de campos del archivo. Medido con la base de desarrollo: 6 versiones pasan de 12.7 KB a 1.4 KB.\n- Projects.getProjectById (findOne, ProyectoDetalle + GeneratePdfButton): antes populate=*, que traía todos los documentos del proyecto. Ahora populate[tutor][fields]=username,email y populate[students][fields]=username,email; la página y el PDF solo muestran nombre y correo. No alimenta el visor ni el comparador (esos reciben los documentos de getDocumentsByProjectId).\n- Document.copyDocumentAsNewVersion (findOne, sin consumidores actuales): solo necesita los ids de project, documentFile, comments y notifications para reenlazarlos; ahora pide populate[relacion][fields][0]=id en las cuatro.\n- Document.getDocumentById (findOne, DocumentViewer): se mantiene populate=* porque alimenta el visor de documentos.\n- Comments.getCommentsByDocument: ya usaba populate[comments][populate][0]=correctionTutor (explícito); sin cambios.\nVerificación: arrancando Strapi programáticamente contra .tmp/data.db (strapi develop no arranca por el binding nativo de @swc) y lanzando las cuatro consultas con supertest y los tokens de estudiante/tutor/coordinador: cada respuesta trae exactamente los campos que leen las páginas (incluido restoredFrom.version y comments.correction/quote) y los filtros de pertenencia siguen aplicando. Test de contrato en frontend/src/core/__tests__/populate.test.js.",
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -186,6 +187,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-09-18T01:21:20.921Z"
+    "updatedAt": "2026-09-18T01:26:23.665Z"
   }
 }

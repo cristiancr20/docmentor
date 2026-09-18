@@ -47,7 +47,8 @@ const GeneratePdfButton = ({ project, documents, generatedBy }) => {
         ?.map((student) => student.attributes?.username)
         ?.join(", ") || "Sin estudiantes asignados";
 
-    // Los documentos llegan con sus comentarios poblados (populate=*).
+    // Los documentos llegan con sus comentarios poblados (ProyectoDetalle los
+    // pide con `withRelations`).
     const documentos = Array.isArray(documents) ? documents : [];
 
     // Recopilar comentarios de tutores por documento.

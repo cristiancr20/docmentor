@@ -1,0 +1,58 @@
+# Iteration 5 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: Extraer la carga de proyectos de los dashboards a un hook
+- **Description**: Como desarrollador, quiero un hook useProjects(loader, deps) que encapsule el trío projects/loading/error y el useEffect de carga que StudentDashboard, TutorDashboard y CoordinatorDashboard repiten li...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:17:58.849Z
+- **Ended At**: 2026-09-18T01:21:20.921Z
+- **Duration**: 3m 22s
+- **Input Tokens**: 86
+- **Output Tokens**: 17195
+- **Total Tokens**: 17281
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by looking at the progress file and the three dashboards.
+[94m[Bash][0m Read progress file and list hooks/pages $ ls frontend/src/pages | head -50
+[94m[Bash][0m Read the three dashboard pages $ cat src/pages/CoordinatorDashboard.jsx
+[94m[Bash][0m Read StudentDashboard state/effect section $ sed -n 28,140p src/pages/StudentDashboard.jsx
+[94m[Bash][0m Grep state/loading usage in Tutor and Coordinator dashboards $ grep -n "useState\|useEffect\|loading\|error\|setProjects\|fetch\|load\|reload\|getProjects" src/pag...
+[94m[Bash][0m Read data-loading sections of Tutor and Coordinator dashboards $ sed -n 30,195p src/pages/CoordinatorDashboard.jsx
+[94m[Bash][0m Inspect package.json, eslint config, test dirs, logger, and Projects signal support $ grep -rn "signal" src/core/Projects.js | head
+[94m[Bash][0m Show eslint config and an existing test's style $ ls src/setupTests.js && cat src/setupTests.js
+No `react-hooks` ESLint plugin, and RTL v15 ships `renderHook`. Now I'll create the hook.
+[94m[Bash][0m Create useProjects hook and check core Projects signatures $ } EOF grep -rn "getProjectsByStudents\|getProjectsByTutor\|getAllProjects" src/core/Projects.js
+Now the three dashboards. Student first:
+[94m[Bash][0m Refactor StudentDashboard to use useProjects $ ''' assert old_fetch in s s = s.replace(old_fetch, new_fetch)  old_err = '''      {error && (       ...
+[94m[Bash][0m Refactor Tutor and Coordinator dashboards to use useProjects $ ''' assert old_fetch in s s = s.replace(old_fetch, new_fetch)  old_err = '''      {error && (       ...
+Now the hook test:
+[94m[Bash][0m Write useProjects tests and run them $ EOF CI=true npx react-scripts test --watchAll=false src/hooks 2>&1 | tail -40
+All 7 pass. Now the full quality gates plus the diff review:
+[94m[Bash][0m Run typecheck, eslint and the full test suite $ echo "--- typecheck ---" && npm run typecheck 2>&1 | tail -5 && echo "--- eslint ---" && npx eslint ...
+[94m[Bash][0m Review diff of dashboards to confirm only data fetching changed $ cd /Users/cristian/orca/docmentor && git diff --stat -- frontend/src/pages && git diff -- frontend/s...
+The diffs only touch data fetching (plus `{error}` → `{error.message}`, since the hook stores the Error object). Now documenting in `progress.md`:
+[94m[Bash][0m Append US-005 entry and pattern to progress.md $ git status --short
+US-005 is done.
+
+**What was implemented**
+- `frontend/src/hooks/useProjects.js` — `useProjects(loader, deps = [])` returns `{ projects, loading, error, reload, setProjects }`. One `AbortController` per load, aborted in the effect cleanup (unmount, `deps` change, or `reload()`); after abort the result is discarded so there's no `setState` post-unmount. `CanceledError`/`AbortError` are ignored; other errors are logged with the same `"Error fetching dashboard data:"` message the dashboards used, and stored as the `Error` object.
+- `StudentDashboard.jsx`, `TutorDashboard.jsx`, `CoordinatorDashboard.jsx` — removed the `projects`/`loading`/`error` `useState`s, the mount `useEffect`, and the `try/catch/finally`; `fetchDashboardData` now just returns the project list and is passed to `useProjects`. JSX is unchanged apart from `{error}` → `{error.message}`. Coordinator uses the hook's `setProjects` for its local optimistic update after assigning a tutor (a `reload()` there would have flashed the skeleton and refetched everything).
+- `frontend/src/hooks/__tests__/useProjects.test.js` — 7 `renderHook` tests: successful load, `undefined` loader result, error, `reload`, `deps` change, abort on unmount (checks `signal.aborted` and no `console.error`), and ignored `CanceledError`.
+
+**Verification** (all passing)
+- `npm run typecheck`
+- `npx eslint 'src/**/*.{js,jsx}'`
+- `CI=true npx react-scripts test --watchAll=false` → 13 suites, 73 tests
+
+**One assumed behavioral nuance** (noted in progress.md): previously, if `getDocumentsByProjectId` failed *after* `setProjects(...)`, the projects stayed visible next to the error banner; now `projects` stays `[]` since the loader never returned them.
+
+Progress log and the `## Codebase Patterns` section in `.ralph-tui/progress.md` are updated.
+
+<promise>COMPLETE</promise>

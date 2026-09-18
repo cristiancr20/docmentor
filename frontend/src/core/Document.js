@@ -155,8 +155,16 @@ export const changeDocumentStatus = async (documentId, status) => {
 
 export const copyDocumentAsNewVersion = async (documentId) => {
   try {
-    // Obtener el documento original
-    const response = await api.get(`/api/documents/${documentId}?populate=*`);
+    // Obtener el documento original. De cada relación solo hace falta el id
+    // para reenlazarla en la copia.
+    const response = await api.get(`/api/documents/${documentId}`, {
+      params: {
+        "populate[project][fields][0]": "id",
+        "populate[documentFile][fields][0]": "id",
+        "populate[comments][fields][0]": "id",
+        "populate[notifications][fields][0]": "id",
+      },
+    });
     if (!response || !response.data || !response.data.data) {
       throw new Error("No se pudo obtener el documento original.");
     }
@@ -229,9 +237,32 @@ const handleError = (error) => {
   }
 };
 
-// Obtener documentos por ID del proyecto
-export const getDocumentsByProjectId = async (projectId) =>
-  (await api.get(`/api/documents?filters[project][id][$eq]=${projectId}&populate=*`)).data;
+// Relaciones que lee el detalle del proyecto (ProyectoDetalle): la URL del
+// archivo para el comparador y la línea de tiempo, la versión de origen de
+// una restauración para la línea de tiempo y los comentarios para el PDF del
+// proyecto. Antes se pedía `populate=*`, que además traía las notificaciones
+// y los archivos completos de cada versión.
+const PROJECT_DOCUMENTS_RELATIONS = {
+  "populate[documentFile][fields][0]": "url",
+  "populate[restoredFrom][fields][0]": "version",
+  "populate[comments][fields][0]": "correction",
+  "populate[comments][fields][1]": "quote",
+};
 
+// Obtener documentos por ID del proyecto. Por defecto no se pobla ninguna
+// relación: los dashboards y el selector de versiones del visor solo leen
+// campos escalares (title, status, version, createdAt). `withRelations`
+// añade las de PROJECT_DOCUMENTS_RELATIONS.
+export const getDocumentsByProjectId = async (projectId, { withRelations = false } = {}) =>
+  (
+    await api.get(`/api/documents`, {
+      params: {
+        "filters[project][id][$eq]": projectId,
+        ...(withRelations ? PROJECT_DOCUMENTS_RELATIONS : {}),
+      },
+    })
+  ).data;
+
+// Detalle que alimenta el visor de documentos: se mantiene `populate=*`.
 export const getDocumentById = async (documentId) =>
   (await api.get(`/api/documents/${documentId}?populate=*`)).data;

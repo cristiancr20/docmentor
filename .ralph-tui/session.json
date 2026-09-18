@@ -3,10 +3,10 @@
   "sessionId": "e23adec5-809e-4505-8759-0cef36fa2eb4",
   "status": "running",
   "startedAt": "2026-09-18T01:08:14.704Z",
-  "updatedAt": "2026-09-18T01:21:20.922Z",
-  "currentIteration": 4,
+  "updatedAt": "2026-09-18T01:26:23.665Z",
+  "currentIteration": 5,
   "maxIterations": 0,
-  "tasksCompleted": 4,
+  "tasksCompleted": 5,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -42,8 +42,8 @@
       {
         "id": "US-005",
         "title": "Extraer la carga de proyectos de los dashboards a un hook",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-006",
@@ -111,6 +111,16 @@
       "durationMs": 130951,
       "startedAt": "2026-09-18T01:15:46.806Z",
       "endedAt": "2026-09-18T01:17:57.757Z"
+    },
+    {
+      "iteration": 5,
+      "status": "completed",
+      "taskId": "US-005",
+      "taskTitle": "Extraer la carga de proyectos de los dashboards a un hook",
+      "taskCompleted": true,
+      "durationMs": 202072,
+      "startedAt": "2026-09-18T01:17:58.849Z",
+      "endedAt": "2026-09-18T01:21:20.921Z"
     }
   ],
   "skippedTaskIds": [],

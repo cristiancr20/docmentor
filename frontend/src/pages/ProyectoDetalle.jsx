@@ -60,7 +60,7 @@ const ProyectoDetalle = () => {
       const projectDetails = await getProjectById(projectId);
       setProject(projectDetails);
 
-      const documentsResponse = await getDocumentsByProjectId(projectId);
+      const documentsResponse = await getDocumentsByProjectId(projectId, { withRelations: true });
       const fetchedDocuments = documentsResponse.data;
       setDocuments(fetchedDocuments);
 
