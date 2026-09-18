@@ -52,19 +52,35 @@ const NotificationBell = () => {
   const [preference, setPreference] = useState("both");
   const navigate = useNavigate();
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (signal) => {
     try {
-      const data = await getMyNotifications();
+      const data = await getMyNotifications({ signal });
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
+      // Petición abortada al desmontar: no es un error ni hay estado que tocar
+      if (error?.name === "CanceledError" || error?.name === "AbortError") {
+        return;
+      }
       logger.error("Error al cargar notificaciones:", error);
     }
   }, []);
 
   useEffect(() => {
-    loadNotifications();
-    const intervalId = setInterval(loadNotifications, POLL_INTERVAL_MS);
-    return () => clearInterval(intervalId);
+    // Un AbortController por ciclo de carga: el cleanup aborta la petición
+    // en vuelo para no hacer setState sobre un componente desmontado
+    let controller = null;
+    const poll = () => {
+      controller?.abort();
+      controller = new AbortController();
+      loadNotifications(controller.signal);
+    };
+
+    poll();
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS);
+    return () => {
+      clearInterval(intervalId);
+      controller?.abort();
+    };
   }, [loadNotifications]);
 
   useEffect(() => {

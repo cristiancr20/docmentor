@@ -1,8 +1,8 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import NotificationBell from "../NotificationBell";
+import NotificationBell, { POLL_INTERVAL_MS } from "../NotificationBell";
 import {
   getMyNotifications,
   markNotificationAsRead,
@@ -120,5 +120,65 @@ describe("NotificationBell", () => {
     await userEvent.click(screen.getByLabelText("Notificaciones"));
 
     expect(await screen.findByText("No hay notificaciones.")).toBeInTheDocument();
+  });
+
+  it("aborta la petición en vuelo al desmontar sin avisos de setState", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    let capturedSignal = null;
+    // Simula axios: la petición queda pendiente hasta que se aborta el signal
+    getMyNotifications.mockImplementation(
+      ({ signal } = {}) =>
+        new Promise((_, reject) => {
+          capturedSignal = signal;
+          signal?.addEventListener("abort", () => {
+            const error = new Error("canceled");
+            error.name = "CanceledError";
+            reject(error);
+          });
+        })
+    );
+
+    const { unmount } = renderBell();
+    await waitFor(() =>
+      expect(getMyNotifications).toHaveBeenCalledWith({
+        signal: expect.any(AbortSignal),
+      })
+    );
+    expect(capturedSignal.aborted).toBe(false);
+
+    unmount();
+    // Deja que el rechazo por cancelación se propague por loadNotifications
+    await act(async () => {});
+
+    expect(capturedSignal.aborted).toBe(true);
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("cancela la petición anterior al lanzar el siguiente ciclo de polling", async () => {
+    jest.useFakeTimers();
+    try {
+      const signals = [];
+      getMyNotifications.mockImplementation(({ signal } = {}) => {
+        signals.push(signal);
+        return new Promise(() => {});
+      });
+
+      // Deja resolver la carga de preferencia antes de avanzar el reloj
+      await act(async () => {
+        renderBell();
+      });
+      expect(signals).toHaveLength(1);
+
+      await act(async () => {
+        jest.advanceTimersByTime(POLL_INTERVAL_MS);
+      });
+
+      expect(signals).toHaveLength(2);
+      expect(signals[0].aborted).toBe(true);
+      expect(signals[1].aborted).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

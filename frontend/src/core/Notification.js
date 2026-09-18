@@ -1,8 +1,10 @@
 import api from './apiClient';
 
-// Notificaciones propias de los últimos 30 días
-export const getMyNotifications = async () => {
-  const response = await api.get(`/api/notifications/me`);
+// Notificaciones propias de los últimos 30 días.
+// `signal` (AbortSignal) permite cancelar la petición en vuelo, p.ej. al
+// desmontar el componente que hace polling.
+export const getMyNotifications = async ({ signal } = {}) => {
+  const response = await api.get(`/api/notifications/me`, { signal });
   return response.data?.data || [];
 };
 

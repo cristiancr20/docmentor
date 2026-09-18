@@ -12,6 +12,8 @@ after each iteration and it's included in prompts for context.
 
 - **Logging en backend**: en `backend/src` nunca usar `console.*`; usar `strapi.log.info/warn/error/debug` (global de Strapi, disponible también en callbacks asíncronos de módulos cargados por Strapi como `mailer.js`). Excepciones: `backend/scripts/*` (CLI, sí usan `console`) y `src/admin/app.example.js` (código de navegador del panel admin, sin `strapi`; no loguear ahí).
 - **Tests del backend**: `backend/package.json` exige `node >=18 <=20`; con Node 26 (el default de la máquina) `npm test` revienta en `buffer-equal-constant-time` (`SlowBuffer`) antes de ejecutar nada. Correr con `PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" npm test`.
+- **Peticiones cancelables en polling**: las funciones de `core/*.js` que se usan en polling aceptan `{ signal }` opcional y lo pasan a axios como `config.signal`. En el componente, un `AbortController` por ciclo dentro del `useEffect`, abortado en el cleanup junto con `clearInterval`, y en el `catch` se ignoran los errores con `name === "CanceledError"` (axios) o `"AbortError"` (fetch nativo) antes de loguear. Ver `NotificationBell.jsx`.
+- **Tests con `jest.useFakeTimers()` y RTL**: envolver el `render` en `await act(async () => {...})` para que las promesas ya resueltas de los mocks (p.ej. `getNotificationPreference`) se apliquen dentro de `act` y no salte el warning "not wrapped in act"; `waitFor` no funciona bien con fake timers, así que hay que avanzar el reloj con `jest.advanceTimersByTime` dentro de `act`.
 
 ---
 
@@ -61,4 +63,16 @@ after each iteration and it's included in prompts for context.
   - `strapi` es global y está disponible dentro de callbacks asíncronos de módulos que Strapi carga (el `verify` del transporter en `mailer.js` ya se ve en la salida de los tests como `[error]: Error al verificar la conexión SMTP: Missing credentials for "PLAIN"`).
   - En zsh, `echo =====` falla con "not found" (expansión `=cmd`) y aborta toda la línea; usar `echo "====="`.
   - `npm test` con Node 26 falla antes de ejecutar suites (`buffer-equal-constant-time` usa `SlowBuffer`, eliminado en Node ≥24); hay que usar Node 20 de nvm.
+---
+
+## 2026-09-17 - US-004
+- `frontend/src/core/Notification.js`: `getMyNotifications({ signal } = {})` pasa `signal` a `api.get` como `config.signal`. El resto de funciones no cambia.
+- `frontend/src/components/NotificationBell.jsx`: `loadNotifications(signal)` ignora los errores `CanceledError`/`AbortError` antes de loguear; el `useEffect` de polling crea un `AbortController` por ciclo (`poll()`), aborta el anterior al lanzar el siguiente y en el cleanup hace `clearInterval` + `controller.abort()`. `POLL_INTERVAL_MS` sigue en 30000.
+- `frontend/src/components/__tests__/NotificationBell.test.jsx`: dos tests nuevos. (1) mock de `getMyNotifications` que queda pendiente hasta que se aborta el signal (rechaza con `CanceledError`, como axios), `unmount()` durante la petición, y se comprueba `signal.aborted === true` y que `console.error` no se llamó (ni warnings de React ni `logger.error`). (2) con fake timers, avanzar `POLL_INTERVAL_MS` aborta el signal del ciclo anterior y crea uno nuevo.
+- Verificado: `npm run typecheck`, `npx eslint 'src/**/*.{js,jsx}'` y `CI=true npx react-scripts test --watchAll=false` (12 suites, 66 tests) pasan.
+- Files changed: `frontend/src/core/Notification.js`, `frontend/src/components/NotificationBell.jsx`, `frontend/src/components/__tests__/NotificationBell.test.jsx`.
+- **Learnings:**
+  - React 18 ya no emite el warning "Can't perform a React state update on an unmounted component", así que el test lo cubre espiando `console.error` en general (atrapa también un `logger.error` indebido si el `CanceledError` no se ignorase) y comprobando directamente `signal.aborted`.
+  - El test preexistente "muestra mensaje vacío cuando no hay notificaciones" ya emitía un warning "not wrapped in act" (por `setPreference` tras resolver `getNotificationPreference`) antes de esta historia; no se tocó porque queda fuera del alcance.
+  - `echo ====` en zsh falla con "=== not found" (expansión `=cmd`); usar otro separador en los scripts de shell.
 ---
