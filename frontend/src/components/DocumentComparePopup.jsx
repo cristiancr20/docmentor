@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import {
   AlertTriangle,
@@ -11,10 +11,7 @@ import {
   ScanLine,
 } from "lucide-react";
 
-import { API_URL } from "../core/config.js";
-import { getCommentsByDocument } from "../core/Comments";
-import { comparePdfDocuments } from "../utils/pdfCompare";
-import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
+import useDocumentCompare from "../hooks/useDocumentCompare";
 
 import PdfViewer from "./PdfViewer.tsx";
 import Modal from "./ui/Modal";
@@ -23,197 +20,50 @@ import EmptyState from "./ui/EmptyState";
 import { SkeletonRows } from "./ui/Skeleton";
 import ChangeList from "./compare/ChangeList";
 import CompareSummary, { SimilarityBadge } from "./compare/CompareSummary";
-import logger from "../utils/logger";
+
+const tabs = [
+  { key: "changes", label: "Cambios", icon: FileSearch },
+  { key: "side-by-side", label: "Lado a lado", icon: Columns2 },
+];
 
 /**
  * Comparador de versiones.
  *
- * El worker de pdf.js lo configura src/setupPdfWorker.js al arrancar la
- * aplicación. Antes este archivo lo reasignaba a un CDN y además importaba
- * `pdf.worker.entry`, así que había tres configuraciones compitiendo y la
- * comparación dependía de que cdnjs estuviera accesible.
+ * El estado y la orquestación viven en `useDocumentCompare`; aquí solo queda
+ * el JSX. El worker de pdf.js lo configura src/setupPdfWorker.js al arrancar
+ * la aplicación.
  */
 const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentIndex }) => {
-  const [notesDocument1, setNotesDocument1] = useState([]);
-  const [notesDocument2, setNotesDocument2] = useState([]);
-
-  const [result, setResult] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | loading | done | error
-  const [filter, setFilter] = useState("all");
-  const [tab, setTab] = useState("changes"); // changes | side-by-side
-  // Página a la que saltar cuando se pulsa "página N" en la lista de cambios.
-  const [targetPage, setTargetPage] = useState(null);
-
-  const contentRef = useRef(null);
-
-  const [syncScroll, setSyncScroll] = useState(true);
-  // Los visores avisan de su contenedor de scroll cuando terminan de cargar el
-  // PDF. Va en estado y no en una ref porque el enlace de los listeners tiene
-  // que rehacerse en cuanto aparecen, no antes.
-  const [scrollers, setScrollers] = useState({ before: null, after: null });
-  // Evita el rebote: al mover un panel movemos el otro, y ese movimiento
-  // dispararía a su vez el listener contrario en bucle.
-  const syncingRef = useRef(false);
-
-  // Identidad estable: si cambiara en cada render, el visor volvería a
-  // registrarse sin parar y el efecto de sincronía no llegaría a enlazarse.
-  const registerBefore = useCallback(
-    (element) => setScrollers((current) => ({ ...current, before: element })),
-    []
-  );
-  const registerAfter = useCallback(
-    (element) => setScrollers((current) => ({ ...current, after: element })),
-    []
-  );
-
   const sortedDocuments = [...documents].sort((a, b) => a.id - b.id);
   const doc1 = sortedDocuments[currentIndex];
   const doc2 = sortedDocuments[currentIndex + 1];
 
-  // Sin guardas, un índice fuera de rango o un documento sin archivo adjunto
-  // dejaban la pantalla en blanco.
-  const fileUrl = (doc) => {
-    const url = doc?.attributes?.documentFile?.data?.[0]?.attributes?.url;
-    return url ? `${API_URL}${url}` : null;
-  };
+  const {
+    canCompare,
+    panes,
+    result,
+    loading,
+    error,
+    hasResult,
+    showDiffOverlay,
+    hunks,
+    visibleHunks,
+    filter,
+    setFilter,
+    tab,
+    setTab,
+    targetPage,
+    goToPage,
+    syncScroll,
+    setSyncScroll,
+    runComparison,
+    contentRef,
+  } = useDocumentCompare(doc1, doc2);
 
-  const documento1 = fileUrl(doc1);
-  const documento2 = fileUrl(doc2);
-
-  const doc1Id = doc1?.id;
-  const doc2Id = doc2?.id;
-
-  const nameDocumento1 = doc1?.attributes?.title ?? "Versión anterior";
-  const nameDocumento2 = doc2?.attributes?.title ?? "Versión reciente";
-  const version1 = doc1?.attributes?.version;
-  const version2 = doc2?.attributes?.version;
-
-  const canCompare = Boolean(documento1 && documento2);
-
-  const runComparison = useCallback(async () => {
-    if (!documento1 || !documento2) return;
-
-    setStatus("loading");
-    try {
-      setResult(await comparePdfDocuments(documento1, documento2));
-      setStatus("done");
-    } catch (error) {
-      logger.error("Error comparando documentos:", error);
-      setStatus("error");
-    }
-  }, [documento1, documento2]);
-
-  // La comparación arranca sola al abrir y al cambiar de par de versiones:
-  // antes había que pulsar un botón para que la vista dejara de estar vacía.
-  useEffect(() => {
-    setResult(null);
-    setFilter("all");
-    runComparison();
-  }, [runComparison]);
-
-  useEffect(() => {
-    const loadNotes = async () => {
-      if (!doc1Id || !doc2Id) return;
-
-      try {
-        const [comments1, comments2] = await Promise.all([
-          getCommentsByDocument(doc1Id),
-          getCommentsByDocument(doc2Id),
-        ]);
-
-        const toNotes = (comments) =>
-          comments.map((comment) => ({
-            id: comment.id,
-            content: comment.attributes.correction,
-            highlightAreas: JSON.parse(comment.attributes.highlightAreas || "[]") || [],
-            quote: comment.attributes.quote || "",
-          }));
-
-        setNotesDocument1(toNotes(comments1));
-        setNotesDocument2(toNotes(comments2));
-      } catch (error) {
-        logger.error("Error al cargar los comentarios:", error);
-      }
-    };
-
-    loadNotes();
-  }, [doc1Id, doc2Id]);
-
-  // Al cambiar de pestaña se conservaba el desplazamiento de la anterior, así
-  // que se entraba a mitad de la vista nueva.
-  useEffect(() => {
-    contentRef.current?.parentElement?.scrollTo({ top: 0 });
-  }, [tab]);
-
-  /**
-   * Desplazamiento sincronizado entre los dos visores.
-   *
-   * Se sincroniza en proporción, no en píxeles: las dos versiones rara vez
-   * miden lo mismo, y copiar el scrollTop tal cual desalinea en cuanto una
-   * tiene una página de más.
-   */
-  useEffect(() => {
-    if (tab !== "side-by-side" || !syncScroll) return undefined;
-
-    const { before, after } = scrollers;
-    if (!before || !after) return undefined;
-
-    const mirror = (source, target) => () => {
-      if (syncingRef.current) return;
-
-      const sourceRange = source.scrollHeight - source.clientHeight;
-      const targetRange = target.scrollHeight - target.clientHeight;
-      if (sourceRange <= 0 || targetRange <= 0) return;
-
-      syncingRef.current = true;
-      target.scrollTop = (source.scrollTop / sourceRange) * targetRange;
-
-      // Se libera en el siguiente frame: el scroll que acabamos de provocar
-      // emite su propio evento.
-      requestAnimationFrame(() => {
-        syncingRef.current = false;
-      });
-    };
-
-    const onBefore = mirror(before, after);
-    const onAfter = mirror(after, before);
-
-    before.addEventListener("scroll", onBefore, { passive: true });
-    after.addEventListener("scroll", onAfter, { passive: true });
-
-    return () => {
-      before.removeEventListener("scroll", onBefore);
-      after.removeEventListener("scroll", onAfter);
-    };
-  }, [tab, syncScroll, scrollers]);
+  const [before, after] = panes;
 
   const handlePrevious = () => setCurrentIndex(currentIndex - 1);
   const handleNext = () => setCurrentIndex(currentIndex + 1);
-
-  /**
-   * Los resaltados del comparador viajan como "notas" porque es lo que sabe
-   * pintar el visor, pero llevan color propio y son de solo lectura: rojo para
-   * lo que desaparece en la versión anterior, verde para lo que se añade en la
-   * nueva. Los ids van en negativo para no chocar con los de los comentarios.
-   */
-  const diffNotes = (areas, tone) =>
-    (areas ?? []).map((area, index) => ({
-      id: -(index + 1),
-      content: tone === "removed" ? "Texto eliminado en la nueva versión" : "Texto agregado",
-      quote: "",
-      highlightAreas: [area],
-      color: tone === "removed" ? HIGHLIGHT_COLORS.removed : HIGHLIGHT_COLORS.added,
-      readOnly: true,
-    }));
-
-  const showDiffOverlay = status === "done" && !result?.textLayerMissing;
-
-  const notesForPane = (baseNotes, side) => {
-    if (!showDiffOverlay) return baseNotes;
-
-    const areas = side === "before" ? result?.highlights?.before : result?.highlights?.after;
-    return [...baseNotes, ...diffNotes(areas, side === "before" ? "removed" : "added")];
-  };
 
   // Hacen falta dos versiones con archivo para poder comparar.
   if (!canCompare) {
@@ -238,11 +88,8 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
     );
   }
 
-  const hunks = result?.hunks ?? [];
-  const visibleHunks = filter === "all" ? hunks : hunks.filter((hunk) => hunk.type === filter);
-
   const renderChanges = () => {
-    if (status === "loading") {
+    if (loading) {
       return (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted">Extrayendo el texto de ambas versiones…</p>
@@ -251,7 +98,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       );
     }
 
-    if (status === "error") {
+    if (error) {
       return (
         <EmptyState
           icon={AlertTriangle}
@@ -287,25 +134,8 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       );
     }
 
-    return (
-      <ChangeList
-        hunks={visibleHunks}
-        onGoToPage={(page) => {
-          setTargetPage(page);
-          setTab("side-by-side");
-        }}
-      />
-    );
+    return <ChangeList hunks={visibleHunks} onGoToPage={goToPage} />;
   };
-
-  const tabs = [
-    { key: "changes", label: "Cambios", icon: FileSearch },
-    { key: "side-by-side", label: "Lado a lado", icon: Columns2 },
-  ];
-
-  // Hay resultado utilizable en cuanto la comparación termina y los PDF traen
-  // texto, aunque no haya ninguna diferencia (100% en común es un dato válido).
-  const hasResult = status === "done" && !result?.textLayerMissing && Boolean(result?.summary);
 
   // Los filtros solo tienen sentido si hay algo que filtrar, y viven en la
   // zona fija para seguir alcanzables con listas largas.
@@ -317,9 +147,9 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
       onClose={onClose}
       size="xl"
       title="Comparador de versiones"
-      description={`${nameDocumento1}${version1 ? ` (v${version1})` : ""} → ${nameDocumento2}${
-        version2 ? ` (v${version2})` : ""
-      }`}
+      description={`${before.title}${before.version ? ` (v${before.version})` : ""} → ${
+        after.title
+      }${after.version ? ` (v${after.version})` : ""}`}
       subHeader={
         <>
           <div className="flex items-center gap-1 border-b border-line">
@@ -367,12 +197,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
             Par anterior
           </Button>
 
-          <Button
-            variant="ghost"
-            onClick={runComparison}
-            loading={status === "loading"}
-            disabled={status === "loading"}
-          >
+          <Button variant="ghost" onClick={runComparison} loading={loading} disabled={loading}>
             <RefreshCw className="h-4 w-4" strokeWidth={1.8} />
             Recalcular
           </Button>
@@ -426,22 +251,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
           )}
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {[
-              {
-                side: "before",
-                title: nameDocumento1,
-                version: version1,
-                url: documento1,
-                notes: notesDocument1,
-              },
-              {
-                side: "after",
-                title: nameDocumento2,
-                version: version2,
-                url: documento2,
-                notes: notesDocument2,
-              },
-            ].map((pane) => (
+            {panes.map((pane) => (
               <div key={pane.url} className="rounded-xl border border-line bg-surface-2 p-3">
                 <h3 className="mb-2 flex items-center gap-2 font-display text-sm font-semibold text-content">
                   {pane.title}
@@ -454,12 +264,12 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
                 <div className="h-[60vh] overflow-auto rounded-lg bg-surface">
                   <PdfViewer
                     fileUrl={pane.url}
-                    notes={notesForPane(pane.notes, pane.side)}
+                    notes={pane.notes}
                     onAddNote={() => {}}
                     canComment={false}
                     selectedHighlightId={null}
                     goToPage={targetPage}
-                    onScrollerReady={pane.side === "before" ? registerBefore : registerAfter}
+                    onScrollerReady={pane.onScrollerReady}
                   />
                 </div>
               </div>

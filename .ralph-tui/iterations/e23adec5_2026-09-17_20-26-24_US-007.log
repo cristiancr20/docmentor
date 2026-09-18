@@ -1,0 +1,45 @@
+# Iteration 7 Log
+
+## Metadata
+
+- **Task ID**: US-007
+- **Task Title**: Renombrar el visor de PDF con un nombre que describa lo que es
+- **Description**: Como desarrollador, quiero que frontend/src/components/DisplayNotesSidebarExample.tsx se llame PdfViewer.tsx, porque es el visor principal de documentos usado por DocumentViewer y DocumentComparePopup...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:26:24.765Z
+- **Ended At**: 2026-09-18T01:27:18.343Z
+- **Duration**: 53s
+- **Input Tokens**: 40
+- **Output Tokens**: 3703
+- **Total Tokens**: 3743
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Read progress notes and locate usages of the component $ tail -60 .ralph-tui/progress.md && echo ---- && grep -rn DisplayNotesSidebarExample frontend/src && ...
+[94m[Bash][0m Find component definition and other references outside src $ grep -rn DisplayNotesSidebarExample --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.ral...
+[94m[Bash][0m Inspect component header and internal name usages $ sed -n 1,60p frontend/src/components/DisplayNotesSidebarExample.tsx
+[94m[Bash][0m Rename file with git mv and update component name and imports $ git status --short frontend
+Now the quality checks.
+[94m[Bash][0m Run typecheck, eslint and the test suite $ echo "tests exit=${PIPESTATUS[0]}"
+[94m[Bash][0m Confirm exit codes of typecheck and eslint $ echo "eslint exit=$?"
+All checks pass. Now documenting in progress.md.
+[94m[Bash][0m Append US-007 entry to progress notes $ para capturar el exit code de un comando con `| tail`, mejor ejecutarlo sin pipe y leer `$?`. --- EO...
+US-007 done.
+
+**Changes**
+- `git mv frontend/src/components/DisplayNotesSidebarExample.tsx` → `frontend/src/components/PdfViewer.tsx`. The internal component was actually named `HighlightExample` (matching neither name); it's now `const PdfViewer: React.FC<PdfViewerProps>` with `export default PdfViewer`. No logic changes.
+- `frontend/src/pages/DocumentViewer.jsx:22,329` and `frontend/src/components/DocumentComparePopup.jsx:19,455`: import path and JSX tag updated to `PdfViewer`.
+
+**Acceptance criteria verified**
+- `grep -rn DisplayNotesSidebarExample frontend/src` → no output
+- `npm run typecheck` → exit 0
+- `npx eslint 'src/**/*.{js,jsx}'` → exit 0
+- `CI=true npx react-scripts test --watchAll=false` → 14 suites, 77 tests passed
+
+Progress entry appended to `.ralph-tui/progress.md`. No commit made.
+
+<promise>COMPLETE</promise>
