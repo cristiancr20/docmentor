@@ -7,8 +7,8 @@
  * sola consulta, dejándolo en `ctx.state.user` para que `global::has-permission`
  * (y el controller) no tengan que volver a la base de datos.
  *
- * Sustituye a `authenticate()` + `authorize()` de utils/protectedController.js,
- * que hacían dos consultas por petición y respondían a mano desde el controller.
+ * Sustituye al antiguo `authenticate()` + `authorize()` de cada controller,
+ * que hacían dos consultas por petición y respondían a mano.
  * Como policy, devolver `false` hace que Strapi responda 403 (PolicyError); por
  * eso aquí nunca se lanza ni se toca `ctx.body`.
  */

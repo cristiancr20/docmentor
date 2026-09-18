@@ -14,6 +14,10 @@
  * coincida con `config.code`. No consulta la base de datos. Devuelve `false`
  * (Strapi responde 403) si no hay usuario, si falta `config.code` o si el
  * permiso no está; nunca lanza.
+ *
+ * Cuando la decisión depende del registro (autor vs. moderador) la ruta no
+ * puede declarar el código: el controller usa `userHasPermission(user, code)`
+ * sobre el mismo `ctx.state.user` y responde el 403 él mismo.
  */
 
 const hasActivePermission = (rols, code) =>
@@ -23,7 +27,14 @@ const hasActivePermission = (rols, code) =>
       rol.permissions.some((perm) => perm?.isActive === true && perm?.code === code)
   );
 
-module.exports = (policyContext, config, { strapi }) => {
+/** ¿Tiene el usuario (con `rols.permissions` cargados) el permiso activo `code`? */
+const userHasPermission = (user, code) => {
+  if (!user || typeof code !== 'string' || code.length === 0) return false;
+  const rols = Array.isArray(user.rols) ? user.rols : [];
+  return hasActivePermission(rols, code);
+};
+
+const hasPermissionPolicy = (policyContext, config, { strapi }) => {
   try {
     const code = config?.code;
     if (typeof code !== 'string' || code.length === 0) {
@@ -36,8 +47,7 @@ module.exports = (policyContext, config, { strapi }) => {
       return false;
     }
 
-    const rols = Array.isArray(user.rols) ? user.rols : [];
-    if (!hasActivePermission(rols, code)) {
+    if (!userHasPermission(user, code)) {
       strapi.log.warn(`has-permission: usuario ${user.id} sin el permiso ${code}`);
       return false;
     }
@@ -48,3 +58,8 @@ module.exports = (policyContext, config, { strapi }) => {
     return false;
   }
 };
+
+// El loader de Strapi registra `module.exports` tal cual como policy; la
+// función auxiliar va colgada de ella para no duplicar la comprobación.
+module.exports = hasPermissionPolicy;
+module.exports.userHasPermission = userHasPermission;

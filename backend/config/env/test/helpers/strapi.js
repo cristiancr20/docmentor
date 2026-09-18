@@ -14,11 +14,17 @@ const TEST_ACTIONS = [
   'api::comment.comment',
   'api::notification.notification',
   'api::rol.rol',
+  'api::permission.permission',
+  'api::setting.setting',
 ].flatMap((uid) => ['find', 'findOne', 'create', 'update', 'delete'].map((a) => `${uid}.${a}`));
 
 TEST_ACTIONS.push(
   'plugin::users-permissions.user.find',
-  'plugin::users-permissions.user.findOne'
+  'plugin::users-permissions.user.findOne',
+  // Auditoría: las rutas custom /audit-logs no llevan `auth: false`, así que
+  // además de VIEW_AUDIT_LOGS necesitan la acción de users-permissions.
+  'api::audit.audit.find',
+  'api::audit.audit.export'
 );
 
 const dbFile = () => path.resolve(process.cwd(), '.tmp/test.db');

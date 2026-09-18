@@ -3,10 +3,10 @@
   "sessionId": "2f3a8b32-4456-4840-bce0-70117e0eaba9",
   "status": "running",
   "startedAt": "2026-09-18T00:17:41.135Z",
-  "updatedAt": "2026-09-18T00:39:32.406Z",
-  "currentIteration": 7,
+  "updatedAt": "2026-09-18T00:45:47.239Z",
+  "currentIteration": 8,
   "maxIterations": 0,
-  "tasksCompleted": 7,
+  "tasksCompleted": 8,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -60,8 +60,8 @@
       {
         "id": "US-008",
         "title": "Proteger las rutas de project y comment con policies",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-009",
@@ -159,6 +159,16 @@
       "durationMs": 238137,
       "startedAt": "2026-09-18T00:32:37.486Z",
       "endedAt": "2026-09-18T00:36:35.623Z"
+    },
+    {
+      "iteration": 8,
+      "status": "completed",
+      "taskId": "US-008",
+      "taskTitle": "Proteger las rutas de project y comment con policies",
+      "taskCompleted": true,
+      "durationMs": 175678,
+      "startedAt": "2026-09-18T00:36:36.726Z",
+      "endedAt": "2026-09-18T00:39:32.404Z"
     }
   ],
   "skippedTaskIds": [],

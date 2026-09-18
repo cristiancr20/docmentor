@@ -2,7 +2,15 @@
 
 /**
  * audit custom routes
+ *
+ * Aquí no se pone `auth: false`: estas rutas siempre han pasado por la auth de
+ * users-permissions (el rol `authenticated` necesita `api::audit.audit.find` y
+ * `api::audit.audit.export`, que concede el seed). Las policies añaden la
+ * sesión propia y VIEW_AUDIT_LOGS, que antes exigía el handler.
  */
+
+const authenticated = 'global::is-authenticated';
+const withPermission = (code) => ({ name: 'global::has-permission', config: { code } });
 
 module.exports = {
   routes: [
@@ -13,7 +21,7 @@ module.exports = {
       path: '/audit-logs/export',
       handler: 'api::audit.audit.export',
       config: {
-        policies: [],
+        policies: [authenticated, withPermission('VIEW_AUDIT_LOGS')],
         middlewares: [],
       },
     },
@@ -26,7 +34,7 @@ module.exports = {
       path: '/audit-logs',
       handler: 'api::audit.audit.find',
       config: {
-        policies: [],
+        policies: [authenticated, withPermission('VIEW_AUDIT_LOGS')],
         middlewares: [],
       },
     },

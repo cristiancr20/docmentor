@@ -5,17 +5,12 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
 const { generatePDF, generateXLSX } = require('../../../utils/exportReports');
 
+// Autenticación y VIEW_AUDIT_LOGS se resuelven en las policies declaradas en
+// routes/; aquí solo queda filtrar, paginar y exportar.
 module.exports = createCoreController('api::audit.audit', ({ strapi }) => ({
   async find(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'VIEW_AUDIT_LOGS', strapi);
-    if (!hasPermission) return;
-
     const { userId, entityType, entityId, startDate, endDate, page = 1, pageSize = 20 } = ctx.query;
 
     const filters = {};
@@ -35,12 +30,6 @@ module.exports = createCoreController('api::audit.audit', ({ strapi }) => ({
   },
 
   async export(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'VIEW_AUDIT_LOGS', strapi);
-    if (!hasPermission) return;
-
     const { userId, entityType, entityId, startDate, endDate, format = 'pdf' } = ctx.query;
 
     if (!['pdf', 'xlsx'].includes(format.toLowerCase())) {

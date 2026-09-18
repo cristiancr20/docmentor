@@ -5,18 +5,19 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
 const { applyFilter } = require('../../../utils/ownership');
 
 const VALID_PREFERENCES = ['email', 'in_app', 'both'];
 
+// Autenticación y MANAGE_NOTIFICATIONS (create/update/delete) se resuelven en
+// las policies declaradas en routes/; aquí el usuario ya viene en
+// `ctx.state.user` y solo queda la pertenencia (destinatario).
 module.exports = createCoreController('api::notification.notification', ({ strapi }) => ({
   // `findMine` filtraba bien, pero el `find` del core seguía montado y abierto:
   // GET /api/notifications devolvía las notificaciones privadas de todos los
   // usuarios. Se limita siempre al destinatario.
   async find(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     applyFilter(ctx, { tutor: { id: user.id } });
 
@@ -24,8 +25,7 @@ module.exports = createCoreController('api::notification.notification', ({ strap
   },
 
   async findOne(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     const notification = await strapi.db.query('api::notification.notification').findOne({
       where: { id: ctx.params.id },
@@ -39,40 +39,9 @@ module.exports = createCoreController('api::notification.notification', ({ strap
     return super.findOne(ctx);
   },
 
-  async create(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_NOTIFICATIONS', strapi);
-    if (!hasPermission) return;
-
-    return super.create(ctx);
-  },
-
-  async update(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_NOTIFICATIONS', strapi);
-    if (!hasPermission) return;
-
-    return super.update(ctx);
-  },
-
-  async delete(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_NOTIFICATIONS', strapi);
-    if (!hasPermission) return;
-
-    return super.delete(ctx);
-  },
-
-  // Notificaciones propias (últimos 30 días): solo requiere autenticación
+  // Notificaciones propias (últimos 30 días)
   async findMine(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     const notifications = await strapi
       .service('api::notification.notification')
@@ -82,8 +51,7 @@ module.exports = createCoreController('api::notification.notification', ({ strap
   },
 
   async markRead(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     const notification = await strapi.entityService.findOne('api::notification.notification', id, {
@@ -106,8 +74,7 @@ module.exports = createCoreController('api::notification.notification', ({ strap
   },
 
   async markAllRead(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     const unread = await strapi.entityService.findMany('api::notification.notification', {
       filters: { tutor: { id: user.id }, isRead: { $ne: true } },
@@ -127,8 +94,7 @@ module.exports = createCoreController('api::notification.notification', ({ strap
   },
 
   async getPreferences(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     const fullUser = await strapi
       .query('plugin::users-permissions.user')
@@ -140,8 +106,7 @@ module.exports = createCoreController('api::notification.notification', ({ strap
   },
 
   async updatePreferences(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     const { notificationPreference } = ctx.request.body || {};
     if (!VALID_PREFERENCES.includes(notificationPreference)) {

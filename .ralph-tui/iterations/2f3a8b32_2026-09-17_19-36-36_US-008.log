@@ -1,0 +1,67 @@
+# Iteration 8 Log
+
+## Metadata
+
+- **Task ID**: US-008
+- **Task Title**: Proteger las rutas de project y comment con policies
+- **Description**: Como desarrollador backend, quiero aplicar el mismo esquema de policies a api::project y api::comment, para que la autorización esté declarada en las rutas y no en el cuerpo de cada handler.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:36:36.726Z
+- **Ended At**: 2026-09-18T00:39:32.404Z
+- **Duration**: 2m 55s
+- **Input Tokens**: 118
+- **Output Tokens**: 15715
+- **Total Tokens**: 15833
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress file and the current state of the project/comment APIs.
+[94m[Bash][0m Read progress.md head and tail $ sed -n 1,80p .ralph-tui/progress.md && echo ---- && tail -60 .ralph-tui/progress.md
+[94m[Bash][0m List and show project/comment route files $ cd /Users/cristian/orca/docmentor/backend && ls src/api/project/routes src/api/project/controllers s...
+[94m[Bash][0m Show project controller $ cat src/api/project/controllers/project.js
+[94m[Bash][0m Show comment controller and protectedController $ cat src/api/comment/controllers/comment.js && echo ---- && cat src/utils/protectedController.js
+Now let me look at the US-007 reference implementation (document routes/controller) and the existing tests for projects and comments.
+[94m[Bash][0m Show document routes and controller head (US-007 reference) $ cat src/api/document/routes/document.js src/api/document/routes/01-custom-document.js && echo ---- &...
+[94m[Bash][0m Show test suite layout and projects tests $ ls config/env/test config/env/test/projects config/env/test/comments && cat config/env/test/app.test...
+[94m[Bash][0m Show comments tests and strapi helper $ cat config/env/test/comments/index.js && echo ---- && cat config/env/test/helpers/strapi.js
+Let me check the US-007 document tests to mirror their fixture pattern for new HTTP tests.
+[94m[Bash][0m Show documents tests and ownership utils $ cat config/env/test/documents/index.js && echo ---- && sed -n 1,60p src/utils/ownership.js
+I have what I need. Now writing the routes.
+[94m[Bash][0m Write project and comment route files with policies $ EOF
+Now the project controller:
+[94m[Bash][0m Strip authenticate/authorize from project controller $ ""","") open(p,'w').write(s) EOF grep -n "authenticate\|authorize\|ctx.state.user" src/api/project/c...
+Project controller is clean. Now the comment controller:
+[94m[Bash][0m Strip authenticate/authorize from comment controller (keep canModifyComment) $ """) open(p,'w').write(s) EOF grep -n "authenticate\|authorize\|ctx.state.user\|correctionTutor" src...
+Now I'll add HTTP tests that verify the policies are wired. First, let me check the comment schema and notification service so the create-comment fixture is realistic.
+[94m[Bash][0m Show comment schema, notification and audit services $ cat src/api/comment/content-types/comment/schema.json && grep -n "notifyCommentReceived" -A 40 src/a...
+[94m[Bash][0m Append HTTP policy tests for projects $ EOF
+[94m[Bash][0m Check project status attribute in schema $ grep -n '"status"' -A 12 src/api/project/content-types/project/schema.json | head -20
+[94m[Bash][0m Append HTTP policy tests for comments $ EOF
+Now run the backend test suite with Node 20:
+[94m[Bash][0m Check Node 20 and node_modules presence $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && node -v && ls node_modules >/dev/null 2...
+[94m[Bash][0m Run backend test suite and show results $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -E "✓|✕|●|Tests:|T...
+[94m[Bash][0m Verify no leftover auth calls, package.json intact, syntax ok $ git status --short
+Everything checks out. Now documenting the learnings in `progress.md`:
+[94m[Bash][0m Append US-008 entry to progress.md $ un `estudiante`/`tutor` no es elevado, así que los comentarios sin documento no le aparecen filtrado...
+I'll also add the reusable "record-dependent permission stays in the controller" pattern to the Codebase Patterns section at the top:
+[94m[Bash][0m Insert new pattern into Codebase Patterns section $ las core responden `{ data: { id, attributes } }`. """ assert anchor in s s=s.replace(anchor, new+an...
+US-008 is done. Summary of what was implemented:
+
+**Routes (authorization now declared on the route)**
+- `backend/src/api/project/routes/project.js` — `createCoreRouter` with `is-authenticated` on `find`/`findOne`, plus `has-permission` `CREATE_PROJECT` / `UPDATE_PROJECT` / `DELETE_PROJECT` on `create`/`update`/`delete` (codes read from the controller before changing it). No `auth: false` on core routes, per the US-007 learning.
+- `backend/src/api/project/routes/01-custom-project.js` — `PUT /projects/:id/change-status` now `auth: false` + `is-authenticated` + `has-permission CHANGE_PROJECT_STATUS` (it was previously `auth: false` with nothing else, relying solely on the handler).
+- `backend/src/api/comment/routes/comment.js` — `is-authenticated` on all five actions; `create` additionally requires `COMMENT_DOCUMENT`. `update`/`delete` intentionally only require a session.
+
+**Controllers**
+- `project.js` — dropped the `protectedController` import and every `authenticate()`/`authorize()` call; each handler uses `const user = ctx.state.user;` and keeps the ownership checks (`isElevated`/`applyFilter`/`requireProjectAccess`) and audit logging.
+- `comment.js` — same, except `canModifyComment` still imports and calls `authorize(..., 'MANAGE_COMMENTS', ...)` for the moderation path. `create` still overwrites `correctionTutor` with `ctx.state.user.id` and `update` still strips it from the body.
+
+**Tests** — the 8 existing project/comment tests are unchanged; 14 new HTTP cases verify the policies are wired (no token, missing permission on core and custom routes, success with audit `userId` from `ctx.state.user`, body-supplied `correctionTutor` ignored, author can edit without `MANAGE_COMMENTS`, stranger gets 403, moderator can delete). `cd backend && npm test`: **52/52 passing**.
+
+`backend/package.json` is untouched. Learnings and a new Codebase Pattern (record-dependent permissions stay in the controller) are appended to `.ralph-tui/progress.md`. No commits were made.
+
+<promise>COMPLETE</promise>

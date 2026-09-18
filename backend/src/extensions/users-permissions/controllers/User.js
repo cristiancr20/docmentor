@@ -1,19 +1,18 @@
+'use strict';
+
+/**
+ * Métodos custom del controller `user` de users-permissions.
+ *
+ * Autenticación y permiso (VIEW_USERS, MANAGE_USERS, ANONYMIZE_USER) se
+ * resuelven en las policies declaradas en routes/index.js; aquí el usuario ya
+ * viene en `ctx.state.user`.
+ */
+
 module.exports = {
   async getMyPermissions(ctx) {
-    const { authenticate } = require('../../../utils/protectedController');
-
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const userWithRoles = await strapi.entityService.findOne('plugin::users-permissions.user', user.id, {
-      populate: {
-        rols: {
-          populate: {
-            permissions: true,
-          },
-        },
-      },
-    });
+    // `global::is-authenticated` ya deja el usuario con `rols.permissions`
+    // cargados; no hace falta otra consulta.
+    const userWithRoles = ctx.state.user;
 
     if (!userWithRoles || !userWithRoles.rols || userWithRoles.rols.length === 0) {
       return ctx.send({ data: [] });
@@ -37,13 +36,7 @@ module.exports = {
   },
 
   async adminListUsers(ctx) {
-    const { authenticate, authorize } = require('../../../utils/protectedController');
-
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'VIEW_USERS', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const users = await strapi.entityService.findMany('plugin::users-permissions.user', {
       populate: { rols: true },
@@ -67,13 +60,7 @@ module.exports = {
   },
 
   async adminCreateUser(ctx) {
-    const { authenticate, authorize } = require('../../../utils/protectedController');
-
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_USERS', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { username, email, password, rols } = ctx.request.body;
 
@@ -127,13 +114,7 @@ module.exports = {
   },
 
   async adminUpdateUser(ctx) {
-    const { authenticate, authorize } = require('../../../utils/protectedController');
-
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_USERS', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     const { username, email, password, rols, isActive } = ctx.request.body;
@@ -185,13 +166,7 @@ module.exports = {
   },
 
   async adminDeleteUser(ctx) {
-    const { authenticate, authorize } = require('../../../utils/protectedController');
-
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_USERS', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
 
@@ -224,13 +199,7 @@ module.exports = {
   },
 
   async anonymize(ctx) {
-    const { authenticate, authorize } = require('../../../utils/protectedController');
-
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'ANONYMIZE_USER', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
 

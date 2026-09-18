@@ -1,36 +1,11 @@
 'use strict';
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
 
+// Autenticación y MANAGE_PERMISSIONS se resuelven en las policies declaradas
+// en routes/permission.js. Solo se conserva el borrado lógico.
 module.exports = createCoreController('api::permission.permission', ({ strapi }) => ({
-  async create(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
-    if (!hasPermission) return;
-
-    return super.create(ctx);
-  },
-
-  async update(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
-    if (!hasPermission) return;
-
-    return super.update(ctx);
-  },
-
   async delete(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_PERMISSIONS', strapi);
-    if (!hasPermission) return;
-
     const { id } = ctx.params;
     await strapi.entityService.update('api::permission.permission', id, {
       data: { isActive: false },

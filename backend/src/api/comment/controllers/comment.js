@@ -5,7 +5,7 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authorize } = require('../../../utils/protectedController');
+const { userHasPermission } = require('../../../policies/has-permission');
 
 /**
  * La relación `documents` admite un id suelto, un array de ids o el formato
@@ -26,9 +26,11 @@ const toIdList = (value) => {
  *
  * Es la única comprobación de permiso que sigue en el controller y no en la
  * ruta: depende del registro (¿quién es el autor?), y solo si no es el autor se
- * exige MANAGE_COMMENTS. `authorize` escribe el 403 en ctx cuando falta.
+ * exige MANAGE_COMMENTS. `user` es el `ctx.state.user` que dejó
+ * `global::is-authenticated`, ya con `rols.permissions`, así que no hace falta
+ * volver a la base de datos para comprobar el permiso.
  */
-const canModifyComment = async (ctx, userId, strapi) => {
+const canModifyComment = async (ctx, user, strapi) => {
   const comment = await strapi.db.query('api::comment.comment').findOne({
     where: { id: ctx.params.id },
     populate: { correctionTutor: true },
@@ -39,9 +41,15 @@ const canModifyComment = async (ctx, userId, strapi) => {
     return false;
   }
 
-  if (comment.correctionTutor?.id === userId) return true;
+  if (comment.correctionTutor?.id === user.id) return true;
 
-  return authorize(ctx, userId, 'MANAGE_COMMENTS', strapi);
+  if (!userHasPermission(user, 'MANAGE_COMMENTS')) {
+    strapi.log.warn(`Comentario ${comment.id}: usuario ${user.id} sin MANAGE_COMMENTS`);
+    ctx.forbidden('Permission denied: MANAGE_COMMENTS required');
+    return false;
+  }
+
+  return true;
 };
 
 // Autenticación y COMMENT_DOCUMENT (para `create`) se resuelven en las policies
@@ -92,7 +100,7 @@ module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   async update(ctx) {
     const user = ctx.state.user;
 
-    if (!(await canModifyComment(ctx, user.id, strapi))) return;
+    if (!(await canModifyComment(ctx, user, strapi))) return;
 
     // Tampoco se puede reasignar la autoría al editar.
     if (ctx.request.body?.data) {
@@ -105,7 +113,7 @@ module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   async delete(ctx) {
     const user = ctx.state.user;
 
-    if (!(await canModifyComment(ctx, user.id, strapi))) return;
+    if (!(await canModifyComment(ctx, user, strapi))) return;
 
     return super.delete(ctx);
   },

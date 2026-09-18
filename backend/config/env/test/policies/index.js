@@ -171,4 +171,30 @@ describe('policies global::is-authenticated y global::has-permission', () => {
       expect(runPolicy('global::has-permission', ctx, { code: PERMISSION_CODE })).toBe(true);
     });
   });
+
+  // Helper que usan los controllers cuando el permiso depende del registro
+  // (p. ej. `canModifyComment`): misma regla que la policy, sin tocar la BD.
+  describe('userHasPermission (helper exportado por has-permission)', () => {
+    const { userHasPermission } = require('../../../../src/policies/has-permission');
+
+    it('sigue registrada como policy aunque exporte el helper', () => {
+      expect(typeof strapi.policy('global::has-permission')).toBe('function');
+      expect(typeof strapi.policy('global::has-permission').userHasPermission).toBe('function');
+    });
+
+    it('devuelve false sin usuario, sin código o sin rols', () => {
+      expect(userHasPermission(null, PERMISSION_CODE)).toBe(false);
+      expect(userHasPermission({ id: 1 }, PERMISSION_CODE)).toBe(false);
+      expect(userHasPermission({ id: 1, rols: [] }, PERMISSION_CODE)).toBe(false);
+      expect(userHasPermission({ id: 1, rols: [{ permissions: [] }] }, '')).toBe(false);
+    });
+
+    it('respeta isActive y el código sobre el usuario que deja is-authenticated', async () => {
+      const ctx = fakeContext(`Bearer ${issueToken(activeUser)}`);
+      await runPolicy('global::is-authenticated', ctx);
+      expect(userHasPermission(ctx.state.user, PERMISSION_CODE)).toBe(true);
+      expect(userHasPermission(ctx.state.user, INACTIVE_PERMISSION_CODE)).toBe(false);
+      expect(userHasPermission(ctx.state.user, 'policies.test.missing')).toBe(false);
+    });
+  });
 });

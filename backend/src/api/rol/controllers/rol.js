@@ -1,36 +1,11 @@
 'use strict';
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
 
+// Autenticación y MANAGE_ROLES se resuelven en las policies declaradas en
+// routes/; aquí no queda ninguna comprobación de permiso.
 module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
-  async create(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
-    if (!hasPermission) return;
-
-    return super.create(ctx);
-  },
-
-  async update(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
-    if (!hasPermission) return;
-
-    return super.update(ctx);
-  },
-
   async delete(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
-    if (!hasPermission) return;
-
     const { id } = ctx.params;
     await strapi.entityService.update('api::rol.rol', id, {
       data: { isActive: false },
@@ -39,11 +14,6 @@ module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
   },
 
   async getRolePermissions(ctx) {
-    // La ruta va con `auth: false`, así que sin esta comprobación el mapa
-    // completo de rol -> permisos quedaba accesible sin sesión.
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
     const { id } = ctx.params;
     const rol = await strapi.entityService.findOne('api::rol.rol', id, {
       populate: { permissions: true },
@@ -55,12 +25,6 @@ module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
   },
 
   async addRolePermission(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
-    if (!hasPermission) return;
-
     const { id } = ctx.params;
     const { permissionId } = ctx.request.body;
 
@@ -89,12 +53,6 @@ module.exports = createCoreController('api::rol.rol', ({ strapi }) => ({
   },
 
   async removeRolePermission(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'MANAGE_ROLES', strapi);
-    if (!hasPermission) return;
-
     const { id, permissionId } = ctx.params;
 
     const rol = await strapi.entityService.findOne('api::rol.rol', id, {
