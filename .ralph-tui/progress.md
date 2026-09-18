@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - **Sesión en localStorage (frontend):** las claves `userData` (JSON), `jwtToken` (string plano), `userPermissions` y `strapiUserId` forman la sesión. Leer el usuario siempre con `getUserData()` y limpiar con `clearStoredSession()` de `src/utils/auth.utils.js`; no hacer `JSON.parse(localStorage.getItem("userData"))` a mano. `AuthContext` descarta y limpia la sesión si `userData` no es JSON válido.
 - **Tests con localStorage:** `setupTests.js` carga `jest-localstorage-mock` (métodos `jest.fn()`), y CRA aplica `resetMocks: true`, así que `getItem` devuelve `undefined` en cada test. Para probar código que usa localStorage hay que respaldarlo en `beforeEach` con un `Map` vía `localStorage.getItem.mockImplementation(...)` (ver `src/context/__tests__/AuthContext.test.jsx`).
 - **Quality gates del frontend:** `npm run typecheck`, `npx eslint 'src/**/*.{js,jsx}'`, `CI=true npx react-scripts test --watchAll=false`. El warning de `act()` en `NotificationBell` es preexistente.
+- **Config del frontend:** la única variable de entorno es `REACT_APP_API_URL` (`src/core/config.js` exporta solo `API_URL`, con fallback a `http://localhost:1337`). Plantilla en `frontend/.env.example`. `src/k6/**` está excluido de eslint y es un script de k6 (usa `__ENV`), no código de la app.
 
 ---
 
@@ -36,4 +37,15 @@ after each iteration and it's included in prompts for context.
   - No fiarse de "no está enrutado" en el PRD: `grep -rn NombreComponente src` antes de borrar un archivo, porque `App.js` sí lo importaba y hubiera roto el build.
   - Los consumidores de `core/Autentication.js` son solo `Login.jsx`, `SignUp.jsx` y `DocumentViewer.jsx`; el login local depende de `login` + `getUserWithRole` + `useAuth().login`.
   - `isInstitutional` sigue usándose como flag de datos (`getTutors`, `NewProject`, `SignUp`, `Login`), así que no forma parte del código muerto de Keycloak y no hay que tocarlo.
+---
+
+## 2026-09-17 - US-003
+- `core/config.js` queda reducido a `export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:1337'`: se quitó el fallback a `docmentor-production.up.railway.app`, `WORKER_URL` (ningún archivo lo importaba) y el bloque `if (!API_URL) console.error(...)` que el fallback hacía inalcanzable.
+- `src/k6/tests_load_k6.js`: la única otra referencia a railway era el `BASE_URL` hardcodeado del script de carga; ahora es `__ENV.BASE_URL || 'http://localhost:1337'` (se sobreescribe con `k6 run -e BASE_URL=...`).
+- Nuevo `frontend/.env.example` con `REACT_APP_API_URL=http://localhost:1337`; el paso 4 de instalación del `README.md` raíz ahora dice `cp .env.example .env` y aclara que sin `.env` se usa ese mismo valor.
+- `grep -rn railway frontend/src` no devuelve nada.
+- Files changed: `frontend/src/core/config.js`, `frontend/src/k6/tests_load_k6.js`, `frontend/.env.example` (nuevo), `README.md`.
+- **Learnings:**
+  - `frontend/.env` está en `.gitignore` pero `.env.example` no, así que la plantilla sí se versiona.
+  - El PRD hablaba de "frontend/src", que incluye `src/k6/`; aunque eslint lo ignora, el criterio de "cero referencias a railway.app" lo cubre, por eso se parametrizó en vez de dejarlo.
 ---

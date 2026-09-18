@@ -1,11 +1,3 @@
-//definir process
-export const API_URL = process.env?.REACT_APP_API_URL || "https://docmentor-production.up.railway.app";
-
-export const WORKER_URL = process.env.REACT_APP_WORKER_URL;
-
-// Validación y logging
-if (!API_URL) {
-  console.error('API_URL no está definida. Verifica tus archivos .env');
-}
-
-
+// URL base del backend Strapi. Sin .env apunta a local para que un entorno
+// mal configurado falle contra localhost y no contra un servidor externo.
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:1337';

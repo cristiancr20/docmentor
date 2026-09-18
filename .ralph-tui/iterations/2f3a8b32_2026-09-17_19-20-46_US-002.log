@@ -1,0 +1,56 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-002
+- **Task Title**: Eliminar el flujo de login institucional Keycloak muerto
+- **Description**: Como responsable de seguridad, quiero borrar el flujo Keycloak inalcanzable (apunta a http://localhost:8080 hardcodeado y registra usuarios en Strapi con la contraseña fija 'contraseñaSegura123' asign...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:20:46.002Z
+- **Ended At**: 2026-09-18T00:22:54.618Z
+- **Duration**: 2m 8s
+- **Input Tokens**: 72
+- **Output Tokens**: 6747
+- **Total Tokens**: 6819
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the relevant source files.
+[94m[Bash][0m Read the progress file head and tail $ sed -n 1,80p .ralph-tui/progress.md && echo "=== TAIL ===" && tail -40 .ralph-tui/progress.md
+[94m[Bash][0m Read the Keycloak login page, AuthContext and Autentication core $ echo "=== Autentication.js ===" && cat src/core/Autentication.js
+Now let me check all usages of the symbols to be removed and of `jwt-decode`, and the references to keycloak/aerobase/etc.
+[94m[Bash][0m Find all usages of symbols to remove and forbidden references $ echo "=== isInstitutional ===" && grep -rn "isInstitutional" src
+[94m[Bash][0m Find all usages of symbols to remove and forbidden references $ echo "=== isInstitutional ===" && grep -rn 'isInstitutional' src
+The story says `LoginInstitucional` isn't routed, but it actually is (`App.js:98`). I'll remove the import and route too. Let me check App.js and any links pointing at `/login-institucional`.
+[94m[Bash][0m Inspect App.js route and links to the institutional login $ echo "=== tests referencing ===" && grep -rln 'AuthContext\|Autentication' src --include='*.test.*'
+[94m[Bash][0m Delete the Keycloak page and strip the dead flow from App, AuthContext and Autentication $ \n', '') start = s.index("//METODO PARA OBTENER LOS ROLES") end = s.index("//buscar id del usuario p...
+Now uninstall `jwt-decode` and run the verification greps.
+[94m[Bash][0m Uninstall jwt-decode and verify no forbidden references remain $ echo "(exit $?)"
+`jwt-decode` is gone from `package.json` and the lockfile, and no forbidden references remain. Now the quality gates.
+[94m[Bash][0m Run typecheck and eslint on the frontend $ echo "eslint exit: ${pipestatus[1]}"
+[94m[Bash][0m Run the frontend test suite $ npx react-scripts test --watchAll=false 2>&1 | grep -E "Tests:|Test Suites:|✕|FAIL|PASS" | head -30
+All gates pass (typecheck, eslint, 49/49 tests). Let me confirm the local login only depends on symbols I kept.
+[94m[Bash][0m Verify Login.jsx only uses remaining auth exports $ grep -n "import\|useAuth()" src/pages/Login.jsx | head -20 && echo "=== exports Autentication ===" &...
+The local login (`Login.jsx`) uses `login`, `getUserWithRole` and `useAuth().login`, all retained. Now I'll document the learnings in `progress.md`.
+[94m[Bash][0m Append the US-002 entry to the progress log $ el login local depende de `login` + `getUserWithRole` + `useAuth().login`.   - `isInstitutional` sig...
+US-002 is done. Summary of what changed:
+
+**Removed the dead Keycloak/Aerobase flow**
+- Deleted `frontend/src/pages/LoginInstitucional.jsx`.
+- `frontend/src/App.js`: removed the import and the `/login-institucional` route. The story claimed the page wasn't routed, but it was — leaving that in would have broken the build after deleting the file. No other page linked to it.
+- `frontend/src/context/AuthContext.js`: removed `loginInstitutional` (the hardcoded `http://localhost:8080/auth/realms/aerobase/...` fetch and `realm_access` role parsing) and its entry in the provider value.
+- `frontend/src/core/Autentication.js`: removed `getRoles`, `syncUserWithStrapi` (fixed password `contraseñaSegura123`, client-side role assignment) and `assignRolesToStrapiUser`. Only that flow used them; `registerUser`, `login`, `getUserWithRole` and `getUserByEmail` stay because `Login.jsx`, `SignUp.jsx` and `DocumentViewer.jsx` import them.
+- `npm uninstall jwt-decode` — it was only imported by `Autentication.js`; gone from `package.json` and `package-lock.json`.
+
+**Verification**
+- `grep` for `keycloak|aerobase|realm_access|localhost:8080` (and the removed symbols) in `frontend/src`: no matches.
+- Local login untouched: `Login.jsx` uses `login` + `getUserWithRole` from `Autentication` and `useAuth().login`, all kept.
+- `npm run typecheck` ✅, `npx eslint 'src/**/*.{js,jsx}'` ✅, `CI=true npx react-scripts test --watchAll=false` ✅ (9 suites, 49 tests passed).
+
+Learnings appended to `.ralph-tui/progress.md` (notably: don't trust "not routed" claims — grep before deleting; `isInstitutional` is still a live data flag used by `getTutors`/`NewProject`/`SignUp`, not part of the dead code). No commits made.
+
+<promise>COMPLETE</promise>

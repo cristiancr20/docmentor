@@ -56,10 +56,11 @@ npm install
 ```
 
 4. Configurar variables de entorno:
-   - En el directorio `frontend`, crear un archivo `.env`:
+   - En el directorio `frontend`, copiar `.env.example` a `.env` y ajustar la URL del backend si no corre en local:
+   ```bash
+   cp .env.example .env
    ```
-   REACT_APP_API_URL=http://localhost:1337
-   ```
+   El archivo define `REACT_APP_API_URL=http://localhost:1337`. Si no existe `.env`, el frontend usa ese mismo valor por defecto.
 
    - En el directorio `backend`, crear un archivo `.env`:
    ```
