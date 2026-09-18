@@ -9,7 +9,7 @@ import {
 /**
  * Navegación por rol, en un solo sitio.
  *
- * Las rutas de App.js y los enlaces de la barra se declaraban por separado, así
+ * Las rutas de App.jsx y los enlaces de la barra se declaraban por separado, así
  * que era fácil que un rol tuviera acceso a una vista sin enlace para llegar
  * (le pasaba a coordinador con /audit-logs).
  */

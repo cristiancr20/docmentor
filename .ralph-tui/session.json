@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "sessionId": "864cba7e-1a46-4489-a7d8-0b2ce8563270",
+  "status": "running",
+  "startedAt": "2026-09-18T01:35:38.308Z",
+  "updatedAt": "2026-09-18T01:37:45.468Z",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "claude",
+  "trackerState": {
+    "plugin": "json",
+    "executionScopes": [],
+    "prdPath": "./tasks/prd-vite.json",
+    "totalTasks": 6,
+    "tasks": [
+      {
+        "id": "US-001",
+        "title": "Renombrar a .jsx los archivos .js que contienen JSX",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-002",
+        "title": "Sustituir react-scripts por Vite para dev y build",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-003",
+        "title": "Migrar las suites de tests de Jest (CRA) a Vitest",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-004",
+        "title": "Actualizar Docker, CI y Vercel para el build de Vite",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-005",
+        "title": "Retirar la configuración y dependencias que solo usaba CRA",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-006",
+        "title": "Verificar en el navegador que la app funciona igual con Vite",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/cristian/orca/docmentor",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}

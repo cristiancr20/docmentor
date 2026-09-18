@@ -1,7 +1,7 @@
 import { navItemsFor, NAV_BY_ROLE } from "../layout/navigation";
 
 /**
- * La navegación se deriva del rol, igual que las rutas protegidas de App.js.
+ * La navegación se deriva del rol, igual que las rutas protegidas de App.jsx.
  * Antes se derivaba de permisos sueltos, y eso permitía desajustes: coordinador
  * tenía acceso a /audit-logs pero ningún enlace para llegar.
  */
