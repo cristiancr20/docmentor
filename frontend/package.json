@@ -22,29 +22,16 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1",
-    "react-scripts": "5.0.1",
     "sweetalert2": "^11.12.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "react-scripts test --coverage",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' -f html > eslint-report.html",
     "typecheck": "tsc --noEmit"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
@@ -52,6 +39,7 @@
     "@babel/preset-react": "^7.25.9",
     "@eslint/js": "^9.16.0",
     "@testing-library/jest-dom": "^6.6.3",
+    "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.4.19",
     "babel-jest": "^29.7.0",
     "dotenv": "^16.4.7",
@@ -66,27 +54,7 @@
     "postcss": "^8.4.38",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.4",
-    "typescript": "^4.9.5"
-  },
-  "jest": {
-    "transformIgnorePatterns": [
-      "/node_modules/(?!axios)/"
-    ],
-    "transform": {
-      "^.+\\.(js|jsx)$": "babel-jest"
-    },
-    "testMatch": [
-      "**/__tests__/**/*.+(js|jsx|ts|tsx)",
-      "**/?(*.)+(spec|test).+(js|jsx|ts|tsx)"
-    ],
-    "coverageReporters": [
-      "json",
-      "lcov",
-      "text",
-      "clover"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/"
-    ]
+    "typescript": "^4.9.5",
+    "vite": "^8.3.0"
   }
 }

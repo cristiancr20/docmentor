@@ -45,11 +45,12 @@
         "cd frontend && npm run build passes y genera frontend/dist/index.html y frontend/dist/pdf.worker.js"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -141,6 +142,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-09-18T01:37:45.468Z"
+    "updatedAt": "2026-09-18T01:41:02.675Z"
   }
 }

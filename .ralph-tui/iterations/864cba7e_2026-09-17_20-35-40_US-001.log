@@ -1,0 +1,58 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Renombrar a .jsx los archivos .js que contienen JSX
+- **Description**: Como desarrollador, quiero que todo archivo con JSX tenga extensión .jsx, porque Vite (esbuild) solo transforma JSX en .jsx/.tsx y CRA lo permitía en .js. Este cambio es compatible con CRA, así que se...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:35:40.173Z
+- **Ended At**: 2026-09-18T01:37:45.467Z
+- **Duration**: 2m 5s
+- **Input Tokens**: 84
+- **Output Tokens**: 8391
+- **Total Tokens**: 8475
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reading the progress file and inspecting the frontend structure.
+[94m[Bash][0m Read progress.md head and tail $ sed -n 1,80p .ralph-tui/progress.md && echo "----- TAIL -----" && tail -60 .ralph-tui/progress.md
+[94m[Bash][0m List frontend, package.json, and .js files containing JSX $ echo "---- all .js in src ----" && find src -name '*.js' | grep -vE '/k6/|__tests__'
+The grep found 4 files; `AuthContext.js` didn't match but the story lists it. Let me check it plus a few other suspicious files (PermissionGate, Alerts, navigation) for JSX that the regex might miss.
+[94m[Bash][0m Inspect candidate files and config files for extensions $ sed -n 60,120p package.json
+[94m[Bash][0m Detect JSX in .js files by parsing without the jsx plugin $ } }'
+Six candidates total: the 5 parser hits plus `useAppTheme.js` (which the AC names and the grep matched, but parses cleanly). Let me look at why.
+[94m[Bash][0m Check useAppTheme grep match and find all importers $ grep -rnE "from ['\"].*(index|App|AuthContext|PermissionContext|useAppTheme|PermissionGate)(\.js)?['...
+[94m[Bash][0m Find explicit .js references to the files being renamed $ grep -rnE "(src/)?(index|App|AuthContext|PermissionContext|useAppTheme|PermissionGate)\.js\b" --excl...
+No explicit-extension imports anywhere. Two code comments mention `App.js` (navigation.js, navigation.test.js) — I'll update them for accuracy. Now the renames:
+[94m[Bash][0m Rename JSX files to .jsx with git mv and update comments $ git mv src/index.js src/index.jsx && git mv src/App.js src/App.jsx && git mv src/context/AuthContext...
+Renames done (6 files). Now verify the AC grep is clean and run the quality checks.
+[94m[Bash][0m Run AC grep, typecheck and eslint $ echo "--- AC grep (expect empty) ---" && (grep -rlE '<[A-Za-z][^>]*>' --include='*.js' src | grep -v...
+[94m[Bash][0m Confirm eslint and tsc exit codes $ echo "TSC_EXIT=$?"
+Typecheck and lint pass. Now tests and build.
+[94m[Bash][0m Run the Jest test suite in CI mode $ echo "TEST_EXIT=${PIPESTATUS[0]}"
+[94m[Bash][0m Run the CRA production build $ echo "BUILD_EXIT=${PIPESTATUS[0]}"
+[94m[Bash][0m Confirm clean tree and document learnings in progress.md $ for(const f of walk("src")){try{p.parse(fs.readFileSync(f,"utf8"),{sourceType:"module"})}catch(e){co...
+US-001 is done. Summary:
+
+**Renamed with `git mv` (6 files in `frontend/src`)**
+- `index.js`, `App.js`, `context/AuthContext.js`, `context/PermissionContext.js`, `utils/useAppTheme.js` → `.jsx` (the 5 listed in the AC)
+- `components/PermissionGate.js` → `.jsx` — this one has real JSX (a `<>{children}</>` fragment) that the AC's grep can't see, and would break under Vite/esbuild, so I included it.
+
+**Two things worth flagging**
+- The AC grep `<[A-Za-z][^>]*>` is unreliable: it missed `AuthContext.js` (multi-line `<AuthContext.Provider value={{`) and `PermissionGate.js` (fragment), and it flagged `useAppTheme.js` only because of `<html>` in a comment — that file has no JSX. I renamed it anyway since the AC names it explicitly. I verified the real set by parsing every `src/**/*.js` with `@babel/parser` without the `jsx` plugin (parse failure ⇔ contains JSX); after the renames, zero files fail, and the AC grep is also empty.
+- No import edits were needed: every importer and `jest.mock(...)` uses extension-less paths. `tailwind.config.js`, `eslint.config.mjs`, `tsconfig.json` and the Jest `transform` already covered `.jsx` — verified, unchanged. I did update two code comments that referenced `App.js`.
+
+**Checks (all from `frontend/`)**
+- `npm run typecheck` → exit 0
+- `npx eslint 'src/**/*.{js,jsx}'` → exit 0
+- `CI=true npx react-scripts test --watchAll=false` → 15 suites, 86 tests passed
+- `CI=false npm run build` → `Compiled successfully`; CRA resolved `src/index.jsx` with no change to `public/index.html`
+
+`.ralph-tui/progress.md` is updated with the iteration entry plus two reusable patterns (the babel-parser JSX detection snippet, and the extension-less-imports note). No commits were created.
+
+<promise>COMPLETE</promise>

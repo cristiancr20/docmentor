@@ -1,4 +1,4 @@
 import { GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Configura la ruta al worker
-GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.js`;
+// El worker vive en public/pdf.worker.js; Vite lo sirve tal cual bajo BASE_URL
+GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.js`;

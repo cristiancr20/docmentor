@@ -2,14 +2,14 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0b0c0e" />
     <meta
       name="description"
       content="DocMentor - Gestión y seguimiento de documentos de proyectos académicos"
     />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,7 +36,7 @@
       })();
     </script>
 
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     <title>DocMentor</title>
   </head>
   <body>
@@ -47,5 +47,6 @@
       un worker cargado como script del hilo principal, desde un CDN y sin SRI.
       La configuración del worker vive en src/setupPdfWorker.js.
     -->
+    <script type="module" src="/src/index.jsx"></script>
   </body>
 </html>

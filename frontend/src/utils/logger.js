@@ -7,10 +7,10 @@
  * porque sí aportan al diagnosticar un fallo en el entorno del usuario.
  *
  * La comprobación de entorno se hace en cada llamada (no al cargar el módulo)
- * para que los tests puedan alternar NODE_ENV sin reimportar el módulo.
+ * para que los tests puedan alternar import.meta.env.MODE sin reimportar el módulo.
  */
 
-const isProduction = () => process.env.NODE_ENV === "production";
+const isProduction = () => import.meta.env.MODE === "production";
 
 const debug = (...args) => {
   if (isProduction()) return;
