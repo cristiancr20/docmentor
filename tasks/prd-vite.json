@@ -1,0 +1,132 @@
+{
+  "name": "Migración del frontend de DocMentor de Create React App a Vite",
+  "description": "Sustituir react-scripts (Create React App, sin mantenimiento desde 2022 y deprecado oficialmente) por Vite y Vitest, manteniendo el código React intacto. Alcance: renombrar los archivos .js que contienen JSX, crear vite.config.js y postcss.config.js, mover index.html a la raíz, cambiar process.env.REACT_APP_* por import.meta.env.VITE_*, configurar el worker de pdfjs, migrar las 8 suites de tests a Vitest, actualizar Dockerfile, docker-compose, workflows de CI y Vercel, y retirar la configuración de CRA. La app debe verse y comportarse exactamente igual: login, dashboards, visor de PDF con resaltados y comparador de versiones. NO tocar backend/ en ningún momento. Se ejecuta DESPUÉS de tasks/prd-seguridad.json y tasks/prd-calidad.json porque renombra y mueve archivos que aquellos editan.",
+  "branchName": "ralph/migracion-vite",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Renombrar a .jsx los archivos .js que contienen JSX",
+      "description": "Como desarrollador, quiero que todo archivo con JSX tenga extensión .jsx, porque Vite (esbuild) solo transforma JSX en .jsx/.tsx y CRA lo permitía en .js. Este cambio es compatible con CRA, así que se hace antes de cambiar la herramienta.",
+      "acceptanceCriteria": [
+        "Renombrar con git mv al menos: src/index.js, src/App.js, src/context/AuthContext.js, src/context/PermissionContext.js y src/utils/useAppTheme.js a .jsx; comprobar con grep -lE '<[A-Za-z][^>]*>' sobre src/**/*.js (excluyendo k6 y __tests__) que no queda ningún otro .js con JSX",
+        "Actualizar todos los imports que apuntaban a esos archivos; los imports sin extensión no requieren cambios",
+        "Actualizar tailwind.config.js content y eslint.config.mjs si enumeran extensiones y no incluían .jsx (ya incluyen .jsx: verificar)",
+        "src/index.js pasa a src/index.jsx y CRA lo resuelve sin cambios en public/index.html",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes",
+        "cd frontend && CI=false npm run build passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Sustituir react-scripts por Vite para dev y build",
+      "description": "Como desarrollador, quiero que npm start levante Vite y npm run build genere el bundle con Vite, para dejar de depender de react-scripts. En esta historia los tests quedan temporalmente sin ejecutar (se migran en US-003).",
+      "acceptanceCriteria": [
+        "Instalar vite y @vitejs/plugin-react como devDependencies con npm install -D; desinstalar react-scripts con npm uninstall",
+        "Crear frontend/vite.config.js con plugin react, server.port 3000, server.host true (necesario para Docker) y build.outDir 'dist'",
+        "Crear frontend/postcss.config.js con tailwindcss y autoprefixer (CRA lo hacía implícitamente; sin esto Tailwind no se aplica)",
+        "Mover public/index.html a frontend/index.html: quitar todos los %PUBLIC_URL% dejando rutas absolutas desde raíz (/favicon.ico, /manifest.json, /logo192.png) y añadir <script type=\"module\" src=\"/src/index.jsx\"></script> antes de cerrar body",
+        "src/core/config.js: API_URL = import.meta.env.VITE_API_URL || 'http://localhost:1337'; no queda ninguna referencia a process.env en src salvo tests",
+        "src/setupPdfWorker.js: GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.js`; public/pdf.worker.js se conserva en public/ y Vite lo sirve en /pdf.worker.js",
+        "Renombrar la variable en frontend/.env y frontend/.env.example de REACT_APP_API_URL a VITE_API_URL manteniendo el valor",
+        "Añadir \"types\": [\"vite/client\"] en compilerOptions de tsconfig.json para que import.meta.env tipifique",
+        "package.json scripts: start = vite, build = vite build, preview = vite preview; el script test se deja como está hasta US-003",
+        "Eliminar los bloques browserslist y jest de package.json (Vite usa build.target; Jest se sustituye en US-003)",
+        "Añadir /dist a frontend/.gitignore",
+        "npm start arranca en http://localhost:3000 y la página de login se renderiza con estilos Tailwind aplicados (verificar con el skill run o con curl que el HTML sirve el módulo /src/index.jsx)",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && npm run build passes y genera frontend/dist/index.html y frontend/dist/pdf.worker.js"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-001"]
+    },
+    {
+      "id": "US-003",
+      "title": "Migrar las suites de tests de Jest (CRA) a Vitest",
+      "description": "Como desarrollador, quiero que npm test ejecute Vitest, porque Jest no puede parsear import.meta.env y CRA ya no provee el runner. Las 8 suites y 46 tests actuales deben pasar sin cambiar lo que verifican.",
+      "acceptanceCriteria": [
+        "Instalar vitest, jsdom y @vitest/coverage-v8 como devDependencies",
+        "En vite.config.js añadir test: { environment: 'jsdom', globals: true, setupFiles: './src/setupTests.js', css: false, coverage: { reporter: ['text', 'lcov'] } }",
+        "src/setupTests.js: conservar import '@testing-library/jest-dom' (usar '@testing-library/jest-dom/vitest' si la versión instalada lo exporta), eliminar dotenv (Vitest carga .env solo) y sustituir jest-localstorage-mock por un mock propio de localStorage con vi.fn() que exponga getItem/setItem/removeItem/clear como funciones espiables y se resetee en beforeEach, porque AuthContext.test.jsx usa localStorage.getItem.mockImplementation",
+        "En los 8 archivos de src/**/__tests__: sustituir jest.fn, jest.mock, jest.spyOn por vi.fn, vi.mock, vi.spyOn (importando { vi } de vitest o usando globals); las llamadas a jest.mock con factory se convierten a vi.mock con la misma factory",
+        "package.json scripts: test = vitest run --coverage; añadir test:watch = vitest",
+        "Eliminar de package.json las devDependencies jest, jest-environment-jsdom, babel-jest, jest-junit, jest-localstorage-mock y github-actions-ctrf si ningún archivo ni workflow las referencia",
+        "cd frontend && npm test passes con 8 suites y 46 tests (mismo número que antes de la migración)",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes; actualizar eslint.config.mjs para que los globals de tests sean los de vitest (globals.vitest) en lugar de globals.jest",
+        "cd frontend && npm run build passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-002"]
+    },
+    {
+      "id": "US-004",
+      "title": "Actualizar Docker, CI y Vercel para el build de Vite",
+      "description": "Como desarrollador, quiero que los entornos que construyen o sirven el frontend usen los nuevos comandos y el directorio dist, para que Docker Compose, GitHub Actions y Vercel sigan funcionando tras la migración.",
+      "acceptanceCriteria": [
+        "frontend/Dockerfile: CMD [\"npm\", \"start\"] sigue funcionando porque vite.config.js fija host true y puerto 3000; eliminar los comentarios de la etapa de producción que referencian /app/build o sustituirlos por /app/dist",
+        "docker-compose.yml: en el servicio react eliminar CHOKIDAR_USEPOLLING (era de webpack) y añadir environment VITE_API_URL=http://localhost:1337; el puerto 3000:3000 no cambia",
+        ".github/workflows/build_frontend.yml y slint.yml no necesitan cambios de comandos (usan npm ci, npm run build, npm run lint); verificar que build_frontend.yml no referencia frontend/build y, si lo hace, cambiarlo a frontend/dist",
+        ".github/workflows/sast.yml y sca.yml: si referencian frontend/build cambiarlo a frontend/dist",
+        "Crear frontend/vercel.json con { \"rewrites\": [{ \"source\": \"/(.*)\", \"destination\": \"/index.html\" }] } para que las rutas de react-router respondan en recargas directas (CRA lo hacía por preset de Vercel; Vite no)",
+        "README.md raíz: sección de instalación y de variables de entorno pasa de REACT_APP_API_URL a VITE_API_URL, de npm start (react-scripts) a npm start (Vite) y menciona npm run preview; la lista de tecnologías cambia 'React 18.x' a 'React 18.x + Vite'",
+        "docker compose build react termina sin error (si Docker está disponible; si no, anotar en notes que no se pudo verificar)",
+        "cd frontend && npm run build passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-003"]
+    },
+    {
+      "id": "US-005",
+      "title": "Retirar la configuración y dependencias que solo usaba CRA",
+      "description": "Como desarrollador, quiero eliminar los restos de la toolchain anterior, para que package.json y la raíz de frontend/ solo contengan lo que Vite y Vitest usan.",
+      "acceptanceCriteria": [
+        "Eliminar frontend/babel.config.js (esbuild transforma JSX; Vitest no usa Babel) y actualizar el comentario de eslint.config.mjs que lo menciona",
+        "Desinstalar @babel/core, @babel/preset-env, @babel/preset-react y @babel/plugin-proposal-private-property-in-object si ningún archivo de configuración los referencia tras borrar babel.config.js",
+        "Eliminar public/silent-check-sso.html (resto de Keycloak) y src/reportWebVitals.js junto con la dependencia web-vitals si nadie lo importa",
+        "Actualizar typescript a ^5 con npm install -D typescript@5 y verificar que npm run typecheck sigue pasando (CRA ataba TS a 4.9; Vite no)",
+        "Eliminar la carpeta frontend/build si existe en el working tree y quitar /build de frontend/.gitignore dejando /dist",
+        "npm ls --depth=0 no muestra dependencias extraneous ni missing",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && npm test passes",
+        "cd frontend && npm run build passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-004"]
+    },
+    {
+      "id": "US-006",
+      "title": "Verificar en el navegador que la app funciona igual con Vite",
+      "description": "Como usuario, quiero que tras la migración el login, los dashboards, el visor de PDF con resaltados y el comparador de versiones funcionen exactamente como antes, porque esas pantallas dependen del worker de pdfjs y de los estilos de @react-pdf-viewer, que son lo que más cambia entre webpack y Vite.",
+      "acceptanceCriteria": [
+        "Con el backend corriendo en localhost:1337 (cd backend && npm run develop) y el frontend en modo dev (npm start), iniciar sesión con un usuario del seed (backend/scripts/seed-test-users.js) y llegar al dashboard de su rol sin errores en la consola del navegador",
+        "Abrir un documento en el visor: el PDF se renderiza (el worker /pdf.worker.js responde 200 en la pestaña Network), los resaltados existentes se pintan y se puede crear un comentario nuevo",
+        "Abrir el comparador entre dos versiones: ambos visores cargan, el desplazamiento sincronizado funciona y se muestra el porcentaje de similitud",
+        "Repetir las tres comprobaciones anteriores con el build de producción servido con npm run preview en http://localhost:4173, para validar que las rutas de assets y del worker son correctas fuera del dev server",
+        "Recargar directamente una ruta profunda (por ejemplo /tutor/dashboard) en npm run preview responde la app y no un 404",
+        "Anotar en notes cualquier diferencia visual encontrada y corregirla en esta misma historia si es causada por la migración (típicamente CSS de @react-pdf-viewer no importado o worker no encontrado)",
+        "cd frontend && npm test passes",
+        "cd frontend && npm run build passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-005"]
+    }
+  ]
+}

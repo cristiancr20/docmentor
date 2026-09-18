@@ -3,10 +3,10 @@
   "sessionId": "2f3a8b32-4456-4840-bce0-70117e0eaba9",
   "status": "running",
   "startedAt": "2026-09-18T00:17:41.135Z",
-  "updatedAt": "2026-09-18T00:36:35.624Z",
-  "currentIteration": 6,
+  "updatedAt": "2026-09-18T00:39:32.406Z",
+  "currentIteration": 7,
   "maxIterations": 0,
-  "tasksCompleted": 6,
+  "tasksCompleted": 7,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -54,8 +54,8 @@
       {
         "id": "US-007",
         "title": "Proteger las rutas de document con policies",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-008",
@@ -149,6 +149,16 @@
       "durationMs": 304593,
       "startedAt": "2026-09-18T00:27:31.773Z",
       "endedAt": "2026-09-18T00:32:36.366Z"
+    },
+    {
+      "iteration": 7,
+      "status": "completed",
+      "taskId": "US-007",
+      "taskTitle": "Proteger las rutas de document con policies",
+      "taskCompleted": true,
+      "durationMs": 238137,
+      "startedAt": "2026-09-18T00:32:37.486Z",
+      "endedAt": "2026-09-18T00:36:35.623Z"
     }
   ],
   "skippedTaskIds": [],

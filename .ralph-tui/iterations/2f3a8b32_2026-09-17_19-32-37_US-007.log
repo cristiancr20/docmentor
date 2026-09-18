@@ -1,0 +1,66 @@
+# Iteration 7 Log
+
+## Metadata
+
+- **Task ID**: US-007
+- **Task Title**: Proteger las rutas de document con policies
+- **Description**: Como desarrollador backend, quiero que las rutas custom y core de api::document declaren sus policies en la configuración de ruta, para que ningún handler quede público por olvidar llamar a authentica...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:32:37.486Z
+- **Ended At**: 2026-09-18T00:36:35.623Z
+- **Duration**: 3m 58s
+- **Input Tokens**: 138
+- **Output Tokens**: 18375
+- **Total Tokens**: 18513
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reading the progress file and the document API files.
+[94m[Bash][0m Read progress notes and document API files $ tail -80 .ralph-tui/progress.md && echo ---- && cat backend/src/api/document/routes/01-custom-docume...
+Now let me look at the existing tests, the policies, protectedController, ownership utils, and any other example of `createCoreRouter` with config in the repo.
+[94m[Bash][0m Read tests, policies, helpers and other routers $ cd /Users/cristian/orca/docmentor/backend && cat config/env/test/documents/index.js && echo ---- && ...
+[94m[Bash][0m Look at other routers, test helper, remaining ownership utils $ cat package.json | grep -n '"test"\|"engines"' -A2
+[94m[Bash][0m Check Strapi version and core controller sanitize behaviour $ grep -rn "auth" node_modules/@strapi/utils/dist/sanitize/index.js 2>/dev/null | head
+[94m[Bash][0m Inspect how sanitize treats user relations without auth $ grep -n "restricted\|auth" node_modules/@strapi/utils/dist/sanitize/index.js | head -30
+[94m[Bash][0m Locate sanitize visitor files $ 
+[94m[Bash][0m Read restricted-relations visitors in bundled utils $ grep -n "const throwRestrictedRelations = " -A40 node_modules/@strapi/utils/dist/index.js | head -50
+[94m[Bash][0m Check how strapi.auth.verify behaves with empty auth $ grep -n "verify(auth" -B5 -A25 node_modules/@strapi/strapi/dist/services/auth.js | head -60
+[94m[Bash][0m Find strapi.auth.verify implementation $ grep -rn "const verify = async (auth" -A25 node_modules/@strapi/strapi/dist/ | head -40
+[94m[Bash][0m Locate auth verify in strapi services $ grep -rn "verify(auth" node_modules/@strapi/strapi/dist/services/*.js | head
+[94m[Bash][0m Read auth verify implementation $ grep -n "verify" -A20 node_modules/@strapi/strapi/dist/services/auth/index.js | sed -n 1,60p
+[94m[Bash][0m Read sanitize contentAPI transforms and their auth conditions $ sed -n 2100,2200p node_modules/@strapi/utils/dist/index.js
+[94m[Bash][0m Check validateQuery auth usage and core controller sanitize helpers $ sed -n 1,60p node_modules/@strapi/strapi/dist/core-api/controller/index.js
+[94m[Bash][0m Write custom and core document routes with policies $ EOF
+Now the controller: remove `authenticate()`/`authorize()` and take the user from `ctx.state.user`.
+[94m[Bash][0m Strip authenticate/authorize from document controller $ aquí el // usuario ya viene en `ctx.state.user`. Lo que sí sigue siendo del controller // es la pert...
+Controller is clean. Now let me run the backend test suite (Node 20) and also add an HTTP-level check that the route policies are actually wired, since the existing documents tests only cover `find`.
+[94m[Bash][0m Check Node 20 and node_modules availability $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && node -v && ls node_modules >/dev/null 2...
+[94m[Bash][0m Look at policies tests for fixture patterns $ ls config/env/test/
+[94m[Bash][0m Check audit and notification services for side-effect requirements $ grep -n "notifyDocumentStatusChanged" -A30 src/api/notification/services/notification.js | head -45
+Both side effects are tolerant. Now I'll add HTTP-level tests for the route wiring to `documents/index.js`, keeping the two existing tests and their expectations untouched.
+[94m[Bash][0m Add route-policy HTTP tests and run backend suite $ EOF export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -v "Missing cr...
+Those are the `--detectOpenHandles` reports, not failures. Let me see the actual test results.
+[94m[Bash][0m Show pass/fail summary of backend suite $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -E "✓|✕|Tests:|Tes...
+[94m[Bash][0m Show the failing assertion details $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -A30 "● policies e...
+[94m[Bash][0m Give reviewer fixture the authenticated role and rerun tests $ """) p.write_text(s) EOF export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 ...
+All 38 tests pass. Let me verify the remaining acceptance criteria (package.json untouched, quality scripts) and confirm nothing else references the removed imports.
+[94m[Bash][0m Check git status, package files, lint/typecheck and remaining protectedController users $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && git status --short -- . && echo ---- &&...
+[94m[Bash][0m Append US-007 learnings and pattern to progress.md $ mirar `Tests:` o filtrar por `✓|✕`. --- """ p.write_text(s) EOF grep -n "US-007" .ralph-tui/progress...
+US-007 is implemented and verified.
+
+**What changed**
+
+- `backend/src/api/document/routes/01-custom-document.js` — the three custom routes now declare `config: { auth: false, policies: ['global::is-authenticated', { name: 'global::has-permission', config: { code } }] }`: `REVIEW_DOCUMENT` for `/status` and `/review`, `CREATE_DOCUMENT` for `/restore`.
+- `backend/src/api/document/routes/document.js` — `createCoreRouter` with per-action config: `find`/`findOne` only `is-authenticated`; `create`/`update`/`delete` add `has-permission` with `CREATE_DOCUMENT`/`UPDATE_DOCUMENT`/`DELETE_DOCUMENT`.
+- `backend/src/api/document/controllers/document.js` — removed the `protectedController` import and every `authenticate()`/`authorize()` call; each handler reads `const user = ctx.state.user`. `requireDocumentAccess`, `requireProjectAccess` and the non-elevated `find` filter are untouched.
+- `backend/config/env/test/documents/index.js` — the two existing tests are unchanged; added 6 HTTP tests proving the policies are wired (no token, missing permission on custom and core routes, success path with the audit written under the policy-loaded user, and the ownership filter still hiding documents from non-elevated users).
+
+**One deliberate deviation worth knowing:** the core routes keep Strapi's default users-permissions auth and add the policies on top — I did not set `auth: false` there. The core handlers delegate to `super.find/create/...`, which sanitize query/body/output using `ctx.state.auth`; with `auth: false` that state is `{}` and `@strapi/utils` strips or rejects (400) every relation — including the `project.tutor/students` ownership filter, the `project` in the create body and `documentFile` in responses. That would have both broken the app and silently disabled the scope filter. The AC only requires `auth: false` on the custom routes (which use `entityService` + `ctx.send` and are unaffected). The reasoning is commented in `routes/document.js` and recorded as a pattern in `progress.md` for the remaining controllers.
+
+**Checks:** `cd backend && npm test` → 38/38 passing; `lint`/`typecheck` are no-op scripts; `backend/package.json` unchanged.
+
+<promise>COMPLETE</promise>

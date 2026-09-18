@@ -5,7 +5,6 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
 const {
   isElevated,
   projectScopeFilter,
@@ -13,12 +12,15 @@ const {
   requireProjectAccess,
 } = require('../../../utils/ownership');
 
+// Autenticación y permiso por código se resuelven en las policies declaradas en
+// routes/ (`global::is-authenticated`, `global::has-permission`); aquí el
+// usuario ya viene en `ctx.state.user`. Lo que sí sigue siendo del controller
+// es la pertenencia: que el proyecto sea del usuario (utils/ownership).
 module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   // El `find` del core devolvía todos los proyectos a cualquier usuario con
   // sesión. Se limita a los propios salvo para coordinación y superadmin.
   async find(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     if (!(await isElevated(user.id, strapi))) {
       applyFilter(ctx, projectScopeFilter(user.id));
@@ -28,8 +30,7 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async findOne(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     if (!(await requireProjectAccess(ctx, ctx.params.id, user.id, strapi))) return;
 
@@ -37,11 +38,7 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async create(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'CREATE_PROJECT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const result = await super.create(ctx);
 
@@ -61,11 +58,7 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async update(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'UPDATE_PROJECT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireProjectAccess(ctx, id, user.id, strapi))) return;
@@ -90,11 +83,7 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async delete(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'DELETE_PROJECT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireProjectAccess(ctx, id, user.id, strapi))) return;
@@ -119,11 +108,7 @@ module.exports = createCoreController('api::project.project', ({ strapi }) => ({
   },
 
   async changeStatus(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'CHANGE_PROJECT_STATUS', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireProjectAccess(ctx, id, user.id, strapi))) return;

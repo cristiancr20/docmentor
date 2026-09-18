@@ -5,7 +5,7 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
+const { authorize } = require('../../../utils/protectedController');
 
 /**
  * La relación `documents` admite un id suelto, un array de ids o el formato
@@ -23,6 +23,10 @@ const toIdList = (value) => {
  *
  * Antes exigía MANAGE_COMMENTS a secas, de modo que un estudiante no podía ni
  * corregir una errata en su propio comentario.
+ *
+ * Es la única comprobación de permiso que sigue en el controller y no en la
+ * ruta: depende del registro (¿quién es el autor?), y solo si no es el autor se
+ * exige MANAGE_COMMENTS. `authorize` escribe el 403 en ctx cuando falta.
  */
 const canModifyComment = async (ctx, userId, strapi) => {
   const comment = await strapi.db.query('api::comment.comment').findOne({
@@ -40,18 +44,14 @@ const canModifyComment = async (ctx, userId, strapi) => {
   return authorize(ctx, userId, 'MANAGE_COMMENTS', strapi);
 };
 
+// Autenticación y COMMENT_DOCUMENT (para `create`) se resuelven en las policies
+// declaradas en routes/comment.js; aquí el usuario ya viene en `ctx.state.user`.
+// Comentar exige COMMENT_DOCUMENT, no MANAGE_COMMENTS: el segundo es para
+// moderar los comentarios de otros, no para escribir el propio, y solo lo tiene
+// el tutor, así que exigirlo dejaba al estudiante sin poder responder.
 module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   async create(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    // Comentar exige COMMENT_DOCUMENT, no MANAGE_COMMENTS. Este control pedía
-    // el segundo, que solo tiene el tutor, así que un estudiante recibía 403 al
-    // responder a una corrección pese a tener concedido COMMENT_DOCUMENT.
-    // MANAGE_COMMENTS es para moderar los comentarios de otros, no para
-    // escribir el propio.
-    const hasPermission = await authorize(ctx, user.id, 'COMMENT_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     // La autoría la fija el servidor. Venía en el body, así que se podía
     // publicar una corrección firmada por otro tutor.
@@ -90,8 +90,7 @@ module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   },
 
   async update(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     if (!(await canModifyComment(ctx, user.id, strapi))) return;
 
@@ -104,8 +103,7 @@ module.exports = createCoreController('api::comment.comment', ({ strapi }) => ({
   },
 
   async delete(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     if (!(await canModifyComment(ctx, user.id, strapi))) return;
 
