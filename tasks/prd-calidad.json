@@ -1,0 +1,171 @@
+{
+  "name": "Calidad de código de DocMentor - Estructura y duplicación",
+  "description": "Reducir duplicación y ruido en el código sin cambiar comportamiento: logger único en frontend y strapi.log en backend, eliminar los try/catch que solo loguean y relanzan en core/, cancelar peticiones en vuelo al desmontar componentes, dejar de pedir populate=* donde la vista usa dos campos, extraer el patrón repetido de carga de proyectos de los tres dashboards a un hook, y renombrar el visor de PDF. Cada historia debe dejar el comportamiento visible idéntico. Restricción global: NO cambiar la versión de @strapi/strapi ni de ningún paquete @strapi/* (el backend deja de funcionar). Este PRD se ejecuta DESPUÉS de tasks/prd-seguridad.json porque toca archivos que aquel modifica.",
+  "branchName": "ralph/calidad-estructura-y-duplicacion",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Crear un logger de frontend silenciado en producción",
+      "description": "Como desarrollador, quiero un módulo frontend/src/utils/logger.js con debug/info/warn/error que no imprima nada cuando process.env.NODE_ENV === 'production', para dejar de tener más de cien console.* sueltos que llegan al navegador del usuario final.",
+      "acceptanceCriteria": [
+        "Crear frontend/src/utils/logger.js que exporta un objeto { debug, info, warn, error }; en producción debug e info no hacen nada y warn/error siguen saliendo por consola",
+        "Reemplazar todos los console.log, console.info, console.warn y console.error de frontend/src (excluyendo __tests__, k6 y setupTests.js) por la función equivalente del logger",
+        "grep -rn 'console\\.' frontend/src --include=*.js --include=*.jsx --include=*.tsx | grep -v __tests__ | grep -v k6 | grep -v setupTests | grep -v utils/logger.js no devuelve ninguna línea",
+        "Añadir frontend/src/utils/__tests__/logger.test.js que compruebe que debug no llama a console.log cuando NODE_ENV es production y sí en development",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Quitar los try/catch que solo loguean y relanzan en core/",
+      "description": "Como desarrollador, quiero que los módulos frontend/src/core/*.js (Projects, Admin, Document, Setting, Audit, Autentication, Comments, Notification) sean llamadas directas a apiClient sin envoltorio try/catch, porque atrapar solo para hacer logger.error y volver a lanzar duplica ruido y el interceptor de apiClient ya centraliza los errores.",
+      "acceptanceCriteria": [
+        "En cada función de frontend/src/core/*.js que tenga la forma try { const r = await api.x(); return r.data } catch (e) { logger.error(...); throw e } se elimina el try/catch y queda return (await api.x()).data",
+        "Se conservan los try/catch que hacen algo distinto de loguear y relanzar (por ejemplo devolver [] o null como valor por defecto); anotar cada uno conservado en notes",
+        "Se eliminan las cabeceras Content-Type: application/json pasadas a mano, porque axios las pone por defecto con cuerpos de objeto",
+        "Ningún archivo de frontend/src/core importa logger salvo que conserve un catch con lógica propia",
+        "Las páginas y componentes que consumen estas funciones no cambian: siguen recibiendo el mismo valor de retorno y la misma excepción en caso de error",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-001"]
+    },
+    {
+      "id": "US-003",
+      "title": "Usar strapi.log en lugar de console en el backend",
+      "description": "Como desarrollador backend, quiero que los 27 console.log/console.error de backend/src usen strapi.log (info, warn, error), para que los mensajes pasen por el logger de Strapi con nivel y formato uniformes.",
+      "acceptanceCriteria": [
+        "Reemplazar cada console.log por strapi.log.info o strapi.log.debug según sea información operativa o traza de desarrollo, y cada console.error por strapi.log.error",
+        "Los bloques de código comentados en backend/src/api/document/content-types/document/lifecycles.js y project/lifecycles.js que contienen console.* se eliminan por completo si todo el archivo está comentado, o se limpian sus console.* si hay código activo",
+        "grep -rn 'console\\.' backend/src no devuelve ninguna línea",
+        "backend/scripts/seed-test-users.js se conserva con console.* porque es un script de línea de comandos, no código de servidor",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-004",
+      "title": "Cancelar el polling de notificaciones al desmontar",
+      "description": "Como usuario, quiero que la campana de notificaciones no dispare actualizaciones de estado sobre un componente ya desmontado, porque hoy NotificationBell usa setInterval sin cancelar la petición en vuelo y provoca setState tras unmount al navegar.",
+      "acceptanceCriteria": [
+        "frontend/src/core/Notification.js acepta un parámetro opcional { signal } en la función que lista notificaciones y lo pasa a apiClient como config.signal",
+        "NotificationBell.jsx crea un AbortController por ciclo de carga, lo aborta en el cleanup del useEffect junto con clearInterval, e ignora los errores cuyo name sea CanceledError o AbortError",
+        "Añadir un test en frontend/src/components/__tests__/NotificationBell.test.jsx que desmonte el componente durante una petición pendiente y compruebe que no hay warnings de React sobre setState en componente desmontado",
+        "El intervalo de polling POLL_INTERVAL_MS no cambia",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-002"]
+    },
+    {
+      "id": "US-005",
+      "title": "Extraer la carga de proyectos de los dashboards a un hook",
+      "description": "Como desarrollador, quiero un hook useProjects(loader, deps) que encapsule el trío projects/loading/error y el useEffect de carga que StudentDashboard, TutorDashboard y CoordinatorDashboard repiten literalmente, para que los tres dashboards solo declaren qué función de core llaman.",
+      "acceptanceCriteria": [
+        "Crear frontend/src/hooks/useProjects.js que recibe una función async que devuelve la lista de proyectos y expone { projects, loading, error, reload }",
+        "El hook usa AbortController o una bandera de cancelación en el cleanup para no hacer setState tras desmontar",
+        "StudentDashboard.jsx, TutorDashboard.jsx y CoordinatorDashboard.jsx usan useProjects y eliminan sus useState de projects, loading y error y el useEffect de carga inicial",
+        "Los dashboards renderizan exactamente los mismos estados que antes (spinner mientras loading, mensaje cuando error, lista cuando hay datos); comparar con git diff que solo cambia la obtención de datos",
+        "Añadir frontend/src/hooks/__tests__/useProjects.test.js con renderHook cubriendo carga correcta, error y reload",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-002"]
+    },
+    {
+      "id": "US-006",
+      "title": "Sustituir populate=* por populate explícito en core/",
+      "description": "Como usuario, quiero que las listas carguen rápido, porque hoy cinco llamadas de frontend/src/core piden populate=* y traen comentarios, notificaciones y archivos completos de cada proyecto cuando la vista muestra dos o tres campos.",
+      "acceptanceCriteria": [
+        "Localizar las llamadas con populate=* en frontend/src/core/*.js (grep 'populate=\\*' y 'populate\\[')",
+        "Para cada una, revisar qué campos y relaciones consume la página o componente que la usa y sustituir populate=* por populate[relacion]=true o populate[relacion][fields][0]=campo con solo lo que se lee",
+        "Documentar en notes, por cada llamada, qué relaciones se conservaron y quién las consume",
+        "Las páginas que consumen esas llamadas no muestran campos vacíos ni errores de undefined: verificar manualmente Student, Tutor y Coordinator dashboards y ProyectoDetalle",
+        "No cambiar populate en llamadas de detalle (findOne) que alimentan el visor de documentos o el comparador",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-005"]
+    },
+    {
+      "id": "US-007",
+      "title": "Renombrar el visor de PDF con un nombre que describa lo que es",
+      "description": "Como desarrollador, quiero que frontend/src/components/DisplayNotesSidebarExample.tsx se llame PdfViewer.tsx, porque es el visor principal de documentos usado por DocumentViewer y DocumentComparePopup y el sufijo Example hace pensar que es código de muestra borrable.",
+      "acceptanceCriteria": [
+        "Renombrar con git mv frontend/src/components/DisplayNotesSidebarExample.tsx a frontend/src/components/PdfViewer.tsx",
+        "El componente exportado por defecto se llama PdfViewer y el nombre interno del componente coincide",
+        "Actualizar los imports y usos en frontend/src/pages/DocumentViewer.jsx y frontend/src/components/DocumentComparePopup.jsx",
+        "grep -rn DisplayNotesSidebarExample frontend/src no devuelve ninguna línea",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-008",
+      "title": "Extraer la lógica de comparación de DocumentComparePopup a un hook",
+      "description": "Como desarrollador, quiero que DocumentComparePopup.jsx (481 líneas) separe el estado y la orquestación de pdfCompare en un hook useDocumentCompare, para que el componente quede solo con el JSX y la lógica sea testeable sin renderizar el visor.",
+      "acceptanceCriteria": [
+        "Crear frontend/src/hooks/useDocumentCompare.js que recibe los dos documentos y expone el estado de comparación (resultado, similitud, cargando, error, pestaña activa y los manejadores) que hoy vive en useState/useEffect dentro de DocumentComparePopup",
+        "DocumentComparePopup.jsx importa el hook y conserva únicamente el JSX y los estilos; su tamaño baja al menos un 30 por ciento en líneas",
+        "Ningún cambio en frontend/src/utils/pdfCompare.js",
+        "Añadir frontend/src/hooks/__tests__/useDocumentCompare.test.js que mockee pdfCompare y verifique que el hook expone el resultado y la similitud calculados",
+        "El comparador se abre, compara dos versiones y muestra la similitud igual que antes: verificar manualmente en la app",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-007"]
+    },
+    {
+      "id": "US-009",
+      "title": "Retirar la dependencia sqlite3 sin uso del backend",
+      "description": "Como desarrollador backend, quiero eliminar la devDependency sqlite3 de backend/package.json, porque Strapi 4 usa better-sqlite3 (ya presente) y el driver legado solo añade una compilación nativa y ruido en los análisis de dependencias.",
+      "acceptanceCriteria": [
+        "Confirmar con grep que ningún archivo de backend/src, backend/config ni backend/scripts referencia 'sqlite3' como módulo (la cadena 'better-sqlite3' sí puede aparecer)",
+        "Ejecutar cd backend && npm uninstall sqlite3 --no-audit --no-fund",
+        "git diff backend/package-lock.json solo elimina entradas; ninguna línea añadida cambia la versión de un paquete existente (verificar con git diff backend/package-lock.json | grep '^+.*\"version\"' que devuelve cero líneas)",
+        "backend/package.json mantiene @strapi/strapi y todos los @strapi/* exactamente en la misma versión",
+        "cd backend && npm run build passes",
+        "cd backend && npm test passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-003"]
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: Crear policies globales is-authenticated y has-permission en Strapi
+- **Description**: Como desarrollador backend, quiero policies reutilizables en backend/src/policies que verifiquen el JWT, el estado de la cuenta y el permiso requerido con una sola consulta a la base de datos, para su...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:27:31.773Z
+- **Ended At**: 2026-09-18T00:32:36.366Z
+- **Duration**: 5m 4s
+- **Input Tokens**: 118
+- **Output Tokens**: 17757
+- **Total Tokens**: 17875
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the backend structure.
+[94m[Bash][0m Read progress notes and backend layout $ cat backend/package.json
+[94m[Bash][0m Inspect test harness and content-type schemas $ cat src/extensions/users-permissions/content-types/user/schema.json 2>/dev/null | head -80
+[94m[Bash][0m Check Strapi policy registry API and route usage $ grep -rn "jsonwebtoken\|policies\|policy" src/api/*/routes/01-*.js | head
+[94m[Bash][0m Locate Strapi policies registry and jsonwebtoken $ node -e "console.log(require.resolve('jsonwebtoken'))"
+
+[91m[Error: Exit code 1
+ls: node_modules/@strapi/strapi/: No such file or directory
+bfs: error: node_modules/@strapi/strapi: No such file or directory.
+bfs: error: node_modules: No such file or directory.
+node:internal/modules/cjs/loader:1478
+  throw err;
+  ^
+
+Error: Cannot find module 'jsonwebtoken'
+Require stack:
+- /Users/cristian/orca/docmentor/backend/[eval]
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1475:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1048:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1093:12)
+    at require.resolve (node:internal/modules/helpers:209:31)
+    at [eval]:1:21
+    at runScriptInThisContext (node:internal/vm:219:10)
+    at node:internal/process/execution:483:12
+    at [eval]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:481:60)
+    at evalFunction (node:internal/process/execution:315:30) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/cristian/orca/docmentor/backend/[eval]' ]
+}
+
+Node.js v26.0.0][0m
+No `node_modules` in backend. Let me check available Node versions and install dependencies.
+[94m[Bash][0m Check node versions and backend git history $ git -C .. log --oneline -3 -- backend | cat
+[94m[Bash][0m Install backend dependencies with Node 20 $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && node -v && npm ci --no-audit --no-fund ...
+[94m[Bash][0m Read Strapi policies registry implementation $ sed -n 1,60p node_modules/@strapi/strapi/lib/core/loaders/policies.js 2>/dev/null || find node_modul...
+[94m[Bash][0m Locate policy loader files in Strapi package $ find node_modules/@strapi/strapi node_modules/@strapi/core -maxdepth 6 -iname "*polic*" 2>/dev/null ...
+[94m[Bash][0m Read Strapi policy registry, loader and route policy middleware $ cat node_modules/@strapi/strapi/dist/core/loaders/policies.js
+[94m[Bash][0m Read policy context creation and users-permissions JWT service $ grep -rn "jwtSecret\|jwt.verify\|algorithms" node_modules/@strapi/plugin-users-permissions/server/se...
+[94m[Bash][0m Read policy utils, JWT service and users test $ sed -n 1,60p config/env/test/users/index.js
+[94m[Bash][0m Read createPolicyContext implementation $ cat $f
+[94m[Bash][0m Read policy resolution and context wrapper $ sed -n 240,282p node_modules/@strapi/utils/dist/index.js
+[94m[Bash][0m Check plugin config, env, and a custom route example $ grep -rn "isActive" src/api/rol/controllers/*.js | head -5
+Let me confirm the existing suite passes as a baseline before adding anything.
+[94m[Bash][0m Run backend test suite for baseline $ npm test 2>&1 | grep -v "^\s*console\.\|^\s*at \|Rols:\|Users:\|^$" | tail -40
+[94m[Bash][0m Summarize baseline test results $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -E "Tests:|Test Su...
+Baseline is green (16 tests; the TCPWRAP noise is pre-existing `--detectOpenHandles` output). Now I'll create the two policies.
+[94m[Bash][0m Create is-authenticated and has-permission policies $ EOF echo done
+Now the tests. They call the registered policy handlers directly with a minimal koa-like context, plus one HTTP check that the policies are actually registered under `global::`.
+[94m[Bash][0m Add policy tests and register them in app.test.js $ EOF python3 - <<'EOF' p='config/env/test/app.test.js' s=open(p).read() s=s.replace('require("./docum...
+[94m[Bash][0m Run backend tests including new policy tests $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && npm test 2>&1 | grep -E "Tests:|Test Su...
+All 32 tests pass. Quick syntax/typecheck gates and a check that nothing else changed:
+[94m[Bash][0m Syntax check new files and show backend git status $ export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" && node --check src/policies/is-authentica...
+`package.json` and `utils/protectedController.js` are untouched. Now the progress log.
+[94m[Bash][0m Append US-006 notes and patterns to progress.md $ tail -5 .ralph-tui/progress.md | cut -c1-100
+US-006 done. Summary:
+
+**Implemented**
+- `backend/src/policies/is-authenticated.js` — extracts the `Bearer` token, verifies it with `jsonwebtoken` pinned to `HS256` and the users-permissions `jwtSecret`, loads the user in one `strapi.db.query(...).findOne` with `populate: { rols: { populate: { permissions: true } } }`, rejects missing / `blocked` / `isActive === false` accounts, and puts the full user in `ctx.state.user`. Any exception is caught and returns `false`.
+- `backend/src/policies/has-permission.js` — reads `config.code` and checks `ctx.state.user.rols[].permissions[]` for an `isActive` permission with that code; returns `false` when there's no user or no `config.code`. No DB access, never throws.
+- Both auto-register as `global::is-authenticated` / `global::has-permission` via Strapi's policies loader (no changes to `src/index.js`).
+
+**Tests** — `backend/config/env/test/policies/index.js` (registered in `app.test.js`), 16 cases: no token, non-Bearer scheme, non-JWT token, wrong secret, expired token, deleted user, blocked, inactive, success with `rols.permissions` populated; has-permission with no user, no `config.code`, no role, missing permission, inactive permission, present permission. `cd backend && npm test` → **32/32 passing**.
+
+**Untouched as required**: `utils/protectedController.js` and `backend/package.json`.
+
+**Notes**
+- `backend/` had no `node_modules`; I ran `npm ci` under Node 20 (`~/.nvm/versions/node/v20.20.2`, since `engines` caps at 20 and the shell default is Node 26). This is documented in the progress patterns.
+- `has-permission` deliberately does not check `rol.isActive` — matches the current `authorize()` behavior and the acceptance criterion; flagged in learnings as a separate decision.
+- Progress log and two new Codebase Patterns entries appended to `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>

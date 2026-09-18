@@ -5,7 +5,6 @@
  */
 
 const { createCoreController } = require('@strapi/strapi').factories;
-const { authenticate, authorize } = require('../../../utils/protectedController');
 const {
   isElevated,
   projectScopeFilter,
@@ -14,12 +13,15 @@ const {
   requireProjectAccess,
 } = require('../../../utils/ownership');
 
+// Autenticación y permiso por código se resuelven en las policies declaradas en
+// routes/ (`global::is-authenticated`, `global::has-permission`); aquí el
+// usuario ya viene en `ctx.state.user`. Lo que sí sigue siendo del controller
+// es la pertenencia: que el documento o el proyecto sean del usuario.
 module.exports = createCoreController('api::document.document', ({ strapi }) => ({
   // Sin este filtro, GET /api/documents devolvía todos los documentos del
   // sistema a cualquier usuario autenticado.
   async find(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     if (!(await isElevated(user.id, strapi))) {
       applyFilter(ctx, { project: projectScopeFilter(user.id) });
@@ -29,8 +31,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async findOne(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
+    const user = ctx.state.user;
 
     if (!(await requireDocumentAccess(ctx, ctx.params.id, user.id, strapi))) return;
 
@@ -38,11 +39,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async create(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'CREATE_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     // Sin esto se podía subir un documento al proyecto de otro indicando su id.
     const targetProject = ctx.request.body?.data?.project;
@@ -73,11 +70,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async update(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'UPDATE_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
@@ -102,11 +95,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async delete(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'DELETE_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
@@ -144,11 +133,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
    * uno afectaba a ambas y los contadores mentían.
    */
   async restoreVersion(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'CREATE_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
@@ -228,11 +213,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
 
   /** Marca la versión como revisada o pendiente. */
   async setReviewed(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'REVIEW_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
@@ -267,11 +248,7 @@ module.exports = createCoreController('api::document.document', ({ strapi }) => 
   },
 
   async changeStatus(ctx) {
-    const user = await authenticate(ctx, strapi);
-    if (!user) return;
-
-    const hasPermission = await authorize(ctx, user.id, 'REVIEW_DOCUMENT', strapi);
-    if (!hasPermission) return;
+    const user = ctx.state.user;
 
     const { id } = ctx.params;
     if (!(await requireDocumentAccess(ctx, id, user.id, strapi))) return;
