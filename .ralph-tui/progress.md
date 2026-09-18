@@ -49,3 +49,13 @@ after each iteration and it's included in prompts for context.
   - `frontend/.env` está en `.gitignore` pero `.env.example` no, así que la plantilla sí se versiona.
   - El PRD hablaba de "frontend/src", que incluye `src/k6/`; aunque eslint lo ignora, el criterio de "cero referencias a railway.app" lo cubre, por eso se parametrizó en vez de dejarlo.
 ---
+
+## 2026-09-17 - US-004
+- `auth.utils.js` se limpió de helpers muertos/defectuosos: se eliminaron `ROLE_PRIORITY` y `getPrimaryRole` (nadie los importaba; además no contemplaban `coordinador`, el comparador devolvía `NaN` y `sort` mutaba el array de entrada). `USER_STORAGE_KEYS` y `saveUserData` ya habían sido eliminados en US-001, así que no hubo que tocarlos.
+- Se conservan `ROLE_ROUTES` (App.js, Login.jsx), `validateAuthResponse` (Login.jsx), `getUserData` (AuthContext + 7 páginas/componentes) y `SESSION_STORAGE_KEYS` / `clearStoredSession` (AuthContext).
+- Nuevo test `src/utils/__tests__/auth.utils.test.js`: verifica que `ROLE_ROUTES` tiene exactamente las claves `tutor`, `superadmin`, `estudiante`, `coordinador` y que cada valor es un path `/<area>/dashboard`.
+- Files changed: `frontend/src/utils/auth.utils.js`, `frontend/src/utils/__tests__/auth.utils.test.js` (nuevo).
+- **Learnings:**
+  - Antes de eliminar una exportación, `grep -rnE "nombre1|nombre2" frontend/src` (sin `--include`, que en zsh hay que entrecomillar o falla con "no matches found"); la lista de exportaciones vivas de `auth.utils.js` queda arriba para futuras limpiezas.
+  - Los tests de `src/utils/__tests__` que no tocan `localStorage` no necesitan el `mockImplementation` del patrón de AuthContext.
+---

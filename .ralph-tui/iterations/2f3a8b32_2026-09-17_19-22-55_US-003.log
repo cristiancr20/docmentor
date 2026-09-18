@@ -1,0 +1,53 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-003
+- **Task Title**: Apuntar a localhost por defecto y no a una URL de producción
+- **Description**: Como desarrollador, quiero que sin .env el frontend apunte a http://localhost:1337 en lugar de a docmentor-production.up.railway.app (la app ya no está desplegada ahí), para que un entorno mal configu...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:22:55.737Z
+- **Ended At**: 2026-09-18T00:24:37.830Z
+- **Duration**: 1m 42s
+- **Input Tokens**: 64
+- **Output Tokens**: 5060
+- **Total Tokens**: 5124
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Inspect config.js, references, and README $ echo ---- && grep -n -i "instal\|env\|REACT_APP" README.md | head -40
+[94m[Bash][0m Read README install section, k6 file, .env, gitignore $ grep -rn "k6" frontend/package.json
+[94m[Bash][0m Check k6 script header and eslint config $ grep -n "eslintConfig" -A6 frontend/package.json
+[94m[Bash][0m Check eslint config in package.json $ grep -n "__ENV\|globals" frontend/src/k6/tests_load_k6.js | head
+[94m[Bash][0m Locate eslint config $ grep -n "eslint" frontend/package.json
+[94m[Bash][0m Read eslint config $ cat frontend/eslint.config.mjs
+Now I'll make the changes.
+[94m[Bash][0m Rewrite config.js, patch k6 BASE_URL, create .env.example $ echo "railway refs: $?"
+Now the README installation section:
+[94m[Bash][0m Update README install section to mention .env.example $ python3 - <<'EOF' p='README.md' s=open(p).read() old="""4. Configurar variables de entorno:    - En ...
+Now the quality gates:
+[94m[Bash][0m Run typecheck and eslint $ echo "ESLINT EXIT: ${PIPESTATUS[0]}"
+[94m[Bash][0m Run typecheck, eslint, and tests with exit codes $ echo "TEST EXIT: ${pipestatus[1]}"
+All three gates pass. Now documenting learnings in progress.md.
+[94m[Bash][0m Inspect progress.md structure $ cd /Users/cristian/orca/docmentor && head -20 .ralph-tui/progress.md && echo ... && tail -15 .ralph-...
+[94m[Bash][0m Append US-003 entry and pattern to progress.md $ aunque eslint lo ignora, el criterio de "cero referencias a railway.app" lo cubre, por eso se parame...
+US-003 implemented and verified.
+
+**Changes**
+- `frontend/src/core/config.js` — now only `export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:1337'`. Removed the railway fallback, `WORKER_URL` (confirmed no importers via grep), and the unreachable `if (!API_URL)` validation block.
+- `frontend/src/k6/tests_load_k6.js` — the other `railway.app` reference in `frontend/src` was the load-test script's hardcoded `BASE_URL`; it's now `__ENV.BASE_URL || 'http://localhost:1337'`, overridable with `k6 run -e BASE_URL=...`.
+- `frontend/.env.example` — new, with `REACT_APP_API_URL=http://localhost:1337` (not gitignored, so it's versioned).
+- `README.md` — install step 4 now says `cp .env.example .env` and notes the default when no `.env` exists.
+- `.ralph-tui/progress.md` — appended the US-003 entry and added a "Config del frontend" codebase pattern.
+
+**Verification**
+- `grep -rn railway frontend/src` → no matches
+- `npm run typecheck` → exit 0
+- `npx eslint 'src/**/*.{js,jsx}'` → exit 0
+- `CI=true npx react-scripts test --watchAll=false` → 9 suites, 49 tests passed
+
+<promise>COMPLETE</promise>

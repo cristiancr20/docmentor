@@ -1,20 +1,5 @@
 // src/utils/auth.utils.js
 
-export const ROLE_PRIORITY = {
-  superadmin: 3,
-  tutor: 2,
-  estudiante: 1
-};
-
-// Actualizar getPrimaryRole para manejar consistentemente los roles
-export const getPrimaryRole = (roles) => {
-  if (!Array.isArray(roles)) {
-    return roles;
-  }
-
-  return roles.sort((a, b) => ROLE_PRIORITY[b] - ROLE_PRIORITY[a])[0];
-};
-
 export const ROLE_ROUTES = {
   tutor: "/tutor/dashboard",
   // Apuntaba a /tutor/dashboard, así que al superadmin lo dejaba en el panel de
