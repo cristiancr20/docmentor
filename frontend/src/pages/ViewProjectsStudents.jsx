@@ -11,7 +11,7 @@ import { SkeletonRows } from "../components/ui/Skeleton";
 import ProjectsTable from "../components/ProjectsTable";
 import NewProject from "../components/NewProject";
 import EditProject from "../components/EditProject";
-import { decryptData } from "../utils/encryption";
+import { getUserData } from "../utils/auth.utils";
 import { formatDateTime } from "../utils/format";
 
 const fadeIn = {
@@ -29,13 +29,10 @@ const ViewProjectsStudents = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   let userEmail = null;
 
-  const encryptedUserData = localStorage.getItem("userData");
+  const storedUserData = getUserData();
 
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = decryptData(encryptedUserData);
-
-    userEmail = decryptedUserData.email;
+  if (storedUserData) {
+    userEmail = storedUserData.email;
   } else {
     console.log("No se encontró el userData en localStorage");
   }

@@ -1,15 +1,15 @@
 {
-  "id": "afd6595f-263b-4f1b-9d4e-1f4a2a5b4f73",
-  "status": "completed",
-  "startedAt": "2026-07-12T21:37:25.117Z",
-  "updatedAt": "2026-07-12T21:50:35.809Z",
+  "id": "2f3a8b32-4456-4840-bce0-70117e0eaba9",
+  "status": "running",
+  "startedAt": "2026-09-18T00:17:41.068Z",
+  "updatedAt": "2026-09-18T00:17:41.068Z",
   "agentPlugin": "claude",
   "trackerPlugin": "json",
-  "prdPath": "./tasks/prd.json",
-  "currentIteration": 3,
+  "executionScopes": [],
+  "prdPath": "./tasks/prd-seguridad.json",
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 3,
-  "cwd": "/Users/cristian/orca/docmentor",
-  "endedAt": "2026-07-12T21:50:35.809Z"
+  "tasksCompleted": 0,
+  "cwd": "/Users/cristian/orca/docmentor"
 }

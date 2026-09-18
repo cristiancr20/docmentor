@@ -27,7 +27,7 @@ import {
   updateDocumentStatusRevisado,
 } from "../core/Comments.js";
 import { API_URL } from "../core/config.js";
-import { decryptData } from "../utils/encryption.js";
+import { getUserData } from "../utils/auth.utils";
 import { formatDateTime } from "../utils/format";
 import { getUserByEmail } from "../core/Autentication.js";
 import { usePermission } from "../context/PermissionContext";
@@ -50,12 +50,10 @@ const DocumentoViewer = () => {
 
   let tutorEmail = null;
 
-  const encryptedUserData = localStorage.getItem("userData");
+  const storedUserData = getUserData();
 
-  if (encryptedUserData) {
-    // Desencriptar los datos
-    const decryptedUserData = decryptData(encryptedUserData);
-    tutorEmail = decryptedUserData.email;
+  if (storedUserData) {
+    tutorEmail = storedUserData.email;
   } else {
     console.log("No se encontró el userData en localStorage");
   }

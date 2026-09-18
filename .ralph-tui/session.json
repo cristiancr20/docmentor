@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "sessionId": "2f3a8b32-4456-4840-bce0-70117e0eaba9",
+  "status": "running",
+  "startedAt": "2026-09-18T00:17:41.135Z",
+  "updatedAt": "2026-09-18T00:20:44.894Z",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "claude",
+  "trackerState": {
+    "plugin": "json",
+    "executionScopes": [],
+    "prdPath": "./tasks/prd-seguridad.json",
+    "totalTasks": 12,
+    "tasks": [
+      {
+        "id": "US-001",
+        "title": "Guardar la sesión en localStorage sin cifrado simulado",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-002",
+        "title": "Eliminar el flujo de login institucional Keycloak muerto",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-003",
+        "title": "Apuntar a localhost por defecto y no a una URL de producción",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-004",
+        "title": "Limpiar auth.utils.js de helpers sin uso o defectuosos",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-005",
+        "title": "Cerrar la sesión en memoria cuando el backend responde 401",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-006",
+        "title": "Crear policies globales is-authenticated y has-permission en Strapi",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-007",
+        "title": "Proteger las rutas de document con policies",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-008",
+        "title": "Proteger las rutas de project y comment con policies",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-009",
+        "title": "Proteger el resto de rutas con policies y retirar protectedController",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-010",
+        "title": "Hacer atómica la restauración de versiones",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-011",
+        "title": "Centralizar el registro de auditoría desde el contexto",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-012",
+        "title": "Unificar la lectura del body en los endpoints custom de document",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/cristian/orca/docmentor",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}

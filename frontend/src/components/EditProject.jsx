@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { motion } from "framer-motion";
 import { updateProject, getTutors } from "../core/Projects";
 import { errorAlert, successAlert } from "./Alerts/Alerts";
-import { decryptData } from "../utils/encryption";
+import { getUserData } from "../utils/auth.utils";
 import Input, { Select, Textarea } from "./ui/Input";
 import Button from "./ui/Button";
 
@@ -23,10 +23,9 @@ const EditProject = ({ project, onClose, onUpdate }) => {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    const encryptedUserData = localStorage.getItem("userData");
-    if (encryptedUserData) {
-      const decryptedUserData = decryptData(encryptedUserData);
-      setUserData(decryptedUserData);
+    const storedUserData = getUserData();
+    if (storedUserData) {
+      setUserData(storedUserData);
     }
   }, []);
 

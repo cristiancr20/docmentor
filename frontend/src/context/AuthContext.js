@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { decryptData, encryptData } from "../utils/encryption";
+import { clearStoredSession, getUserData } from "../utils/auth.utils";
 
 const AuthContext = createContext();
 
@@ -11,15 +11,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const encryptedUserData = localStorage.getItem("userData");
-    const encryptedToken = localStorage.getItem("jwtToken");
-    if (encryptedUserData) {
-      const userData = decryptData(encryptedUserData);
+    if (localStorage.getItem("userData")) {
+      const userData = getUserData();
       if (userData) {
         // El token no se guarda dentro de userData; sin rehidratarlo aquí, las
         // llamadas que dependen de `user.token` fallan tras recargar la página.
-        const token = encryptedToken ? decryptData(encryptedToken) : null;
+        const token = localStorage.getItem("jwtToken");
         setUser({ ...userData, token: userData.token ?? token });
+      } else {
+        // Sesión guardada antes de dejar de cifrar (AES) o corrupta: no se
+        // puede leer, así que se limpia entera y el usuario vuelve a entrar.
+        clearStoredSession();
       }
     }
     setLoading(false);
@@ -73,8 +75,8 @@ export const AuthProvider = ({ children }) => {
 
 
       setUser(userData);
-      localStorage.setItem("userData", encryptData(userData));
-      localStorage.setItem("jwtToken", encryptData(userData.token));
+      localStorage.setItem("userData", JSON.stringify(userData));
+      localStorage.setItem("jwtToken", userData.token);
 
       return userData;
     } catch (error) {
@@ -89,9 +91,9 @@ export const AuthProvider = ({ children }) => {
       ...userData, isGuest: true, isInstitutional: false, rols: userData.rols || ["estudiante"]
     };
     setUser(guestUser);
-    localStorage.setItem("userData", encryptData(guestUser));
+    localStorage.setItem("userData", JSON.stringify(guestUser));
     if (userData.token) {
-      localStorage.setItem("jwtToken", encryptData(userData.token));
+      localStorage.setItem("jwtToken", userData.token);
     }
   };
 
@@ -100,10 +102,7 @@ export const AuthProvider = ({ children }) => {
   // dejaba atrás `userPermissions` y `strapiUserId`.
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("userData");
-    localStorage.removeItem("jwtToken");
-    localStorage.removeItem("userPermissions");
-    localStorage.removeItem("strapiUserId");
+    clearStoredSession();
   };
 
 
@@ -116,8 +115,8 @@ export const AuthProvider = ({ children }) => {
     const rols = userData.rols ?? (userData.rol ? [userData.rol] : []);
     const normalized = { ...userData, rols };
     setUser({ ...normalized, token });
-    localStorage.setItem("userData", encryptData(normalized));
-    localStorage.setItem("jwtToken", encryptData(token));
+    localStorage.setItem("userData", JSON.stringify(normalized));
+    localStorage.setItem("jwtToken", token);
   };
 
 

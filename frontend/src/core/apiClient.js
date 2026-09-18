@@ -1,6 +1,5 @@
 import axios from "axios";
 import { API_URL } from "./config";
-import { decryptData } from "../utils/encryption";
 
 /**
  * Cliente HTTP único de la aplicación.
@@ -15,11 +14,7 @@ import { decryptData } from "../utils/encryption";
  * que acordarse de hacerlo.
  */
 
-export const getAuthToken = () => {
-  const encryptedToken = localStorage.getItem("jwtToken");
-  if (!encryptedToken) return null;
-  return decryptData(encryptedToken);
-};
+export const getAuthToken = () => localStorage.getItem("jwtToken") || null;
 
 // Endpoints públicos de autenticación. Mandarles una cabecera Authorization es
 // contraproducente: Strapi valida el token antes de mirar las credenciales, así

@@ -1,7 +1,5 @@
 // src/utils/auth.utils.js
 
-import { decryptData, encryptData } from "./encryption";
-
 export const ROLE_PRIORITY = {
   superadmin: 3,
   tutor: 2,
@@ -26,24 +24,6 @@ export const ROLE_ROUTES = {
   coordinador: "/coordinator/dashboard",
 };
 
-export const USER_STORAGE_KEYS = ["rol", "username", "email", "userId"];
-
-export const saveUserData = (user, userRoles) => {
-  const userData = {
-    rols: Array.isArray(userRoles) ? userRoles : [userRoles], // Asegurar que siempre sea un array
-    username: user.username,
-    email: user.email,
-    userId: user.id,
-  };
-
-
-  // Convertir el objeto a JSON y encriptarlo
-  const encryptedUserData = encryptData(userData);
-
-  // Guardar el cuerpo encriptado como un solo item en localStorage
-  localStorage.setItem("userData", encryptedUserData);
-};
-
 export const validateAuthResponse = (response) => {
   if (!response?.jwt || !response?.user) {
     throw new Error("Respuesta de autenticación inválida");
@@ -52,16 +32,24 @@ export const validateAuthResponse = (response) => {
 };
 
 
+// Claves que componen la sesión guardada. Se limpian juntas para que no quede
+// medio estado (p. ej. token sin usuario) tras un logout o una sesión corrupta.
+export const SESSION_STORAGE_KEYS = ["userData", "jwtToken", "userPermissions", "strapiUserId"];
+
+export const clearStoredSession = () => {
+  SESSION_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+};
+
+// Devuelve el usuario guardado en localStorage o null si no hay sesión o el
+// valor no es JSON válido (por ejemplo, una sesión antigua cifrada con AES).
 export const getUserData = () => {
+  const storedUserData = localStorage.getItem("userData");
+  if (!storedUserData) return null;
+
   try {
-    // Obtener y desencriptar los datos
-    const encryptedUserData = localStorage.getItem("userData");
-    const userData = decryptData(encryptedUserData);
-
-
-    return userData; // Devolver el objeto con los datos
-  } catch (error) {
-    console.error("Error al desencriptar o procesar los datos del usuario:", error);
-    return null; // En caso de error, devuelve null
+    const userData = JSON.parse(storedUserData);
+    return userData && typeof userData === "object" ? userData : null;
+  } catch {
+    return null;
   }
 };

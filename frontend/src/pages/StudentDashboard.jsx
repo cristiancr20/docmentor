@@ -13,7 +13,7 @@ import { PermissionGate } from "../components/PermissionGate";
 import { useAuth } from "../context/AuthContext";
 import { getProjectsByStudents } from "../core/Projects";
 import { getDocumentsByProjectId } from "../core/Document";
-import { decryptData } from "../utils/encryption";
+import { getUserData } from "../utils/auth.utils";
 import { formatDate } from "../utils/format";
 
 // Entrada corta y uniforme: sin retardo por índice, que dejaba el final de las
@@ -34,10 +34,9 @@ function StudentDashboard() {
   const [error, setError] = useState(null);
   let userEmail = null;
 
-  const encryptedUserData = localStorage.getItem("userData");
-  if (encryptedUserData) {
-    const decryptedUserData = decryptData(encryptedUserData);
-    userEmail = decryptedUserData.email;
+  const storedUserData = getUserData();
+  if (storedUserData) {
+    userEmail = storedUserData.email;
   }
 
   useEffect(() => {

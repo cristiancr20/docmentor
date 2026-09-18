@@ -1,0 +1,249 @@
+{
+  "name": "Endurecimiento de seguridad de DocMentor - Sesión, autenticación y controllers",
+  "description": "Corregir los hallazgos de seguridad de la revisión de código: eliminar el cifrado inútil de localStorage con clave incrustada en el bundle, borrar el flujo Keycloak muerto que creaba usuarios con contraseña conocida, dejar de apuntar a producción por defecto, mover la autenticación y autorización del backend a policies de Strapi (en lugar de auth:false más llamadas manuales en cada handler), hacer atómica la restauración de versiones y eliminar la duplicación de auditoría. Restricción global: NO cambiar la versión de @strapi/strapi ni de ningún paquete @strapi/* (el backend deja de funcionar).",
+  "branchName": "ralph/seguridad-sesion-y-policies",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Guardar la sesión en localStorage sin cifrado simulado",
+      "description": "Como desarrollador, quiero que el JWT y los datos del usuario se guarden en localStorage como JSON plano, para eliminar un cifrado AES cuya clave viaja dentro del bundle (frontend/src/core/config.js SECRET_KEY) y que no protege nada.",
+      "acceptanceCriteria": [
+        "Eliminar frontend/src/utils/encryption.js y toda importación de encryptData/decryptData",
+        "Eliminar SECRET_KEY de frontend/src/core/config.js y REACT_APP_SECRET_KEY de frontend/.env.example si existe",
+        "apiClient.getAuthToken lee jwtToken de localStorage como string plano",
+        "AuthContext guarda userData con JSON.stringify y lo lee con JSON.parse dentro de try/catch; si el valor guardado no es JSON válido (sesión antigua cifrada) se borran userData, jwtToken, userPermissions y strapiUserId y el usuario queda deslogueado sin errores en consola",
+        "auth.utils.saveUserData y getUserData usan JSON plano o se eliminan si nadie los llama",
+        "crypto-js se conserva porque GeneratePdfButton.jsx lo usa para SHA256",
+        "Login y logout funcionan y una recarga de página mantiene la sesión",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Eliminar el flujo de login institucional Keycloak muerto",
+      "description": "Como responsable de seguridad, quiero borrar el flujo Keycloak inalcanzable (apunta a http://localhost:8080 hardcodeado y registra usuarios en Strapi con la contraseña fija 'contraseñaSegura123' asignando roles desde el cliente), para que nadie pueda reconectarlo por accidente.",
+      "acceptanceCriteria": [
+        "Eliminar frontend/src/pages/LoginInstitucional.jsx (no está enrutado en App.js)",
+        "Eliminar loginInstitutional de frontend/src/context/AuthContext.js y del valor del provider",
+        "Eliminar syncUserWithStrapi, assignRolesToStrapiUser y getRoles de frontend/src/core/Autentication.js si solo los usaba ese flujo",
+        "Eliminar la dependencia jwt-decode de frontend/package.json con npm uninstall si ya no se importa en ningún archivo",
+        "No queda ninguna referencia a keycloak, aerobase, realm_access ni localhost:8080 en frontend/src",
+        "El login local (pages/Login.jsx) sigue funcionando",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-003",
+      "title": "Apuntar a localhost por defecto y no a una URL de producción",
+      "description": "Como desarrollador, quiero que sin .env el frontend apunte a http://localhost:1337 en lugar de a docmentor-production.up.railway.app (la app ya no está desplegada ahí), para que un entorno mal configurado falle en local y no contra un servidor externo.",
+      "acceptanceCriteria": [
+        "frontend/src/core/config.js: API_URL = process.env.REACT_APP_API_URL || 'http://localhost:1337'",
+        "Eliminar WORKER_URL de config.js si ningún archivo lo importa",
+        "Eliminar el bloque de validación redundante 'API_URL no está definida' ya que el fallback lo hace imposible",
+        "Crear frontend/.env.example con REACT_APP_API_URL=http://localhost:1337 y actualizar la sección de instalación del README.md raíz para que lo mencione",
+        "No queda ninguna referencia a railway.app en frontend/src",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-004",
+      "title": "Limpiar auth.utils.js de helpers sin uso o defectuosos",
+      "description": "Como desarrollador, quiero que frontend/src/utils/auth.utils.js contenga solo lo que se usa, para eliminar getPrimaryRole (ROLE_PRIORITY no incluye 'coordinador', el comparador devuelve NaN y sort muta el array) y otras exportaciones muertas.",
+      "acceptanceCriteria": [
+        "Eliminar getPrimaryRole y ROLE_PRIORITY (ningún archivo fuera de auth.utils.js los importa)",
+        "Eliminar USER_STORAGE_KEYS si ningún archivo lo importa",
+        "Conservar ROLE_ROUTES y validateAuthResponse, que usa pages/Login.jsx",
+        "Conservar saveUserData/getUserData solo si tras US-001 alguien los importa; si no, eliminarlos",
+        "Añadir un test en frontend/src/utils/__tests__ que verifique que ROLE_ROUTES incluye las cuatro claves: tutor, superadmin, estudiante, coordinador",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Cerrar la sesión en memoria cuando el backend responde 401",
+      "description": "Como usuario, quiero que al expirar mi token la aplicación me lleve al login, porque hoy el interceptor de apiClient borra localStorage pero AuthContext mantiene `user` en memoria y la interfaz sigue mostrando pantallas que ya no cargan datos.",
+      "acceptanceCriteria": [
+        "El interceptor de respuesta de frontend/src/core/apiClient.js, tras limpiar localStorage en un 401, emite window.dispatchEvent(new CustomEvent('auth:expired'))",
+        "AuthContext registra un listener de 'auth:expired' en un useEffect (con cleanup) que hace setUser(null)",
+        "Con user en null las rutas protegidas de App.js redirigen a /login mediante el guard existente",
+        "Un test en frontend/src/context/__tests__ o frontend/src/core/__tests__ verifica que un 401 dispara el evento y que el provider deja user en null",
+        "cd frontend && npm run typecheck passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Crear policies globales is-authenticated y has-permission en Strapi",
+      "description": "Como desarrollador backend, quiero policies reutilizables en backend/src/policies que verifiquen el JWT, el estado de la cuenta y el permiso requerido con una sola consulta a la base de datos, para sustituir las llamadas manuales a authenticate() y authorize() de utils/protectedController.js.",
+      "acceptanceCriteria": [
+        "Crear backend/src/policies/is-authenticated.js: verifica el Bearer JWT con el secret de users-permissions y algoritmo HS256, carga el usuario con populate rols.permissions en UNA consulta, rechaza cuentas inexistentes, blocked o isActive false, y deja el usuario completo en ctx.state.user",
+        "Crear backend/src/policies/has-permission.js que recibe config.code y comprueba que ctx.state.user tenga algún rol con un permiso isActive cuyo code coincida; si ctx.state.user no existe devuelve false",
+        "Ambas policies devuelven false (Strapi responde 403) o true; nunca lanzan",
+        "utils/protectedController.js se conserva intacto en esta historia (se elimina cuando ningún controller lo use)",
+        "Añadir tests en backend/config/env/test/policies/index.js que cubran: sin token, token inválido, usuario bloqueado, permiso ausente y permiso presente; registrarlos en backend/config/env/test/app.test.js",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-007",
+      "title": "Proteger las rutas de document con policies",
+      "description": "Como desarrollador backend, quiero que las rutas custom y core de api::document declaren sus policies en la configuración de ruta, para que ningún handler quede público por olvidar llamar a authenticate() y para reducir el código repetido en el controller.",
+      "acceptanceCriteria": [
+        "backend/src/api/document/routes/01-custom-document.js: cada ruta usa config: { auth: false, policies: ['global::is-authenticated', { name: 'global::has-permission', config: { code: '<PERMISO>' } }] } con REVIEW_DOCUMENT para status y review y CREATE_DOCUMENT para restore",
+        "backend/src/api/document/routes/document.js usa createCoreRouter con config por acción (find, findOne, create, update, delete) aplicando is-authenticated y el has-permission correspondiente (CREATE_DOCUMENT, UPDATE_DOCUMENT, DELETE_DOCUMENT); find y findOne solo is-authenticated",
+        "En backend/src/api/document/controllers/document.js se eliminan las llamadas a authenticate() y authorize(); el usuario se toma de ctx.state.user",
+        "Se conservan los controles de pertenencia requireDocumentAccess, requireProjectAccess y el filtro de find para usuarios no elevados",
+        "Los tests existentes en backend/config/env/test/documents/index.js siguen pasando sin cambiar sus expectativas de código de estado",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Proteger las rutas de project y comment con policies",
+      "description": "Como desarrollador backend, quiero aplicar el mismo esquema de policies a api::project y api::comment, para que la autorización esté declarada en las rutas y no en el cuerpo de cada handler.",
+      "acceptanceCriteria": [
+        "Rutas core y custom de project declaran is-authenticated y has-permission con los códigos que hoy exige cada handler (leer del controller antes de cambiarlo)",
+        "Rutas core de comment declaran is-authenticated; create exige COMMENT_DOCUMENT vía policy; update y delete solo is-authenticated porque canModifyComment decide entre autor y MANAGE_COMMENTS dentro del controller",
+        "Los controllers de project y comment dejan de llamar a authenticate() y authorize() salvo canModifyComment, que sigue usando authorize para el caso de moderación",
+        "El controller de comment sigue fijando correctionTutor desde ctx.state.user.id y no desde el body",
+        "Los tests existentes en backend/config/env/test/projects y comments siguen pasando",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Proteger el resto de rutas con policies y retirar protectedController",
+      "description": "Como desarrollador backend, quiero completar la migración a policies en notification, audit, rol, permission, setting y la extensión users-permissions, para eliminar utils/protectedController.js y que no quede ninguna ruta con auth:false sin policies.",
+      "acceptanceCriteria": [
+        "Rutas de notification, audit, rol, permission y setting declaran is-authenticated y el has-permission que hoy exige cada handler",
+        "Rutas de backend/src/extensions/users-permissions/routes/index.js (getMyPermissions, adminListUsers, adminCreateUser y demás) declaran is-authenticated y has-permission (VIEW_USERS, MANAGE_USERS) según lo que hoy exige cada handler",
+        "Ningún controller importa utils/protectedController.js; el archivo se elimina, y su lógica de authorize que necesita canModifyComment se mueve a una función exportada por la policy has-permission o a utils/ownership.js",
+        "grep -rn 'auth: false' backend/src no devuelve ninguna ruta sin policies en la misma configuración",
+        "Los tests existentes en backend/config/env/test siguen pasando",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Hacer atómica la restauración de versiones",
+      "description": "Como estudiante, quiero que restaurar una versión nunca deje dos documentos marcados como actuales, porque hoy restoreVersion crea la versión nueva y luego lanza N updates en paralelo sin transacción.",
+      "acceptanceCriteria": [
+        "restoreVersion en backend/src/api/document/controllers/document.js envuelve la creación y el desmarcado en strapi.db.transaction()",
+        "El desmarcado de isCurrent se hace con una sola llamada strapi.db.query('api::document.document').updateMany({ where: { project: projectId, id: { $ne: restored.id } }, data: { isCurrent: false } }) en lugar de un update por documento",
+        "Si la transacción falla no se crea ninguna versión nueva y la respuesta es 500 con mensaje claro",
+        "Añadir un test en backend/config/env/test/documents/index.js que, tras restaurar, verifique que exactamente un documento del proyecto tiene isCurrent true",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Centralizar el registro de auditoría desde el contexto",
+      "description": "Como desarrollador backend, quiero un helper logFromCtx en el servicio de auditoría que extraiga usuario e IP del ctx, para eliminar las seis copias del cálculo de ipAddress y la firma de siete argumentos de logAudit repetidas en cada controller.",
+      "acceptanceCriteria": [
+        "backend/src/api/audit/services/audit.js expone logFromCtx(ctx, { action, entity, entityId, before, after }) que obtiene userId de ctx.state.user.id y la IP de ctx.request.ip o del primer valor de x-forwarded-for",
+        "Todos los controllers (document, project, comment, notification, rol, users extension) usan logFromCtx; no queda ninguna línea 'ctx.request.headers[\\'x-forwarded-for\\']' fuera del servicio de auditoría",
+        "logAudit se conserva como función interna usada por logFromCtx",
+        "Los tests existentes siguen pasando y el módulo de auditoría sigue registrando las mismas acciones (verificar con el test de audit existente o añadir uno que cree un documento y compruebe el registro)",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Unificar la lectura del body en los endpoints custom de document",
+      "description": "Como desarrollador, quiero que setReviewed y changeStatus lean el body de la misma forma, porque hoy uno acepta { data: { isRevised } } o { isRevised } y el otro solo { status } en la raíz.",
+      "acceptanceCriteria": [
+        "Ambos handlers leen ctx.request.body?.data ?? ctx.request.body ?? {} mediante un helper readBody(ctx) compartido en utils/",
+        "changeStatus sigue validando que status pertenezca a la lista permitida y las transiciones existentes no cambian",
+        "frontend/src/core/Document.js envía ambos como { data: { ... } }",
+        "Los tests de backend/config/env/test/documents cubren la llamada a /documents/:id/status con { data: { status } } y con { status } y ambas responden igual",
+        "No modificar la versión de @strapi/strapi ni de ningún paquete @strapi/* en backend/package.json",
+        "cd backend && npm test passes",
+        "cd frontend && npx eslint 'src/**/*.{js,jsx}' passes",
+        "cd frontend && CI=true npx react-scripts test --watchAll=false passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-09-18T00:20:44.894Z"
+  }
+}

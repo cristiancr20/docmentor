@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Info, UserPlus, UserRound, X } from "lucide-react";
 import { createProject, getUserByEmail } from "../core/Projects";
 import { successAlert, errorAlert } from "./Alerts/Alerts";
-import { decryptData } from "../utils/encryption";
+import { getUserData } from "../utils/auth.utils";
 import Input, { Select, Textarea } from "./ui/Input";
 import Button from "./ui/Button";
 
@@ -34,10 +34,7 @@ const NewProject = ({ onClose, fetchProjects }) => {
   // vez. Como era dependencia del useEffect de abajo, cada respuesta provocaba
   // un render, que generaba otro objeto, que disparaba otra petición: bucle
   // infinito de llamadas a /api/users. Con useMemo la referencia es estable.
-  const userData = useMemo(() => {
-    const encryptedUserData = localStorage.getItem("userData");
-    return encryptedUserData ? decryptData(encryptedUserData) : null;
-  }, []);
+  const userData = useMemo(() => getUserData(), []);
 
   const userId = userData?.id ?? null;
 
