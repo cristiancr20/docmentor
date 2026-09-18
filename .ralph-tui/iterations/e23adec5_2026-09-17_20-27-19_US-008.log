@@ -1,0 +1,66 @@
+# Iteration 8 Log
+
+## Metadata
+
+- **Task ID**: US-008
+- **Task Title**: Extraer la lógica de comparación de DocumentComparePopup a un hook
+- **Description**: Como desarrollador, quiero que DocumentComparePopup.jsx (481 líneas) separe el estado y la orquestación de pdfCompare en un hook useDocumentCompare, para que el componente quede solo con el JSX y la l...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:27:19.434Z
+- **Ended At**: 2026-09-18T01:30:31.828Z
+- **Duration**: 3m 12s
+- **Input Tokens**: 62
+- **Output Tokens**: 17920
+- **Total Tokens**: 17982
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Read progress file head and list hooks $ ls frontend/src/hooks frontend/src/hooks/__tests__ 2>/dev/null
+[94m[Bash][0m Read DocumentComparePopup component $ cat -n frontend/src/components/DocumentComparePopup.jsx
+[94m[Bash][0m Inspect existing hook, test, and pdfCompare exports $ grep -rn "DocumentComparePopup" frontend/src --include='*.jsx' --include='*.js' -l
+[94m[Bash][0m Look at pdfCompare result shape and the consumer $ grep -n "DocumentComparePopup" -A6 frontend/src/pages/ProyectoDetalle.jsx | head -40
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/hooks/useDocumentCompare.js[0m "import { useCallback, useEffect, useRef, useState } from "react";
+
+import { API_URL } from "../core/config.js";
+import { getCommentsByDocument } from "../core/Comments";
+import { comparePdfDocuments }... (8366 chars)"
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/components/DocumentComparePopup.jsx[0m "import React from "react";
+import PropTypes from "prop-types";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Columns2,
+  FileSearch,
+  GitCompare,
+  RefreshCw,
+  ScanLine,
+} from "lucide-... (9207 chars)"
+[94m[Bash][0m Check line reduction and existing test setup $ ls frontend/src/utils/__tests__
+[94m[Bash][0m Check config, Comments and highlightColors modules $ cat frontend/src/utils/highlightColors.js | head -30
+[94m[Write][0m [95m/Users/cristian/orca/docmentor/frontend/src/hooks/__tests__/useDocumentCompare.test.js[0m "import { act, renderHook, waitFor } from "@testing-library/react";
+import useDocumentCompare from "../useDocumentCompare";
+import { comparePdfDocuments } from "../../utils/pdfCompare";
+import { getCom... (8584 chars)"
+[94m[Bash][0m Run hook tests $ cd /Users/cristian/orca/docmentor/frontend && CI=true npx react-scripts test --watchAll=false src/ho...
+[94m[Bash][0m Run typecheck, eslint and full test suite $ cd .. && git status --short && git diff --stat -- frontend/src/utils/pdfCompare.js
+[94m[Bash][0m Append US-008 entry and pattern to progress.md $ tail -5 .ralph-tui/progress.md
+US-008 implementada.
+
+**Cambios**
+- `frontend/src/hooks/useDocumentCompare.js` (nuevo): recibe `doc1`/`doc2` y concentra la comparación con `comparePdfDocuments`, la carga de comentarios, pestaña/filtro/página objetivo, la sincronía de scroll y el scroll-to-top al cambiar de pestaña. Devuelve `canCompare`, `panes` (título, versión, url, notas ya mezcladas con los resaltados del diff, `onScrollerReady`), `result`, `similarity`, `loading`, `error`, `hasResult`, `showDiffOverlay`, `hunks`, `visibleHunks`, `filter/setFilter`, `tab/setTab`, `targetPage`, `goToPage`, `syncScroll/setSyncScroll`, `runComparison`, `contentRef`. Añade un `runIdRef` para descartar resultados de una comparación anterior que termine tarde.
+- `frontend/src/components/DocumentComparePopup.jsx`: 482 → 292 líneas (−39%); solo ordena los documentos, desestructura el hook y pinta.
+- `frontend/src/hooks/__tests__/useDocumentCompare.test.js` (nuevo, 9 tests) con `pdfCompare`, `core/Comments` y `core/config.js` mockeados: verifica resultado y similitud expuestos, paneles, mezcla de notas, filtro/reset al cambiar de par, `goToPage`, error + reintento, sin capa de texto, sin archivo y descarte de resultado obsoleto.
+- `frontend/src/utils/pdfCompare.js` sin cambios.
+
+**Verificación**
+- `npm run typecheck` ✅, `npx eslint 'src/**/*.{js,jsx}'` ✅, `CI=true npx react-scripts test --watchAll=false` ✅ (15 suites, 86 tests).
+- La verificación manual en la app no se hizo en esta iteración: sesión no interactiva y, según US-006, `strapi develop` no arranca en esta máquina. Queda pendiente para quien pueda abrir el comparador con dos versiones reales.
+
+`.ralph-tui/progress.md` actualizado con la entrada de US-008 y un nuevo patrón sobre hooks de orquestación.
+
+<promise>COMPLETE</promise>
