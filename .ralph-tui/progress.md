@@ -10,6 +10,9 @@ after each iteration and it's included in prompts for context.
 - **Grep en zsh**: `--include=*.js` sin comillas falla con "no matches found"; usar `--include='*.js'`.
 - **Errores en `core/*.js`**: las funciones son llamadas directas a `apiClient` (`return (await api.get(...)).data`), sin `try/catch` que solo loguee y relance: el interceptor de `apiClient` ya centraliza los errores y quien los maneja es la página/componente. Solo se envuelve en `try/catch` cuando el catch hace algo propio (devolver `null`/`[]`, tragar el error). Tampoco se pasa `Content-Type: application/json` a mano; axios lo pone solo con cuerpos de objeto (el `multipart/form-data` de `uploadFile` sí se mantiene).
 
+- **Logging en backend**: en `backend/src` nunca usar `console.*`; usar `strapi.log.info/warn/error/debug` (global de Strapi, disponible también en callbacks asíncronos de módulos cargados por Strapi como `mailer.js`). Excepciones: `backend/scripts/*` (CLI, sí usan `console`) y `src/admin/app.example.js` (código de navegador del panel admin, sin `strapi`; no loguear ahí).
+- **Tests del backend**: `backend/package.json` exige `node >=18 <=20`; con Node 26 (el default de la máquina) `npm test` revienta en `buffer-equal-constant-time` (`SlowBuffer`) antes de ejecutar nada. Correr con `PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" npm test`.
+
 ---
 
 
@@ -44,4 +47,18 @@ after each iteration and it's included in prompts for context.
   - En `Projects.getProjectsByTutor/ByEmail/ByStudents` el `throw new Error("Tutor no encontrado...")` vivía dentro del `try`, así que era capturado, logueado y relanzado; quitar el envoltorio no cambia lo que recibe el consumidor.
   - Los tests de componentes mockean `core/Projects`, `core/Comments` y `core/Notification` con `jest.mock`, así que no dependen de la implementación interna de estos módulos ni de que importen `logger`.
   - `git diff --stat` engaña un poco aquí: casi todo lo eliminado es ruido de `try/catch` y bloques comentados; la superficie exportada de cada módulo no cambió.
+---
+
+## 2026-09-17 - US-003
+- `backend/src/mailer/mailer.js`: los dos `console.log` del `transporter.verify` pasan a `strapi.log.error` (fallo SMTP) y `strapi.log.info` (servidor listo).
+- `backend/src/admin/app.example.js`: se quitó el `console.log(app)` del `bootstrap` de ejemplo (código de navegador del panel admin; no aplica `strapi.log`), dejando el cuerpo vacío con un comentario.
+- Borrados `backend/src/api/document/content-types/document/lifecycles.js` y `backend/src/api/project/content-types/project/lifecycles.js`: ambos archivos estaban comentados de arriba abajo (`/* ... */`), así que no había código activo que migrar. Las plantillas HTML vecinas se dejan tal cual.
+- `backend/scripts/seed-test-users.js` se conserva con `console.*` (script CLI).
+- Verificado: `grep -rn 'console\.' backend/src` vacío; `backend/package.json` sin cambios; `npm test` (Node 20) → 90 tests pasan.
+- Files changed: `backend/src/mailer/mailer.js`, `backend/src/admin/app.example.js`; eliminados los dos `lifecycles.js`.
+- **Learnings:**
+  - De los 27 `console.*` de la historia, 23 vivían en los dos `lifecycles.js` comentados (código muerto que además tenía errores de sintaxis, p.ej. `'api::setting.setting)` sin cerrar la comilla); el envío de correos real vive en `api/notification/services/notification.js`, que ya usaba `strapi.log`.
+  - `strapi` es global y está disponible dentro de callbacks asíncronos de módulos que Strapi carga (el `verify` del transporter en `mailer.js` ya se ve en la salida de los tests como `[error]: Error al verificar la conexión SMTP: Missing credentials for "PLAIN"`).
+  - En zsh, `echo =====` falla con "not found" (expansión `=cmd`) y aborta toda la línea; usar `echo "====="`.
+  - `npm test` con Node 26 falla antes de ejecutar suites (`buffer-equal-constant-time` usa `SlowBuffer`, eliminado en Node ≥24); hay que usar Node 20 de nvm.
 ---

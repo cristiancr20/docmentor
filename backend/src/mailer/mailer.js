@@ -17,9 +17,9 @@ const transporter = nodemailer.createTransport({
 
 transporter.verify(function (error, success) {
   if (error) {
-    console.log(error);
+    strapi.log.error("Error al verificar la conexión SMTP:", error);
   } else {
-    console.log("Server is ready to take our messages");
+    strapi.log.info("Servidor SMTP listo para enviar mensajes");
   }
 });
 

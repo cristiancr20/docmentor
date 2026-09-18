@@ -1,0 +1,59 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-002
+- **Task Title**: Quitar los try/catch que solo loguean y relanzan en core/
+- **Description**: Como desarrollador, quiero que los módulos frontend/src/core/*.js (Projects, Admin, Document, Setting, Audit, Autentication, Comments, Notification) sean llamadas directas a apiClient sin envoltorio t...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:10:56.279Z
+- **Ended At**: 2026-09-18T01:14:00.757Z
+- **Duration**: 3m 4s
+- **Input Tokens**: 76
+- **Output Tokens**: 12116
+- **Total Tokens**: 12192
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing the progress notes and the core modules.
+[94m[Bash][0m Read progress notes and list core modules $ sed -n 1,80p .ralph-tui/progress.md && ls frontend/src/core && wc -l frontend/src/core/*.js
+[94m[Bash][0m Read the smaller core modules $ cd /Users/cristian/orca/docmentor/frontend/src/core && cat apiClient.js Audit.js Autentication.js Co...
+[94m[Bash][0m Read Admin and Projects modules $ cat Admin.js Projects.js
+[94m[Bash][0m Read Document module and find tests touching core $ grep -rln "core/" ../ --include='*.test.js' --include='*.test.jsx' | head
+Let me check the consumers before rewriting, particularly for `copyDocumentAsNewVersion` and the tests that mock core modules.
+[94m[Bash][0m Find consumers and test mocks of core modules $ grep -rn "core/" components/__tests__/*.jsx context/__tests__/*.jsx | grep -i "mock\|import"
+[94m[Bash][0m Rewrite Audit, Autentication and Setting without log-and-rethrow wrappers $ EOF echo done
+[94m[Bash][0m Rewrite Admin and Projects without log-and-rethrow wrappers $ EOF echo done
+[94m[Bash][0m Apply targeted edits to Document.js and list remaining catches $ ''')  open(p, 'w').write(s) print("ok") PY grep -n "try {\|catch\|logger\|Content-Type" Document.js
+Now let me verify the state across `core/` and run the quality checks.
+[94m[Bash][0m Verify core state, run typecheck and eslint $ echo "== typecheck ==" && npm run typecheck 2>&1 | tail -5 && echo "== eslint ==" && npx eslint 'src...
+[94m[Bash][0m Run frontend test suite $ npx react-scripts test --watchAll=false 2>&1 | tail -8
+All three checks pass (typecheck, eslint, 12 suites / 64 tests). Let me review the diff summary and then document the learnings.
+[94m[Bash][0m Show diff summary for core modules $ cd /Users/cristian/orca/docmentor && git diff --stat -- frontend/src/core
+[94m[Bash][0m Append US-002 entry and pattern to progress.md $ la superficie exportada de cada módulo no cambió. --- """ open(p, 'w').write(s) print("ok") PY tail ...
+US-002 is done. Summary of what changed:
+
+**Removed log-and-rethrow wrappers** in `frontend/src/core/{Admin,Audit,Autentication,Document,Projects,Setting}.js`. Simple calls collapsed to `(await api.x(...)).data`; multi-step functions (`updateEmail`, `getAdminAuditLogs`, `exportAuditReport`, `getProjectsByTutor`, …) keep their bodies with the `try/catch` stripped. `Comments.js` and `Notification.js` already had no wrappers.
+
+**Removed manual `Content-Type: application/json`** in `Projects.createProject`, `Document.createDocument` and `Document.copyDocumentAsNewVersion`. The `multipart/form-data` header in `uploadFile` stays — that's a different header and not in scope.
+
+**`logger` import removed** from `Admin`, `Audit`, `Projects`, `Setting`. Kept only in `Autentication` and `Document`.
+
+**Catches preserved** (each has logic beyond logging, documented in progress notes):
+- `Autentication.getUserByEmail` → returns `null` (DocumentViewer relies on it)
+- `Document.getLastDocument` → returns `null`
+- `Document.markDocumentAsOld` → swallows the error
+- `Document.copyDocumentAsNewVersion` → swallows and returns `undefined` (historical behavior; no current callers)
+- `Document.createDocument` → the `catch` (only `handleError` + `throw`) is gone, but the `try/finally` releasing the `window.isUploadingDocument` lock remains
+
+One thing slightly beyond the literal AC: I deleted two commented-out dead blocks in `Projects.js` (old `getProjectsByStudents`/`getProjectsByEmail` copies) since they were the same try/catch + `logger.error` pattern in a file that no longer imports `logger`.
+
+**Checks:** `npm run typecheck` ✓, `npx eslint 'src/**/*.{js,jsx}'` ✓, `CI=true npx react-scripts test --watchAll=false` ✓ (12 suites, 64 tests). Exported signatures and return values are unchanged; consumers receive the same data and the same exception on failure.
+
+Progress notes and a new "Errores en `core/*.js`" pattern were appended to `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>

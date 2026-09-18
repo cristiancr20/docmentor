@@ -30,7 +30,7 @@ const config = {
 };
 
 const bootstrap = (app) => {
-  console.log(app);
+  // Código del panel de administración (navegador): no usar strapi.log aquí.
 };
 
 export default {
