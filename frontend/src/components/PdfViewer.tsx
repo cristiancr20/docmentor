@@ -33,7 +33,7 @@ interface Note {
   readOnly?: boolean;
 }
 
-interface HighlightExampleProps {
+interface PdfViewerProps {
   fileUrl: string;
   notes: Note[];
   onAddNote: (note: Note) => void;
@@ -48,7 +48,7 @@ interface HighlightExampleProps {
   onScrollerReady?: (element: HTMLElement | null) => void;
 }
 
-const HighlightExample: React.FC<HighlightExampleProps> = ({
+const PdfViewer: React.FC<PdfViewerProps> = ({
   fileUrl,
   notes,
   onAddNote,
@@ -422,4 +422,4 @@ const HighlightExample: React.FC<HighlightExampleProps> = ({
   );
 };
 
-export default HighlightExample;
+export default PdfViewer;

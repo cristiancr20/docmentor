@@ -109,3 +109,14 @@ after each iteration and it's included in prompts for context.
   - `strapi develop` no arranca en esta máquina (`@swc/core` sin binding `darwin-universal`), pero `require('@strapi/strapi')().load()` + `server.mount()` + supertest (el mismo patrón de `backend/config/env/test/helpers/strapi.js`) sí, y sirve para probar consultas contra `.tmp/data.db` sin tocar datos. El script tiene que vivir dentro de `backend/` para que resuelva `node_modules`; se borró al terminar.
   - Por defecto, `find` de Strapi pagina a 25; `getDocumentsByProjectId` nunca ha fijado `pagination`, se deja igual (fuera del alcance).
 ---
+
+## 2026-09-17 - US-007
+- `git mv frontend/src/components/DisplayNotesSidebarExample.tsx frontend/src/components/PdfViewer.tsx`. Dentro del archivo, el componente interno se llamaba `HighlightExample` (no coincidía ni con el nombre del archivo); ahora es `const PdfViewer: React.FC<PdfViewerProps>` y `export default PdfViewer`. Sin cambios de lógica.
+- `frontend/src/pages/DocumentViewer.jsx` y `frontend/src/components/DocumentComparePopup.jsx`: import y JSX pasan de `DisplayNotesSidebarExample` a `PdfViewer` (se mantiene la extensión `.tsx` explícita en el import, como estaba).
+- Verificado: `grep -rn DisplayNotesSidebarExample frontend/src` vacío; `npm run typecheck`, `npx eslint 'src/**/*.{js,jsx}'` y `CI=true npx react-scripts test --watchAll=false` (14 suites, 77 tests) pasan.
+- Files changed: `frontend/src/components/PdfViewer.tsx` (renombrado), `frontend/src/pages/DocumentViewer.jsx`, `frontend/src/components/DocumentComparePopup.jsx`.
+- **Learnings:**
+  - El nombre `DisplayNotesSidebarExample` solo aparecía en sus dos consumidores; no hay tests, docs ni configuración que lo referencien fuera de `frontend/src`.
+  - Los imports desde `.jsx` hacia `.tsx` llevan la extensión explícita (`"./PdfViewer.tsx"`); `tsc --noEmit` y CRA lo aceptan, así que al renombrar hay que cambiar también la ruta con extensión.
+  - En zsh, `${PIPESTATUS[0]}` no existe (es `$pipestatus[1]`); para capturar el exit code de un comando con `| tail`, mejor ejecutarlo sin pipe y leer `$?`.
+---

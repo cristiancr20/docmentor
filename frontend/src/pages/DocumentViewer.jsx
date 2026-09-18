@@ -19,7 +19,7 @@ import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
 import CommentsPanel from "../components/CommentsPanel";
 import { errorAlert, successAlert } from "../components/Alerts/Alerts";
-import DisplayNotesSidebarExample from "../components/DisplayNotesSidebarExample.tsx";
+import PdfViewer from "../components/PdfViewer.tsx";
 import { getDocumentById, getDocumentsByProjectId } from "../core/Document";
 import {
   getCommentsByDocument,
@@ -326,7 +326,7 @@ const DocumentoViewer = () => {
           por dentro en lugar de estirar la página. */}
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-3">
         <Card padded={false} className="min-h-0 overflow-hidden bg-surface-2 lg:col-span-2">
-          <DisplayNotesSidebarExample
+          <PdfViewer
             fileUrl={documentUrl}
             notes={notes}
             onAddNote={handleAddNote}

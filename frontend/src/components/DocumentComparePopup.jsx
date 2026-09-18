@@ -16,7 +16,7 @@ import { getCommentsByDocument } from "../core/Comments";
 import { comparePdfDocuments } from "../utils/pdfCompare";
 import { HIGHLIGHT_COLORS } from "../utils/highlightColors";
 
-import DisplayNotesSidebarExample from "./DisplayNotesSidebarExample.tsx";
+import PdfViewer from "./PdfViewer.tsx";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import EmptyState from "./ui/EmptyState";
@@ -452,7 +452,7 @@ const DocumentComparePopup = ({ documents, onClose, currentIndex, setCurrentInde
                   )}
                 </h3>
                 <div className="h-[60vh] overflow-auto rounded-lg bg-surface">
-                  <DisplayNotesSidebarExample
+                  <PdfViewer
                     fileUrl={pane.url}
                     notes={notesForPane(pane.notes, pane.side)}
                     onAddNote={() => {}}

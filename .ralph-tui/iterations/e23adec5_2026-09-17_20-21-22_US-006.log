@@ -1,0 +1,83 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: Sustituir populate=* por populate explícito en core/
+- **Description**: Como usuario, quiero que las listas carguen rápido, porque hoy cinco llamadas de frontend/src/core piden populate=* y traen comentarios, notificaciones y archivos completos de cada proyecto cuando la ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:21:22.030Z
+- **Ended At**: 2026-09-18T01:26:23.664Z
+- **Duration**: 5m 1s
+- **Input Tokens**: 182
+- **Output Tokens**: 22780
+- **Total Tokens**: 22962
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reviewing progress notes and locating the `populate=*` calls.
+[94m[Bash][0m Grep populate in core and read progress header $ grep -n 'populate' frontend/src/core/*.js && echo ---- && sed -n '1,80p' .ralph-tui/progress.md
+[94m[Bash][0m Grep populate outside core, read remaining progress, show US-006 in PRD $ for s in d.get('userStories',d.get('stories',[])):   if s['id'] in ('US-006',): print(json.dumps(s,i...
+Now let me read the core files and the backend schemas to understand what each relation is.
+[94m[Bash][0m Read Projects.js and Document.js $ cat frontend/src/core/Document.js
+[94m[Bash][0m Find consumers and read backend schemas $ ls backend/src/api
+[94m[Bash][0m Read dashboard loaders $ sed -n 35,100p frontend/src/pages/StudentDashboard.jsx
+[94m[Bash][0m See how dashboards render document fields $ grep -n 'documents\|doc\.\|recentDocuments\|attributes' frontend/src/pages/TutorDashboard.jsx fronte...
+[94m[Bash][0m Read ProyectoDetalle page $ cat frontend/src/pages/ProyectoDetalle.jsx
+[94m[Bash][0m Read GeneratePdfButton, timeline and compare popup field usage $ grep -n 'attributes\|documents\[\|doc\.\|document\.' frontend/src/components/DocumentComparePopup.js...
+[94m[Bash][0m Read timeline attributes destructure and compare popup $ sed -n 60,140p frontend/src/components/DocumentComparePopup.jsx
+[94m[Bash][0m Read DocumentViewer data loading and field usage $ grep -n 'attributes\|versions\|documentData\|allVersions' frontend/src/pages/DocumentViewer.jsx | se...
+[94m[Bash][0m See sibling usage and viewer document fields, Strapi version, tests $ grep -rln 'core/Document' frontend/src --include='*.test.*'
+[94m[Bash][0m List tests and read Comments.js $ sed -n 1,60p frontend/src/core/Comments.js
+[94m[Bash][0m Check whether backend/frontend are running and seed users $ grep -n 'DATABASE_CLIENT\|DATABASE_FILENAME' backend/.env 2>/dev/null | head
+[94m[Bash][0m Inspect what's on port 3000, sqlite db, seed users $ grep -n '"develop"\|"start"\|"test"' backend/package.json
+[94m[Bash][0m Check sqlite data counts and users $ " 2>&1
+There's seeded data. I'll start the backend in the background (Node 20) so I can verify the new queries against a real Strapi.
+[94m[Bash][0m Start Strapi backend in background with Node 20 $ nohup npm run develop > /tmp/strapi-dev.log 2>&1 & echo started
+Meanwhile, let me make the code changes. First `Document.js`:
+[94m[Bash][0m Apply populate changes in core, ProyectoDetalle and PDF comment $ ' assert old in s s=s.replace(old,new) open(p,'w').write(s)  p='src/components/GeneratePdfButton.jsx...
+[94m[Bash][0m Check backend controllers' find/populate handling and Strapi startup $ tail -5 /tmp/strapi-dev.log
+[94m[Bash][0m Read document find controller and Strapi startup error $ grep -v '^\s*$' /tmp/strapi-dev.log | head -60
+[94m[Bash][0m Find how backend tests boot Strapi $ grep -n 'jest' package.json
+[94m[Bash][0m Read test helper that boots Strapi $ sed -n 18,45p package.json
+[94m[Bash][0m Boot Strapi programmatically and verify the new populate queries $ EOF PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" node /tmp/verify-populate.js 2>&1 | grep -v '...
+[94m[Bash][0m Run the verification script from inside backend so modules resolve $ cp /tmp/verify-populate.js .tmp/verify-populate.js && PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$P...
+[94m[Bash][0m Inspect project/document links in dev DB $ sqlite3 .tmp/data.db ".tables" | tr ' ' '\n' | grep -i 'files_related\|links'
+Project 6 ("Finlycr") is the one with real data. Let me point the script at it.
+[94m[Bash][0m Rerun verification against project 6 $ /' .tmp/verify-populate.js && PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH" node .tmp/verify-po...
+[94m[Bash][0m Remove temp script, check apiClient shape and existing mocks $ grep -rn "jest.mock(\"../../core\|jest.mock('../../core\|jest.mock(\"../apiClient\|apiClient" fronte...
+[94m[Bash][0m Add contract test and run typecheck, eslint and tests $ npx react-scripts test --watchAll=false 2>&1 | tail -8
+All green (14 suites, 77 tests). Now the `notes` in the PRD and the progress log.
+[94m[Bash][0m Write US-006 notes into the PRD json $ sin cambios. Verificación: arrancando Strapi programáticamente contra .tmp/data.db (strapi develop n...
+[94m[Bash][0m Check the PRD diff didn't reformat the file $ git diff --stat
+[94m[Bash][0m Restore no-trailing-newline and append US-006 entry to progress.md $ `getDocumentsByProjectId` nunca ha fijado `pagination`, se deja igual (fuera del alcance). --- EOF e...
+Now the reusable pattern at the top of `progress.md`:
+[94m[Bash][0m Add populate pattern to Codebase Patterns section $ python3 - <<'EOF' p='.ralph-tui/progress.md' s=open(p).read() anchor = "- **Tests con `jest.useFakeT...
+Final check of the acceptance grep and the full diff of source files:
+[94m[Bash][0m Show remaining populate=* and final source diff $ git status --short
+US-006 is done.
+
+## What changed
+
+**`frontend/src/core/Document.js`**
+- `getDocumentsByProjectId(projectId, { withRelations = false })` no longer sends `populate=*`. By default it populates nothing — the Student/Tutor/Coordinator dashboards only read `title/status/version/createdAt`, and `DocumentViewer`'s sibling-version selector only reads `id/version`. With `withRelations: true` (only `ProyectoDetalle`) it adds exactly: `documentFile[fields]=url` (compare popup + timeline), `restoredFrom[fields]=version` (timeline), `comments[fields]=correction,quote` (project PDF).
+- `copyDocumentAsNewVersion` (no current consumers) asks only for `fields[0]=id` on `project/documentFile/comments/notifications`, which is all it uses to relink them.
+- `getDocumentById` keeps `populate=*` — it's the findOne feeding the viewer, as the story requires.
+
+**`frontend/src/core/Projects.js`** — `getProjectById` asks for `tutor`/`students` with `fields=username,email` only; `populate=*` was dragging every document of the project along.
+
+**`ProyectoDetalle.jsx`** passes `{ withRelations: true }`; `GeneratePdfButton.jsx` comment updated. `Comments.getCommentsByDocument` was already explicit.
+
+**New test** `frontend/src/core/__tests__/populate.test.js` pins the exact `params` both functions send.
+
+## Verification
+- `npm run typecheck`, `npx eslint 'src/**/*.{js,jsx}'`, `CI=true npx react-scripts test --watchAll=false` → 14 suites, 77 tests pass.
+- Manual check of the pages: `strapi develop` doesn't boot on this machine (`@swc/core` missing the `darwin-universal` binding), so I booted Strapi programmatically against the dev DB (`backend/.tmp/data.db`, project "Finlycr": 6 versions, comments, one restore) and ran the four new queries via supertest with student/tutor/coordinator tokens. Each response contains exactly the fields the pages read (including `restoredFrom.version` and `comments.correction/quote`), ownership filters still apply, and the document list shrinks from 12.7 KB to 1.4 KB. Throwaway script removed. I couldn't click through the React UI itself — port 3000 is taken by an unrelated app — so the page check is at the data-contract level plus a field-by-field read of each consumer.
+
+Per-call notes (relations kept + consumers) are in `tasks/prd-calidad.json` → US-006 `notes`, and `progress.md` has the US-006 entry plus a new `populate` pattern at the top.
+
+<promise>COMPLETE</promise>
