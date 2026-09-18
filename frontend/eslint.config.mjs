@@ -28,7 +28,7 @@ export default [
       },
     },
   },
-  // El proyecto usa el runtime automático de JSX (babel.config.js),
+  // El proyecto usa el runtime automático de JSX (@vitejs/plugin-react),
   // por lo que React no necesita estar en scope
   pluginReact.configs.flat["jsx-runtime"],
   {

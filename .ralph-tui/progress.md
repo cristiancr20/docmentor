@@ -7,7 +7,7 @@ after each iteration and it's included in prompts for context.
 
 *Add reusable patterns discovered during development here.*
 
-- **Detectar JSX en `.js` de forma fiable (frontend):** el grep por `<Tag ...>` falla con JSX multilínea y fragmentos. Usar el parser sin el plugin jsx; cualquier archivo que no parsea contiene JSX (es exactamente lo que esbuild/Vite rechazará en `.js`):
+- **Detectar JSX en `.js` de forma fiable (frontend):** el grep por `<Tag ...>` falla con JSX multilínea y fragmentos. Usar el parser sin el plugin jsx; cualquier archivo que no parsea contiene JSX (es exactamente lo que esbuild/Vite rechazará en `.js`). `@babel/parser` ya no es dependencia directa (US-005) pero sigue instalado como transitiva de `@vitejs/plugin-react`, así que el snippet funciona igual:
   ```sh
   cd frontend && node -e '
   const p=require("@babel/parser"),fs=require("fs"),path=require("path");
@@ -18,7 +18,7 @@ after each iteration and it's included in prompts for context.
 - **Imports sin extensión en frontend/src:** todos los imports/`jest.mock` van sin `.js`/`.jsx`, así que renombrar la extensión de un módulo no requiere tocar importadores. Las configs (`tailwind.config.js`, `eslint.config.mjs`, `tsconfig.json`, `jest.transform`) ya incluyen `.jsx`.
 - **Verificar el dev server de Vite sin navegador (frontend):** `npm start` en background y `curl` contra `http://localhost:3000`: el HTML debe incluir `<script type="module" src="/src/index.jsx">`; `curl /src/core/config.js` muestra el `import.meta.env` inyectado (sirve para comprobar que `.env` se leyó); `curl -sI /pdf.worker.js` debe dar 200 (assets de `public/` se sirven en raíz); y `curl /src/index.css | grep '\.bg-surface'` confirma que PostCSS+Tailwind están activos. Terminar con `pkill -f vite`.
 - **Tests con Vitest (frontend):** `vi` es global (`test.globals: true`), no hace falta importarlo. Tres diferencias con Jest que rompen tests al migrar: (1) el factory de `vi.mock` debe devolver la forma del módulo, así que una export por defecto va como `() => ({ default: ... })`, nunca `() => vi.fn()` ni `() => "valor"`; (2) si el código hace `new Mock()`, la `mockImplementation` debe ser una `function` normal, no una arrow (Vitest ≥ 4 lanza "is not a constructor"); (3) el entorno se alterna con `vi.stubEnv("MODE", "production")` + `vi.unstubAllEnvs()` en `afterEach`, no asignando `process.env.NODE_ENV`. `vite.config.js` lleva `test.mockReset: true` (equivale al `resetMocks` de CRA) y `src/setupTests.js` instala un mock propio de `localStorage` con `vi.fn()` y almacén en memoria.
-- **Módulos ESM vs CJS en la raíz de frontend:** `package.json` no tiene `"type": "module"` porque `tailwind.config.js` y `babel.config.js` usan `module.exports`. `vite.config.js` y `postcss.config.js` están en ESM igualmente y Vite los carga (con un aviso de `configLoader: 'native'`). Si se añade `"type": "module"` hay que convertir antes esos dos `.js` CJS (o renombrarlos a `.cjs`).
+- **Módulos ESM vs CJS en la raíz de frontend:** `package.json` no tiene `"type": "module"` porque `tailwind.config.js` usa `module.exports` (desde US-005 es el único CJS que queda; `babel.config.js` ya no existe). `vite.config.js` y `postcss.config.js` están en ESM igualmente y Vite los carga (con un aviso de `configLoader: 'native'` y un `MODULE_TYPELESS_PACKAGE_JSON`). Para quitar el aviso basta con añadir `"type": "module"` y convertir `tailwind.config.js` a ESM (o renombrarlo a `.cjs`).
 
 ---
 
@@ -74,4 +74,18 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - `frontend/Dockerfile` tiene finales de línea CRLF: los `perl -0pi` con `\n` no casan; usar `perl -pi` línea a línea con `\r$` (o `s/\r?\n/`) para conservar CRLF.
   - Las versiones de Node de los workflows (18.x) quedaron por debajo del mínimo de Vite/Vitest; cualquier workflow nuevo del frontend debe usar Node 22. El backend (Strapi) sigue limitado a `<=20.x`, así que los workflows con matrix frontend+backend (sast.yml) no pueden compartir una sola versión sin separar el matrix.
+---
+
+## 2026-09-17 - US-005
+- `git rm` de `frontend/babel.config.js`, `public/silent-check-sso.html` (resto de Keycloak, cero referencias en el repo) y `src/reportWebVitals.js`; borrado el directorio no versionado `frontend/build` (salida vieja de CRA) y quitado `/build` de `frontend/.gitignore` (queda `/dist`).
+- `eslint.config.mjs`: el comentario del runtime automático de JSX cita ahora `@vitejs/plugin-react` en vez de `babel.config.js`.
+- `src/index.jsx`: eliminado el bloque comentado de CRA (`/* reportWebVitals(); */` y su explicación) que era la única mención al módulo borrado.
+- `npm uninstall @babel/core @babel/preset-env @babel/preset-react @babel/plugin-proposal-private-property-in-object web-vitals dotenv`: tras borrar `babel.config.js` ningún archivo de configuración referenciaba `@babel/*`; `web-vitals` solo lo importaba `reportWebVitals.js`; `dotenv` estaba sin uso desde US-003 (no estaba en el AC, pero la historia pide que package.json solo tenga lo que usan Vite y Vitest).
+- `npm install -D typescript@5` → `^5.9.3` (era `^4.9.5`, el tope que imponía CRA).
+- Checks: `npm ls --depth=0` ✅ (sin extraneous/missing), `npm run typecheck` ✅ (tsc 5.9.3), `npx eslint 'src/**/*.{js,jsx}'` ✅, `npm test` ✅ (15 archivos, 86 tests), `npm run build` ✅ (`dist/` ya no incluye `silent-check-sso.html`).
+- **Learnings:**
+  - `typescript@5.9` no requirió ningún cambio en `tsconfig.json` ni en los `.tsx`: `skipLibCheck: true` + `types: ["vite/client"]` compilan igual que con 4.9.
+  - `@babel/parser` sigue disponible como transitiva de `@vitejs/plugin-react` (que trae `@babel/core`), así que borrar los `@babel/*` directos no rompe el snippet de detección de JSX de Codebase Patterns.
+  - Con `babel.config.js` fuera, el único CJS en la raíz de frontend es `tailwind.config.js`; es lo único que impide poner `"type": "module"` y silenciar el aviso de Vite sobre `vite.config.js`/`postcss.config.js` (ver Codebase Patterns). No se hizo aquí por estar fuera del AC.
+  - `frontend/build` no estaba versionado (solo lo ignoraba `.gitignore`), así que bastó `rm -rf`; si en otra máquina existe, `git status` no lo mostrará y hay que borrarlo a mano.
 ---

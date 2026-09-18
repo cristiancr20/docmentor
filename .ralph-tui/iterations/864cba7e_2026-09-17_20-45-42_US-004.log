@@ -1,0 +1,281 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: Actualizar Docker, CI y Vercel para el build de Vite
+- **Description**: Como desarrollador, quiero que los entornos que construyen o sirven el frontend usen los nuevos comandos y el directorio dist, para que Docker Compose, GitHub Actions y Vercel sigan funcionando tras l...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T01:45:42.537Z
+- **Ended At**: 2026-09-18T02:03:29.702Z
+- **Duration**: 17m 47s
+- **Input Tokens**: 76
+- **Output Tokens**: 8742
+- **Total Tokens**: 8818
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by studying the progress file and the relevant files for this story.
+[94m[Bash][0m Read progress notes, Dockerfile, compose and vite config $ cat .ralph-tui/progress.md && echo "=== Dockerfile ===" && cat frontend/Dockerfile && echo "=== dock...
+
+[91m[Error: Exit code 1
+# Ralph Progress Log
+
+This file tracks progress across iterations. Agents update this file
+after each iteration and it's included in prompts for context.
+
+## Codebase Patterns (Study These First)
+
+*Add reusable patterns discovered during development here.*
+
+- **Detectar JSX en `.js` de forma fiable (frontend):** el grep por `<Tag ...>` falla con JSX multilínea y fragmentos. Usar el parser sin el plugin jsx; cualquier archivo que no parsea contiene JSX (es exactamente lo que esbuild/Vite rechazará en `.js`):
+  ```sh
+  cd frontend && node -e '
+  const p=require("@babel/parser"),fs=require("fs"),path=require("path");
+  const walk=(d,o=[])=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=path.join(d,e.name);
+    if(e.isDirectory()){if(!["k6","__tests__"].includes(e.name))walk(f,o)}else if(f.endsWith(".js"))o.push(f)}return o};
+  for(const f of walk("src")){try{p.parse(fs.readFileSync(f,"utf8"),{sourceType:"module"})}catch(e){console.log("JSX:",f)}}'
+  ```
+- **Imports sin extensión en frontend/src:** todos los imports/`jest.mock` van sin `.js`/`.jsx`, así que renombrar la extensión de un módulo no requiere tocar importadores. Las configs (`tailwind.config.js`, `eslint.config.mjs`, `tsconfig.json`, `jest.transform`) ya incluyen `.jsx`.
+- **Verificar el dev server de Vite sin navegador (frontend):** `npm start` en background y `curl` contra `http://localhost:3000`: el HTML debe incluir `<script type="module" src="/src/index.jsx">`; `curl /src/core/config.js` muestra el `import.meta.env` inyectado (sirve para comprobar que `.env` se leyó); `curl -sI /pdf.worker.js` debe dar 200 (assets de `public/` se sirven en raíz); y `curl /src/index.css | grep '\.bg-surface'` confirma que PostCSS+Tailwind están activos. Terminar con `pkill -f vite`.
+- **Tests con Vitest (frontend):** `vi` es global (`test.globals: true`), no hace falta importarlo. Tres diferencias con Jest que rompen tests al migrar: (1) el factory de `vi.mock` debe devolver la forma del módulo, así que una export por defecto va como `() => ({ default: ... })`, nunca `() => vi.fn()` ni `() => "valor"`; (2) si el código hace `new Mock()`, la `mockImplementation` debe ser una `function` normal, no una arrow (Vitest ≥ 4 lanza "is not a constructor"); (3) el entorno se alterna con `vi.stubEnv("MODE", "production")` + `vi.unstubAllEnvs()` en `afterEach`, no asignando `process.env.NODE_ENV`. `vite.config.js` lleva `test.mockReset: true` (equivale al `resetMocks` de CRA) y `src/setupTests.js` instala un mock propio de `localStorage` con `vi.fn()` y almacén en memoria.
+- **Módulos ESM vs CJS en la raíz de frontend:** `package.json` no tiene `"type": "module"` porque `tailwind.config.js` y `babel.config.js` usan `module.exports`. `vite.config.js` y `postcss.config.js` están en ESM igualmente y Vite los carga (con un aviso de `configLoader: 'native'`). Si se añade `"type": "module"` hay que convertir antes esos dos `.js` CJS (o renombrarlos a `.cjs`).
+
+---
+
+## 2026-09-17 - US-001
+- Renombrados con `git mv` a `.jsx` los archivos de `frontend/src` que contienen JSX: `index.js`, `App.js`, `context/AuthContext.js`, `context/PermissionContext.js`, `utils/useAppTheme.js` (los 5 del AC) y además `components/PermissionGate.js` (JSX real, fragmento `<>…</>`, que el grep del AC no detecta).
+- No hubo que tocar imports: todos los importadores usan rutas sin extensión (`from "./App"`, `from "../context/AuthContext"`, `jest.mock("../../context/PermissionContext")`), y CRA/Jest/tsc resuelven `.jsx` sin cambios. `tailwind.config.js` (`./src/**/*.{js,jsx,ts,tsx}`), `eslint.config.mjs` (`**/*.{js,mjs,cjs,jsx}`), `tsconfig.json` (`include: ["src"]`) y el `jest.transform` de package.json (`^.+\.(js|jsx)$`) ya cubrían `.jsx`: verificado, sin cambios.
+- `src/index.jsx` lo resuelve CRA sin cambios en `public/index.html` (react-scripts usa `resolveModule` sobre `src/index` probando `.jsx`).
+- Actualizados dos comentarios que citaban `App.js` (`components/layout/navigation.js`, `components/__tests__/navigation.test.js`).
+- Checks: `npm run typecheck` ✅, `npx eslint 'src/**/*.{js,jsx}'` ✅, `CI=true react-scripts test` ✅ (15 suites, 86 tests), `CI=false npm run build` ✅ (Compiled successfully).
+- **Learnings:**
+  - El grep `<[A-Za-z][^>]*>` del AC tiene falsos negativos y positivos: no detecta JSX multilínea cuyo `>` está en otra línea (`<AuthContext.Provider value={{` en AuthContext.js) ni fragmentos `<>…</>` (PermissionGate.js); y marca `useAppTheme.js` solo por un `<html>` en un comentario (no tiene JSX; se renombró igualmente por estar en el AC). La detección fiable es parsear con `@babel/parser` sin el plugin `jsx`: lo que falla al parsear es lo que esbuild/Vite rechazará (ver patrón en Codebase Patterns).
+  - `useAppTheme.jsx` solo se importa desde `components/PdfViewer.tsx`; no queda ningún `.js` con JSX en `src/` (fuera de `k6/` y `__tests__/`).
+---
+
+## 2026-09-17 - US-002
+- `npm install -D vite @vitejs/plugin-react` (vite ^8.3.0, plugin-react ^6.1.1) y `npm un
+
+... [4289 characters truncated] ...
+
+i.stubEnv`).
+  - En Vitest ≥ 3 `mockReset` restaura la implementación original pasada a `vi.fn(impl)` (no la deja en `undefined` como Jest), así que con `mockReset: true` el mock de `localStorage` recupera solo su almacén en memoria tras cada test.
+  - `@testing-library/jest-dom/vitest` extiende `expect` de Vitest directamente; con `globals: true` no hay que importar `expect` en los tests.
+  - Vitest carga `.env`/`.env.test` por sí mismo (`import.meta.env`), por eso sobra `dotenv`. La devDependency `dotenv` queda ya sin ningún uso en frontend: candidata a borrar en US-005 junto con `@babel/*`, `babel.config.js` y `@babel/core` (que sigue en `dependencies`).
+  - Vitest avisa de que jsdom se crea 15 veces (uno por archivo); es solo rendimiento (~4 s en total), no hace falta tocar `pool`/`isolate`.
+---
+=== Dockerfile ===
+# Dockerfile del frontend
+FROM node:20-alpine
+
+# Establecer el directorio de trabajo
+WORKDIR /app
+
+# Copiar solo los archivos necesarios para instalar las dependencias
+COPY package*.json ./
+
+# Instalar las dependencias en el contenedor
+RUN npm install 
+
+# Copiar el resto de tu aplicación
+COPY . . 
+
+# Build the app
+#RUN npm run build
+
+# Exponer el puerto (ajusta según tu aplicación)
+EXPOSE 3000 
+
+# Comando para iniciar tu aplicación
+CMD ["npm", "start"]
+
+# ===================================================================================================
+# Produccion
+
+# Copiar los archivos construidos desde la etapa anterior
+#COPY --from=build /app/build /usr/share/nginx/html
+
+# Exponer el puerto 80 (puerto predeterminado de Nginx)
+#EXPOSE 80
+
+# Comando para iniciar Nginx
+#CMD ["nginx", "-g", "daemon off;"]
+=== docker-compose ===
+#version: '3'
+
+#services:
+#  frontend:
+#    restart: unless-stopped
+#    build:
+#      context: ./frontend
+#    ports:
+#      - "3000:3000"
+#    depends_on:
+#      - backend
+#    environment:
+#      - REACT_APP_API_URL=http://localhost:1337  # Cambiado a localhost
+
+#  backend:
+#    restart: unless-stopped
+#    build:
+#      context: ./backend
+#    ports:
+#      - "1337:1337"
+#    volumes:
+#      - ./backend:/app
+#      - /app/node_modules  # Añadido para preservar node_modules del contenedor
+#    environment:
+#      NODE_ENV: development
+#      DATABASE_CLIENT: postgres  # Cambiado a postgres
+#      DATABASE_HOST: db  # Nombre del servicio de PostgreSQL
+#      DATABASE_PORT: 5432  # Puerto por defecto de PostgreSQL
+#     DATABASE_NAME: strapi  # Nombre de la base de datos
+#      DATABASE_USERNAME: strapi_user  # Usuario de la base de datos
+#      DATABASE_PASSWORD: strapi_password  # Contraseña de la base de datos
+
+#  db:
+#    restart: unless-stopped
+#    image: postgres:latest
+#    volumes:
+#     - docmentor_postgres_data:/var/lib/postgresql/data
+#    environment:
+#      POSTGRES_USER: strapi_user
+#      POSTGRES_PASSWORD: strapi_password
+#      POSTGRES_DB: strapi  
+#    ports:
+#      - "5436:5432"
+
+#volumes:
+#  docmentor_postgres_data:
+
+
+
+#===================================================================================================
+
+
+version: '3.8'
+
+services:
+  # Servicio para la base de datos PostgreSQL
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: strapi
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Servicio para Strapi (backend)
+  strapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: strapi
+    ports:
+      - "1337:1337"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # Servicio para React (frontend)
+  react:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true" # Habilita hot-reloading en Docker
+    networks:
+      - app-network
+
+# Volúmenes para persistencia de datos
+volumes:
+  postgres_data:
+
+# Red para conectar los servicios
+networks:
+  app-network:
+    driver: bridge=== vite.config ===
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    // Escuchar en 0.0.0.0: sin esto el contenedor de docker-compose no expone el puerto
+    host: true,
+  },
+  build: {
+    outDir: 'dist',
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.js',
+    // Equivale al resetMocks: true de CRA: cada test arranca con los vi.fn()
+    // sin historial ni implementaciones sobrescritas
+    mockReset: true,
+    css: false,
+    coverage: {
+      reporter: ['text', 'lcov'],
+    },
+  },
+});
+ls: frontend/vercel.json: No such file or directory][0m
+[94m[Bash][0m Inspect US-002 notes, workflows, README and env files $ grep -n "\"start\"\|\"build\"\|\"preview\"" frontend/package.json
+[94m[Bash][0m Read README sections, frontend workflow and check Docker availability $ docker info >/dev/null 2>&1 && echo DOCKER_OK || echo DOCKER_NO
+[94m[Bash][0m Check Node engine requirements of Vite tooling vs CI Node version $ grep -n "engines" -A3 package.json
+[94m[Bash][0m Check backend Node engines and lint/sast workflow steps $ grep -n "matrix\|working-directory\|run:" .github/workflows/sast.yml
+[94m[Bash][0m Update Dockerfile comments, compose env, CI Node version and create vercel.json $ grep -n "node-version\|Node.js" .github/workflows/build_frontend.yml .github/workflows/slint.yml
+The Dockerfile perl didn't match (likely CRLF or trailing spaces). Let me check.
+[94m[Bash][0m Inspect Dockerfile line endings $ 27,28p' frontend/Dockerfile | cat -A | cut -c1-90
+CRLF line endings. I'll edit preserving them.
+[94m[Bash][0m Rewrite Dockerfile production comments to /app/dist keeping CRLF $ s|/app/build|/app/dist|' frontend/Dockerfile && \ file frontend/Dockerfile && grep -n "build\|dist" ...
+Now the README.
+[94m[Bash][0m Update README env var, run and build sections for Vite $ `npm run preview` lo sirve en local para probarlo):\n```bash\ncd frontend\nnpm run build\nnpm run pr...
+Now verification: build, lint, typecheck, compose config, and a Docker build attempt.
+[94m[Bash][0m Run build, typecheck, lint and attempt docker compose build $ docker compose build react 2>&1 | tail -3)
+
+[91m[Error: unknown][0m
+Docker daemon isn't running and the compose plugin isn't installed, so I'll validate the compose YAML statically instead.
+[94m[Bash][0m Validate docker-compose.yml parses and react service is correct $ console.log(d.services.react)'
+[94m[Bash][0m Append US-004 learnings to progress log $ cualquier workflow nuevo del frontend debe usar Node 22. El backend (Strapi) sigue limitado a `<=20....
+US-004 implemented. Summary:
+
+**Changes**
+- `frontend/Dockerfile` — production-stage comments now reference `/app/dist` instead of `/app/build` (CRLF endings preserved). Base image and `CMD ["npm", "start"]` untouched.
+- `docker-compose.yml` — `react` service: removed `CHOKIDAR_USEPOLLING`, added `VITE_API_URL: http://localhost:1337`; port `3000:3000` unchanged.
+- `.github/workflows/build_frontend.yml`, `slint.yml` — no workflow referenced `frontend/build` (verified across build_frontend/slint/sast/sca). However, both pinned Node 18.x, and Vite 8 requires `^20.19.0 || >=22.12.0` (Vitest 5 / jsdom 30 need `>=22.12.0`), so `npm run build` would have crashed in CI. Bumped both to Node 22. Left `sast.yml` at 18.20.5 since its matrix includes the backend (`engines: <=20.x`) and its build step already tolerates failure.
+- `frontend/vercel.json` — new, with the `/(.*)` → `/index.html` rewrite.
+- `README.md` — `REACT_APP_API_URL` → `VITE_API_URL`, `npm start` described as the Vite dev server, debug section mentions `frontend/dist` and `npm run preview`, tech list says `React 18.x + Vite`.
+
+**Verification**
+- `npm run build` ✅, `npm run typecheck` ✅, eslint ✅, `vercel.json` parses, `docker-compose.yml` parses with the expected `react` service.
+- `docker compose build react` **could not be run**: the Docker daemon isn't running and the `compose` plugin isn't installed on this machine. Noted in `progress.md`.
+
+Learnings appended to `.ralph-tui/progress.md` (CRLF gotcha in the Dockerfile; Node-version floor for Vite/Vitest vs. the backend's `<=20.x` constraint).
+
+<promise>COMPLETE</promise>
