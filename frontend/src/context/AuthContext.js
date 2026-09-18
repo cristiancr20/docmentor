@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { clearStoredSession, getUserData } from "../utils/auth.utils";
+import { AUTH_EXPIRED_EVENT } from "../core/apiClient";
 
 const AuthContext = createContext();
 
@@ -25,6 +26,14 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
+  }, []);
+
+  // apiClient ya borró localStorage al recibir el 401; aquí solo se descarta
+  // el usuario en memoria para que ProtectedRoute redirija al login.
+  useEffect(() => {
+    const handleExpired = () => setUser(null);
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired);
   }, []);
 
   const loginAsGuest = (userData) => {

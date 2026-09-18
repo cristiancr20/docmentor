@@ -9,6 +9,8 @@ after each iteration and it's included in prompts for context.
 - **Tests con localStorage:** `setupTests.js` carga `jest-localstorage-mock` (métodos `jest.fn()`), y CRA aplica `resetMocks: true`, así que `getItem` devuelve `undefined` en cada test. Para probar código que usa localStorage hay que respaldarlo en `beforeEach` con un `Map` vía `localStorage.getItem.mockImplementation(...)` (ver `src/context/__tests__/AuthContext.test.jsx`).
 - **Quality gates del frontend:** `npm run typecheck`, `npx eslint 'src/**/*.{js,jsx}'`, `CI=true npx react-scripts test --watchAll=false`. El warning de `act()` en `NotificationBell` es preexistente.
 - **Config del frontend:** la única variable de entorno es `REACT_APP_API_URL` (`src/core/config.js` exporta solo `API_URL`, con fallback a `http://localhost:1337`). Plantilla en `frontend/.env.example`. `src/k6/**` está excluido de eslint y es un script de k6 (usa `__ENV`), no código de la app.
+- **Expiración de sesión (401):** `core/apiClient.js` exporta `AUTH_EXPIRED_EVENT` (`"auth:expired"`); su interceptor de respuesta llama a `clearStoredSession()` y hace `window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT))` en cualquier 401 que no sea de `/api/auth/local*`. `AuthContext` escucha ese evento y pone `user` en `null`, y `ProtectedRoute` (App.js) redirige a `/login`. Cualquier otro estado que deba reaccionar a la caducidad debe escuchar el mismo evento, no duplicar la lógica.
+- **Tests de apiClient sin red:** axios está en `transformIgnorePatterns` (se transpila en jest). Para probar interceptores se pasa un `adapter` por petición: `api.get(url, { adapter: (config) => Promise.reject(Object.assign(new Error(), { config, response: { status: 401, config, headers: {}, data: {} } })) })` (ver `src/context/__tests__/AuthContext.expired.test.jsx`). No hace falta `axios-mock-adapter`.
 
 ---
 
@@ -58,4 +60,15 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Antes de eliminar una exportación, `grep -rnE "nombre1|nombre2" frontend/src` (sin `--include`, que en zsh hay que entrecomillar o falla con "no matches found"); la lista de exportaciones vivas de `auth.utils.js` queda arriba para futuras limpiezas.
   - Los tests de `src/utils/__tests__` que no tocan `localStorage` no necesitan el `mockImplementation` del patrón de AuthContext.
+---
+
+## 2026-09-17 - US-005
+- `core/apiClient.js`: en un 401 (fuera de los endpoints públicos de login/registro) el interceptor ahora usa `clearStoredSession()` en vez de los cuatro `removeItem` a mano y después emite `window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT))`. Se exporta `AUTH_EXPIRED_EVENT = "auth:expired"` para que provider y tests compartan el nombre.
+- `context/AuthContext.js`: nuevo `useEffect` que registra `window.addEventListener(AUTH_EXPIRED_EVENT, () => setUser(null))` con cleanup en `removeEventListener`. Con `user` en `null`, el `ProtectedRoute` existente de `App.js` (`if (!user) return <Navigate to="/login" replace />`) redirige sin cambios.
+- Nuevo test `src/context/__tests__/AuthContext.expired.test.jsx` (5 casos): un 401 limpia localStorage y emite el evento; un 401 del propio `/api/auth/local` no lo emite; un 500 no toca la sesión; `AuthProvider` deja `user` en `null` al recibir el 401; el listener se retira al desmontar.
+- Files changed: `frontend/src/core/apiClient.js`, `frontend/src/context/AuthContext.js`, `frontend/src/context/__tests__/AuthContext.expired.test.jsx` (nuevo).
+- **Learnings:**
+  - `auth.utils.js` no importa nada, así que `apiClient` puede importar `clearStoredSession` sin ciclo; `AuthContext` importa de `apiClient` y `apiClient` de `auth.utils`, sin volver a `AuthContext`.
+  - Para disparar un 401 real a través de los interceptores de axios en jest basta con pasar `adapter` en la config de la petición; axios reenvía el rechazo por `interceptors.response` como en producción (patrón añadido arriba).
+  - Al comprobar el efecto del evento sobre el provider hay que envolver la petición en `await act(async () => ...)` para que React aplique el `setUser(null)` antes del `expect`.
 ---

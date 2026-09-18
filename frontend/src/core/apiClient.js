@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_URL } from "./config";
+import { clearStoredSession } from "../utils/auth.utils";
 
 /**
  * Cliente HTTP único de la aplicación.
@@ -24,6 +25,10 @@ const PUBLIC_AUTH_PATHS = ["/api/auth/local", "/api/auth/local/register"];
 
 const isPublicAuthRequest = (url = "") =>
   PUBLIC_AUTH_PATHS.some((path) => url.startsWith(path));
+
+// Evento que se emite en `window` cuando el backend rechaza el token. Este
+// módulo no conoce a React, así que es la forma de avisar a AuthContext.
+export const AUTH_EXPIRED_EVENT = "auth:expired";
 
 const api = axios.create({ baseURL: API_URL });
 
@@ -53,6 +58,11 @@ api.interceptors.request.use((config) => {
  * servidor, o la cuenta se desactivó), la sesión se descarta. Sin esto la
  * aplicación se queda con credenciales muertas: todas las peticiones responden
  * 401 y la interfaz no ofrece salida.
+ *
+ * Borrar localStorage no basta: AuthContext conserva `user` en memoria y las
+ * rutas protegidas siguen mostrándose aunque ya no carguen datos. Por eso,
+ * además, se emite `auth:expired` para que el provider cierre la sesión y el
+ * guard de rutas lleve al usuario al login.
  */
 api.interceptors.response.use(
   (response) => response,
@@ -61,10 +71,8 @@ api.interceptors.response.use(
     const url = error.config?.url ?? "";
 
     if (status === 401 && !isPublicAuthRequest(url)) {
-      localStorage.removeItem("userData");
-      localStorage.removeItem("jwtToken");
-      localStorage.removeItem("userPermissions");
-      localStorage.removeItem("strapiUserId");
+      clearStoredSession();
+      window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
     }
 
     return Promise.reject(error);

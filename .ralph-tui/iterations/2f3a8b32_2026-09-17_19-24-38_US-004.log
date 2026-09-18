@@ -1,0 +1,101 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: Limpiar auth.utils.js de helpers sin uso o defectuosos
+- **Description**: Como desarrollador, quiero que frontend/src/utils/auth.utils.js contenga solo lo que se usa, para eliminar getPrimaryRole (ROLE_PRIORITY no incluye 'coordinador', el comparador devuelve NaN y sort mut...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:24:38.921Z
+- **Ended At**: 2026-09-18T00:25:42.670Z
+- **Duration**: 1m 3s
+- **Input Tokens**: 30
+- **Output Tokens**: 3450
+- **Total Tokens**: 3480
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Inspect auth.utils.js, its importers, and progress notes $ cat frontend/src/utils/auth.utils.js && echo "-----" && grep -rn "auth.utils" frontend/src --include...
+
+[91m[Error: Exit code 1
+// src/utils/auth.utils.js
+
+export const ROLE_PRIORITY = {
+  superadmin: 3,
+  tutor: 2,
+  estudiante: 1
+};
+
+// Actualizar getPrimaryRole para manejar consistentemente los roles
+export const getPrimaryRole = (roles) => {
+  if (!Array.isArray(roles)) {
+    return roles;
+  }
+
+  return roles.sort((a, b) => ROLE_PRIORITY[b] - ROLE_PRIORITY[a])[0];
+};
+
+export const ROLE_ROUTES = {
+  tutor: "/tutor/dashboard",
+  // Apuntaba a /tutor/dashboard, así que al superadmin lo dejaba en el panel de
+  // revisión en lugar del suyo.
+  superadmin: "/admin/dashboard",
+  estudiante: "/student/dashboard",
+  coordinador: "/coordinator/dashboard",
+};
+
+export const validateAuthResponse = (response) => {
+  if (!response?.jwt || !response?.user) {
+    throw new Error("Respuesta de autenticación inválida");
+  }
+  return response;
+};
+
+
+// Claves que componen la sesión guardada. Se limpian juntas para que no quede
+// medio estado (p. ej. token sin usuario) tras un logout o una sesión corrupta.
+export const SESSION_STORAGE_KEYS = ["userData", "jwtToken", "userPermissions", "strapiUserId"];
+
+export const clearStoredSession = () => {
+  SESSION_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+};
+
+// Devuelve el usuario guardado en localStorage o null si no hay sesión o el
+// valor no es JSON válido (por ejemplo, una sesión antigua cifrada con AES).
+export const getUserData = () => {
+  const storedUserData = localStorage.getItem("userData");
+  if (!storedUserData) return null;
+
+  try {
+    const userData = JSON.parse(storedUserData);
+    return userData && typeof userData === "object" ? userData : null;
+  } catch {
+    return null;
+  }
+};
+-----
+(eval):1: no matches found: --include=*.js][0m
+[94m[Bash][0m Find importers and symbol usage, list tests dir, read progress $ tail -40 .ralph-tui/progress.md
+[94m[Bash][0m Remove dead helpers, add ROLE_ROUTES test, verify no refs $ grep -rn "getPrimaryRole\|ROLE_PRIORITY\|USER_STORAGE_KEYS\|saveUserData" src || echo "no refs remai...
+[94m[Bash][0m Run typecheck, eslint, and jest suite $ npm run typecheck 2>&1 | tail -5 && echo "--- eslint" && npx eslint 'src/**/*.{js,jsx}' && echo "esl...
+All three gates pass (the `act()` warning in `NotificationBell` is the known preexisting one). Now the progress log.
+[94m[Bash][0m Append US-004 entry to progress log $ la lista de exportaciones vivas de `auth.utils.js` queda arriba para futuras limpiezas.   - Los test...
+US-004 done.
+
+**What changed**
+- `frontend/src/utils/auth.utils.js`: removed `ROLE_PRIORITY` and `getPrimaryRole` (no importers; the helper was also broken — no `coordinador`, `NaN` comparator, mutating `sort`). `USER_STORAGE_KEYS` and `saveUserData` were already gone from US-001, nothing to do there.
+- Kept everything with live callers: `ROLE_ROUTES` (App.js, Login.jsx), `validateAuthResponse` (Login.jsx), `getUserData` (AuthContext + 7 pages/components), `SESSION_STORAGE_KEYS`/`clearStoredSession` (AuthContext).
+- New `frontend/src/utils/__tests__/auth.utils.test.js` asserting `ROLE_ROUTES` has exactly the four keys `tutor`, `superadmin`, `estudiante`, `coordinador`, plus a shape check on each route.
+
+**Quality gates**
+- `npm run typecheck` ✅
+- `npx eslint 'src/**/*.{js,jsx}'` ✅
+- `CI=true npx react-scripts test --watchAll=false` ✅ — 10 suites, 51 tests passing (only the preexisting `NotificationBell` `act()` warning).
+
+Progress log appended to `.ralph-tui/progress.md`. No commits made.
+
+<promise>COMPLETE</promise>
