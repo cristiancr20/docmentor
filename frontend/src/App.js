@@ -16,7 +16,6 @@ import NotFound from "./pages/ErrorNotFound";
 
 /* AUTENTICACION */
 import Login from "./pages/Login";
-import LoginInstitucional from "./pages/LoginInstitucional";
 import SignUp from "./pages/SignUp";
 
 /* ESTUDIANTE */
@@ -95,7 +94,6 @@ function App() {
           {/* Rutas públicas */}
           <Route path="/" element={<PublicHome />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/login-institucional" element={<LoginInstitucional />} />
           <Route path="/sign-up" element={<SignUp />} />
 
           {/* Rutas protegidas */}

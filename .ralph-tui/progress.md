@@ -25,3 +25,15 @@ after each iteration and it's included in prompts for context.
   - `jest-localstorage-mock` + `resetMocks` de CRA deja `localStorage` inservible en los tests salvo que se le dé implementación en `beforeEach` (ver patrón arriba).
   - El ciphertext viejo de CryptoJS empieza por `U2FsdGVkX1` (base64 de `Salted__`) y nunca es JSON válido, así que `JSON.parse` en try/catch basta como detector de sesión antigua.
 ---
+
+## 2026-09-17 - US-002
+- Se eliminó el flujo de login institucional Keycloak/Aerobase muerto: `src/pages/LoginInstitucional.jsx` (borrado), `loginInstitutional` de `AuthContext` (función y valor del provider), y `getRoles`, `syncUserWithStrapi` y `assignRolesToStrapiUser` de `core/Autentication.js` (solo los usaba ese flujo; se conservan `registerUser`, `login`, `getUserWithRole`, `getUserByEmail`).
+- `App.js`: se quitó el import y la ruta `/login-institucional` (el PRD decía que no estaba enrutada, pero sí lo estaba; ninguna otra página enlazaba a ella).
+- `npm uninstall jwt-decode`: era la única importación (`Autentication.js`), ya no queda en `package.json` ni en `package-lock.json`.
+- No queda ninguna referencia a `keycloak`, `aerobase`, `realm_access` ni `localhost:8080` en `frontend/src`.
+- Files changed: `frontend/src/pages/LoginInstitucional.jsx` (eliminado), `frontend/src/App.js`, `frontend/src/context/AuthContext.js`, `frontend/src/core/Autentication.js`, `frontend/package.json`, `frontend/package-lock.json`.
+- **Learnings:**
+  - No fiarse de "no está enrutado" en el PRD: `grep -rn NombreComponente src` antes de borrar un archivo, porque `App.js` sí lo importaba y hubiera roto el build.
+  - Los consumidores de `core/Autentication.js` son solo `Login.jsx`, `SignUp.jsx` y `DocumentViewer.jsx`; el login local depende de `login` + `getUserWithRole` + `useAuth().login`.
+  - `isInstitutional` sigue usándose como flag de datos (`getTutors`, `NewProject`, `SignUp`, `Login`), así que no forma parte del código muerto de Keycloak y no hay que tocarlo.
+---

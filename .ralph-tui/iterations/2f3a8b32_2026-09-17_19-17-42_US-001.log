@@ -1,0 +1,118 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Guardar la sesión en localStorage sin cifrado simulado
+- **Description**: Como desarrollador, quiero que el JWT y los datos del usuario se guarden en localStorage como JSON plano, para eliminar un cifrado AES cuya clave viaja dentro del bundle (frontend/src/core/config.js S...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:17:42.787Z
+- **Ended At**: 2026-09-18T00:20:44.892Z
+- **Duration**: 3m 2s
+- **Input Tokens**: 114
+- **Output Tokens**: 15136
+- **Total Tokens**: 15250
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reading the progress file and the relevant frontend files.
+[94m[Bash][0m Read progress notes and find encryption usages $ head -80 .ralph-tui/progress.md && echo "-----GREP-----" && grep -rn "encryptData\|decryptData\|SECR...
+
+[91m[Error: Exit code 2
+# Ralph Progress Log
+
+This file tracks progress across iterations. Agents update this file
+after each iteration and it's included in prompts for context.
+
+## Codebase Patterns (Study These First)
+
+*Add reusable patterns discovered during development here.*
+
+---
+
+-----GREP-----
+frontend/src/context/AuthContext.js:3:import { decryptData, encryptData } from "../utils/encryption";
+frontend/src/context/AuthContext.js:17:      const userData = decryptData(encryptedUserData);
+frontend/src/context/AuthContext.js:21:        const token = encryptedToken ? decryptData(encryptedToken) : null;
+frontend/src/context/AuthContext.js:76:      localStorage.setItem("userData", encryptData(userData));
+frontend/src/context/AuthContext.js:77:      localStorage.setItem("jwtToken", encryptData(userData.token));
+frontend/src/context/AuthContext.js:92:    localStorage.setItem("userData", encryptData(guestUser));
+frontend/src/context/AuthContext.js:94:      localStorage.setItem("jwtToken", encryptData(userData.token));
+frontend/src/context/AuthContext.js:119:    localStorage.setItem("userData", encryptData(normalized));
+frontend/src/context/AuthContext.js:120:    localStorage.setItem("jwtToken", encryptData(token));
+frontend/src/utils/auth.utils.js:3:import { decryptData, encryptData } from "./encryption";
+frontend/src/utils/auth.utils.js:41:  const encryptedUserData = encryptData(userData);
+frontend/src/utils/auth.utils.js:59:    const userData = decryptData(encryptedUserData);
+frontend/src/core/config.js:6:export const SECRET_KEY = process.env.REACT_APP_SECRET_KEY ||"4c7b4293c68e4c7b4293c68e4c7b4293c68e4c7b4293c68e4c7b4293c68e4c7b";
+frontend/src/core/apiClient.js:3:import { decryptData } from "../utils/encryption";
+frontend/src/core/apiClient.js:21:  return decryptData(encryptedToken);
+frontend/src/utils/encryption.js:4:import {SECRET_KEY} from "../core/config";
+frontend/src/utils/encryption.js:8:export const encryptData = (data) => {
+frontend/src/utils/encryption.js:9:  if (!SECRET_KEY) {
+frontend/src/utils/encryption.js:13:  return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString();
+frontend/src/utils/encryption.js:17:export const decryptData = (encryptedData) => {
+frontend/src/utils/encryption.js:18:  if (!SECRET_KEY) {
+frontend/src/utils/encryption.js:29:    const bytes = CryptoJS.AES.decrypt(encryptedData, SECRET_KEY);
+frontend/src/components/EditProject.jsx:6:import { decryptData } from "../utils/encryption";
+frontend/src/components/EditProject.jsx:28:      const decryptedUserData = decryptData(encryptedUserData);
+frontend/src/components/NewProject.jsx:7:import { decryptData } from "../utils/encryption";
+frontend/src/components/NewProject.jsx:39:    return encryptedUserData ? decryptData(encryptedUserData) : null;
+frontend/src/pages/TutorDashboard.jsx:23:import { decryptData } from "../utils/encryption";
+frontend/src/pages/TutorDashboard.jsx:47:    const decryptedUserData = decryptData(encryptedUserData);
+frontend/src/pages/ProjectsAsignedTutor.jsx:11:import { decryptData } from "../utils/encryption";
+frontend/src/pages/ProjectsAsignedTutor.jsx:39:    const decryptedUserData = decryptData(encryptedUserData);
+frontend/src/pages/ViewProjectsStudents.jsx:14:import { decryptData } from "../utils/encryption";
+frontend/src/pages/ViewProjectsStudents.jsx:36:    const decryptedUserData = decryptData(encryptedUserData);
+frontend/src/pages/StudentDashboard.jsx:16:import { decryptData } from "../utils/encryption";
+frontend/src/pages/StudentDashboard.jsx:39:    const decryptedUserData = decryptData(encryptedUserData);
+frontend/src/pages/DocumentViewer.jsx:30:import { decryptData } from "../utils/encryption.js";
+frontend/src/pages/DocumentViewer.jsx:57:    const decryptedUserData = decryptData(encryptedUserData);][0m
+The progress file is essentially empty. There are more consumers than the story lists (several pages call `decryptData` directly). Let me look at the core files.
+[94m[Bash][0m Show auth-related core files $ ls -a | grep env
+No `.env.example` exists. Now let me check who calls `saveUserData`/`getUserData`, and how the seven direct `decryptData` consumers read the user.
+[94m[Bash][0m Find auth.utils callers and decryptData consumer context $ done
+[94m[Bash][0m Find remaining crypto/test references $ grep -n '"typecheck"\|"lint"' package.json
+[94m[Bash][0m Rewrite auth.utils.js to plain JSON helpers $ ''' s=s.replace(old_get,new_get) open(p,'w').write(s) EOF cat src/utils/auth.utils.js
+Now `AuthContext.js`, `apiClient.js`, `config.js`, `.env`, and remove `encryption.js`.
+[94m[Bash][0m Update AuthContext, apiClient, config, .env; delete encryption.js $ cat src/core/config.js
+Now the seven pages/components that called `decryptData` directly. They'll use `getUserData()` from `auth.utils` instead.
+[94m[Bash][0m Show every line to change in the consumers $ done
+[94m[Bash][0m Swap decryptData for getUserData in the seven consumers $ done
+Tidy the `NewProject.jsx` useMemo (a one-line body now) and run the quality checks.
+[94m[Bash][0m Simplify useMemo, grep leftovers, run typecheck and eslint $ echo "eslint exit=${PIPESTATUS[0]}"
+Typecheck and ESLint are clean. Now the test suite.
+[94m[Bash][0m Run frontend test suite $ npx react-scripts test --watchAll=false 2>&1 | tail -15
+[94m[Bash][0m Check existing test conventions $ ls src/context
+[94m[Bash][0m Add AuthContext test and run it $ npx eslint src/context && echo "eslint ok"
+[94m[Bash][0m Show the test failure details $ npx react-scripts test --watchAll=false src/context 2>&1 | grep -v "^\s*at " | head -60
+`localStorage.getItem` returns `undefined` here, so the test setup must stub it. Let me look.
+[94m[Bash][0m Inspect test setup for localStorage stub $ grep -rn "localStorage" src/components/__tests__/*.jsx | head -5
+[94m[Bash][0m Back localStorage mocks with in-memory store and rerun $ ''') open(p,'w').write(s) EOF CI=true npx react-scripts test --watchAll=false src/context 2>&1 | gre...
+All three pass. Final full run of the three quality gates plus a diff summary.
+[94m[Bash][0m Run all quality gates and summarize changes $ echo "=== typecheck ===" && npm run typecheck 2>&1 | tail -2 && echo "=== eslint ===" && npx eslint ...
+All gates pass: typecheck clean, ESLint clean, 9 suites / 49 tests green. (`.env` is git-ignored, so the removed `REACT_APP_SECRET_KEY` line there is a local-only change.) Now the progress log.
+[94m[Bash][0m Append US-001 entry and patterns to progress.md $ siempre `grep -rn decryptData` antes de dar por cerrado un cambio de almacenamiento.   - `jest-local...
+## US-001 done
+
+**What changed**
+
+- `frontend/src/utils/encryption.js` deleted; `SECRET_KEY` removed from `core/config.js`. No `.env.example` exists; I removed `REACT_APP_SECRET_KEY` from the local (git-ignored) `.env` since nothing reads it now.
+- `AuthContext.js`: writes `userData` via `JSON.stringify` and `jwtToken` as a plain string. On mount it reads through `getUserData()` (`JSON.parse` in try/catch); if the stored value isn't valid JSON (old AES session) it calls `clearStoredSession()` — clearing `userData`, `jwtToken`, `userPermissions`, `strapiUserId` — and leaves the user logged out with no console errors. `logout` now uses the same helper.
+- `apiClient.getAuthToken` → `localStorage.getItem("jwtToken") || null`.
+- `auth.utils.js`: `saveUserData` and `USER_STORAGE_KEYS` removed (no callers); `getUserData` rewritten as a safe plain-JSON reader; added `SESSION_STORAGE_KEYS` / `clearStoredSession`.
+- Beyond the files the story listed, seven pages/components (`EditProject`, `NewProject`, `TutorDashboard`, `ProjectsAsignedTutor`, `ViewProjectsStudents`, `StudentDashboard`, `DocumentViewer`) imported `decryptData` directly — all switched to `getUserData()`.
+- `crypto-js` kept (still used by `GeneratePdfButton.jsx` for SHA256).
+- New `src/context/__tests__/AuthContext.test.jsx` covering login/logout, reload rehydration, and the legacy-encrypted-session cleanup with `console.error` asserted untouched.
+
+**Verification**
+- `npm run typecheck` ✅
+- `npx eslint 'src/**/*.{js,jsx}'` ✅
+- `CI=true npx react-scripts test --watchAll=false` ✅ — 9 suites, 49 tests (the `act()` warning from `NotificationBell` is pre-existing)
+
+Login/logout/reload behaviour is covered by the new tests rather than a manual browser run. Progress log and Codebase Patterns updated in `.ralph-tui/progress.md`.
+
+<promise>COMPLETE</promise>

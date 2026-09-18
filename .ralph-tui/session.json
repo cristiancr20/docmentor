@@ -3,10 +3,10 @@
   "sessionId": "2f3a8b32-4456-4840-bce0-70117e0eaba9",
   "status": "running",
   "startedAt": "2026-09-18T00:17:41.135Z",
-  "updatedAt": "2026-09-18T00:20:44.894Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-09-18T00:22:54.619Z",
+  "currentIteration": 1,
   "maxIterations": 0,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -18,8 +18,8 @@
       {
         "id": "US-001",
         "title": "Guardar la sesión en localStorage sin cifrado simulado",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-002",
@@ -89,7 +89,18 @@
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "US-001",
+      "taskTitle": "Guardar la sesión en localStorage sin cifrado simulado",
+      "taskCompleted": true,
+      "durationMs": 182105,
+      "startedAt": "2026-09-18T00:17:42.787Z",
+      "endedAt": "2026-09-18T00:20:44.892Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/cristian/orca/docmentor",
   "activeTaskIds": [],
