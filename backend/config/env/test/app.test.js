@@ -6,6 +6,7 @@ require("./projects/index")
 require("./notifications/index")
 require("./comments/index")
 require("./documents/index")
+require("./policies/index")
 
 // Arrancar Strapi contra una base recién creada (se crea el esquema entero)
 // pasa de largo los 5s por defecto de jest, y al vencer el hook la carga sigue

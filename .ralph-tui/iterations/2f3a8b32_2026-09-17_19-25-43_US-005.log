@@ -1,0 +1,51 @@
+# Iteration 5 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: Cerrar la sesión en memoria cuando el backend responde 401
+- **Description**: Como usuario, quiero que al expirar mi token la aplicación me lleve al login, porque hoy el interceptor de apiClient borra localStorage pero AuthContext mantiene `user` en memoria y la interfaz sigue ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-09-18T00:25:43.767Z
+- **Ended At**: 2026-09-18T00:27:30.673Z
+- **Duration**: 1m 46s
+- **Input Tokens**: 62
+- **Output Tokens**: 8433
+- **Total Tokens**: 8495
+- **Agent**: claude
+- **Model**: claude-opus-5
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I'll start by reading the progress file and the relevant source files.
+[94m[Bash][0m Read progress notes, apiClient and AuthContext $ sed -n 1,80p .ralph-tui/progress.md && echo ---- && cat frontend/src/core/apiClient.js && echo ---- ...
+[94m[Bash][0m Read AuthContext, its test, auth utils and App guard $ grep -n "user\b\|Navigate\|ProtectedRoute\|PrivateRoute" src/App.js | head -40
+[94m[Bash][0m Check imports of auth.utils and existing event usage $ grep -rn "auth:expired\|AUTH_EXPIRED" src | head
+No imports in `auth.utils.js`, so `apiClient` can use `clearStoredSession` safely. Now the changes:
+[94m[Bash][0m Apply changes to apiClient and AuthContext $ ''') p.write_text(s) EOF git diff --stat
+Now the test. Let me check the axios version and whether any existing test already imports `apiClient` (CRA's Jest sometimes chokes on axios ESM builds).
+[94m[Bash][0m Check axios version, jest config and test setup $ cat src/setupTests.js
+[94m[Bash][0m Inspect jest config and how existing tests handle apiClient $ grep -n "apiClient\|jest.mock" src/components/__tests__/NotificationBell.test.jsx | head
+Axios is already whitelisted for transform, so the test can drive the real `api` instance with a custom adapter. Writing the test:
+[94m[Bash][0m Write expired-session test and run context tests $ EOF CI=true npx react-scripts test --watchAll=false src/context 2>&1 | tail -40
+All green. Now the full quality gates:
+[94m[Bash][0m Run typecheck, eslint and full test suite $ npx react-scripts test --watchAll=false 2>&1 | grep -E "Tests:|Test Suites:|FAIL"
+All three gates pass (typecheck clean, eslint clean, 11 suites / 56 tests green). Now documenting the learnings in `progress.md`:
+[94m[Bash][0m Append US-005 notes and patterns to progress.md $ axios reenvía el rechazo por `interceptors.response` como en producción (patrón añadido arriba).   -...
+US-005 is implemented and verified.
+
+**Changes**
+- `frontend/src/core/apiClient.js` — on a 401 (outside the public `/api/auth/local*` endpoints) the response interceptor now calls `clearStoredSession()` instead of four manual `removeItem`s, then emits `window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT))`. `AUTH_EXPIRED_EVENT = "auth:expired"` is exported so the provider and tests share the name.
+- `frontend/src/context/AuthContext.js` — new `useEffect` registering an `auth:expired` listener that does `setUser(null)`, with `removeEventListener` cleanup. With `user` null, the existing `ProtectedRoute` in `App.js:45` redirects to `/login`; no change needed there.
+- `frontend/src/context/__tests__/AuthContext.expired.test.jsx` (new, 5 cases) — 401 clears localStorage and fires the event; 401 from the login endpoint does not; 500 leaves the session alone; `AuthProvider` ends with `user` null after a 401; listener is removed on unmount. It drives the real `api` instance with a per-request axios `adapter`, so no network or mock library is involved.
+
+**Quality gates** (all from `frontend/`)
+- `npm run typecheck` — passes
+- `npx eslint 'src/**/*.{js,jsx}'` — passes
+- `CI=true npx react-scripts test --watchAll=false` — 11 suites / 56 tests pass
+
+`progress.md` has the US-005 entry plus two new Codebase Patterns (the `auth:expired` contract and the axios-adapter technique for testing interceptors). No commits were made.
+
+<promise>COMPLETE</promise>
